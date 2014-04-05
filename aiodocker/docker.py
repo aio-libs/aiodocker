@@ -22,7 +22,6 @@ class Docker:
         data = None
         try:
             chunk = yield from response.content.read()  # XXX: Correct?
-            print(chunk)
             data = json.loads(chunk.decode('utf-8'))
         except aiohttp.EofStream:
             pass
