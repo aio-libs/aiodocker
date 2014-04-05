@@ -25,5 +25,5 @@ class Channel:
         for el in self.queues:
             yield from el.put(obj)
 
-    def open(self):
+    def listen(self):
         return ChannelIterator(self)

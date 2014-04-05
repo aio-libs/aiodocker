@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 import json
 import datetime as dt
-
+from aiodocker.channel import Channel
 
 
 class Docker:
@@ -28,38 +28,24 @@ class Docker:
         response.close()
         return data
 
-    @asyncio.coroutine
-    def containers(self, **kwargs):
-        data = yield from self._query("containers/json", **kwargs)
-        return data
+    def events(self):
+        e = DockerEvents(self)
+        return e
+
+
+class DockerEvents:
+    def __init__(self, docker):
+        self.docker = docker
+        self.channel = Channel()
+
+    def listen(self):
+        return self.channel.listen()
 
     @asyncio.coroutine
-    def get_container(self, container, **kwargs):
-        data = yield from self._query(
-            "containers/{}/json".format(container), **kwargs)
-        return data
+    def run(self):
+        response = yield from aiohttp.request(
+            'GET', self.docker._endpoint('events'))
 
-    @asyncio.coroutine
-    def delete_container(self, container, **kwargs):
-        data = yield from self._query(
-            "containers/{}".format(container), method='DELETE', **kwargs)
-        return data
-
-    @asyncio.coroutine
-    def kill_container(self, container, **kwargs):
-        data = yield from self._query(
-            "containers/{}/kill".format(container), method='POST', **kwargs)
-        return data
-
-    @asyncio.coroutine
-    def stop_container(self, container, **kwargs):
-        data = yield from self._query(
-            "containers/{}/stop".format(container), method='POST', **kwargs)
-        return data
-
-    @asyncio.coroutine
-    def events(self, callback):
-        response = yield from aiohttp.request('GET', self._endpoint('events'))
         while True:
             try:
                 chunk = yield from response.content.read()  # XXX: Correct?
@@ -67,11 +53,7 @@ class Docker:
                 if 'time' in data:
                     data['time'] = dt.datetime.fromtimestamp(data['time'])
 
-                if 'id' in data:
-                    data['container'] = yield from self.get_container(
-                        data['id'])
-
-                asyncio.async(callback(data))
+                asyncio.async(self.channel.put(data))
             except aiohttp.EofStream:
                 break
         response.close()
