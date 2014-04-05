@@ -5,7 +5,7 @@ import json
 import datetime as dt
 
 
- 
+
 class Docker:
     def __init__(self, url):
         self.url = url
@@ -71,7 +71,7 @@ class Docker:
                     data['container'] = yield from self.get_container(
                         data['id'])
 
-                yield from callback(data)
+                asyncio.async(callback(data))
             except aiohttp.EofStream:
                 break
         response.close()
