@@ -85,6 +85,10 @@ class DockerContainers:
         return data
 
 
+class DockerContainer:
+    def __init__(self, docker, **kwargs):
+        pass
+
 
 class DockerEvents:
     def __init__(self, docker):
