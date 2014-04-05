@@ -9,6 +9,8 @@ from aiodocker.channel import Channel
 class Docker:
     def __init__(self, url):
         self.url = url
+        self.events = DockerEvents(self)
+        self.containers = DockerContainers(self)
 
     def _endpoint(self, path, **kwargs):
         string = "/".join([self.url, path])
@@ -28,12 +30,6 @@ class Docker:
         response.close()
         return data
 
-    def events(self):
-        return DockerEvents(self)
-
-    def containers(self):
-        return DockerContainers(self)
-
 
 class DockerContainers:
     def __init__(self, docker):
@@ -46,48 +42,59 @@ class DockerContainers:
             method='GET',
             **kwargs
         )
-        return data
+        return [DockerContainer(self.docker **x) for x in data]
 
     @asyncio.coroutine
-    def show(self, container, **kwargs):
+    def get(self, container, **kwargs):
         data = yield from self.docker._query(
             "containers/{}/json".format(container),
+            method='GET',
+            **kwargs
+        )
+        return DockerContainer(self.docker, **data)
+
+
+class DockerContainer:
+    def __init__(self, docker, **kwargs):
+        self.docker = docker
+        self._container = kwargs
+        self._id = self._container.get("id", self._container.get("ID"))
+
+    @asyncio.coroutine
+    def show(self, **kwargs):
+        data = yield from self.docker._query(
+            "containers/{}/json".format(self._id),
             method='GET',
             **kwargs
         )
         return data
 
     @asyncio.coroutine
-    def stop(self, container, **kwargs):
+    def stop(self, **kwargs):
         data = yield from self.docker._query(
-            "containers/{}/stop".format(container),
+            "containers/{}/stop".format(self._id),
             method='POST',
             **kwargs
         )
         return data
 
     @asyncio.coroutine
-    def kill(self, container, **kwargs):
+    def kill(self, **kwargs):
         data = yield from self.docker._query(
-            "containers/{}/kill".format(container),
+            "containers/{}/kill".format(self._id),
             method='POST',
             **kwargs
         )
         return data
 
     @asyncio.coroutine
-    def delete(self, container, **kwargs):
+    def delete(self, **kwargs):
         data = yield from self.docker._query(
-            "containers/{}".format(container),
+            "containers/{}".format(self.container['id']),
             method='DELETE',
             **kwargs
         )
         return data
-
-
-class DockerContainer:
-    def __init__(self, docker, **kwargs):
-        pass
 
 
 class DockerEvents:
@@ -100,7 +107,7 @@ class DockerEvents:
 
     @asyncio.coroutine
     def run(self):
-        containers = self.docker.containers()
+        containers = self.docker.containers
         response = yield from aiohttp.request(
             'GET',
             self.docker._endpoint('events')
@@ -114,7 +121,7 @@ class DockerEvents:
                     data['time'] = dt.datetime.fromtimestamp(data['time'])
 
                 if 'id' in data:
-                    data['container'] = yield from containers.show(data['id'])
+                    data['container'] = yield from containers.get(data['id'])
 
                 asyncio.async(self.channel.put(data))
             except aiohttp.EofStream:
