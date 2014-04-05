@@ -29,8 +29,61 @@ class Docker:
         return data
 
     def events(self):
-        e = DockerEvents(self)
-        return e
+        return DockerEvents(self)
+
+    def containers(self):
+        return DockerContainers(self)
+
+
+class DockerContainers:
+    def __init__(self, docker):
+        self.docker = docker
+
+    @asyncio.coroutine
+    def list(self, **kwargs):
+        data = yield from self.docker._query(
+            "containers/json",
+            method='GET',
+            **kwargs
+        )
+        return data
+
+    @asyncio.coroutine
+    def show(self, container, **kwargs):
+        data = yield from self.docker._query(
+            "containers/{}/json".format(container),
+            method='GET',
+            **kwargs
+        )
+        return data
+
+    @asyncio.coroutine
+    def stop(self, container, **kwargs):
+        data = yield from self.docker._query(
+            "containers/{}/stop".format(container),
+            method='POST',
+            **kwargs
+        )
+        return data
+
+    @asyncio.coroutine
+    def kill(self, container, **kwargs):
+        data = yield from self.docker._query(
+            "containers/{}/kill".format(container),
+            method='POST',
+            **kwargs
+        )
+        return data
+
+    @asyncio.coroutine
+    def delete(self, container, **kwargs):
+        data = yield from self.docker._query(
+            "containers/{}".format(container),
+            method='DELETE',
+            **kwargs
+        )
+        return data
+
 
 
 class DockerEvents:
@@ -43,8 +96,11 @@ class DockerEvents:
 
     @asyncio.coroutine
     def run(self):
+        containers = self.docker.containers()
         response = yield from aiohttp.request(
-            'GET', self.docker._endpoint('events'))
+            'GET',
+            self.docker._endpoint('events')
+        )
 
         while True:
             try:
@@ -52,6 +108,9 @@ class DockerEvents:
                 data = json.loads(chunk.decode('utf-8'))
                 if 'time' in data:
                     data['time'] = dt.datetime.fromtimestamp(data['time'])
+
+                if 'id' in data:
+                    data['container'] = yield from containers.show(data['id'])
 
                 asyncio.async(self.channel.put(data))
             except aiohttp.EofStream:

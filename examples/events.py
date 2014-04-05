@@ -9,23 +9,16 @@ docker = Docker("http://localhost:4243/")
 
 @asyncio.coroutine
 def handler(events):
-    print("waiting")
     queue = events.listen()
+
     while True:
-        print("waiting")
         event = yield from queue.get()
         print(event)
 
 
-@asyncio.coroutine
-def main():
-    events = docker.events()
-    tasks = [
-        asyncio.async(events.run()),
-        asyncio.async(handler(events)),
-        asyncio.async(handler(events)),
-    ]
-    yield from asyncio.gather(*tasks)
+events = docker.events()
+tasks = [asyncio.async(events.run()),
+         asyncio.async(handler(events)),
+         asyncio.async(handler(events)),]
 
-
-loop.run_until_complete(main())
+loop.run_until_complete(asyncio.gather(*tasks))
