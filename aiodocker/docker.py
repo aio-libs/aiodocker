@@ -18,9 +18,10 @@ class Docker:
             string += "?" + urllib.parse.urlencode(kwargs)
         return string
 
-    def _query(self, path, method='GET', data=None, **kwargs):
+    def _query(self, path, method='GET', data=None, headers=None, **kwargs):
         url = self._endpoint(path, **kwargs)
-        response = yield from aiohttp.request(method, url, data=data)
+        response = yield from aiohttp.request(
+                method, url, headers=headers, data=data)
         if response.status not in [200]:
             raise ValueError("Got a failure from the server")
 
@@ -48,17 +49,17 @@ class DockerContainers:
         return [DockerContainer(self.docker **x) for x in data]
 
     @asyncio.coroutine
-    def start(self, config, name=""):
+    def start(self, config, name=None):
         url = "containers/create"
-        if name:
-            url += "?name={}".format(name)
 
-        config = json.dumps(config, sort_keys=True, indent=4)
+        config = json.dumps(
+                config, sort_keys=True, indent=4).encode('utf-8')
         data = yield from self.docker._query(
             url,
             method='POST',
-            headers={"Content-Type": "application/json",},
+            headers={"content-type": "application/json",},
             data=config,
+            name=name
         )
         return DockerContainer(self.docker, ID=data['id'])
 
