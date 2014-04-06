@@ -11,11 +11,12 @@ docker = Docker("http://localhost:4243/")
 def handler(events):
     queue = events.listen()
 
-    # config = {
-    #     "Cmd": ["bash"], "Image": "debian",
-    # }
-    # container = yield from docker.containers.start(config, name='testing')
-    # print(container)
+    config = {
+        "Cmd": ["bash"],
+        "Image": "debian",
+    }
+    container = yield from docker.containers.start(config, name='testing')
+    print(container.show())
 
     while True:
         event = yield from queue.get()

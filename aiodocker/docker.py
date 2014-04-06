@@ -21,6 +21,9 @@ class Docker:
     def _query(self, path, method='GET', data=None, **kwargs):
         url = self._endpoint(path, **kwargs)
         response = yield from aiohttp.request(method, url, data=data)
+        if response.status not in [200]:
+            raise ValueError("Got a failure from the server")
+
         data = None
         try:
             chunk = yield from response.content.read()  # XXX: Correct?
