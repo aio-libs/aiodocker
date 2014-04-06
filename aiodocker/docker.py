@@ -45,6 +45,21 @@ class DockerContainers:
         return [DockerContainer(self.docker **x) for x in data]
 
     @asyncio.coroutine
+    def start(self, config, name=""):
+        url = "containers/create"
+        if name:
+            url += "?name={}".format(name)
+
+        config = json.dumps(config, sort_keys=True, indent=4)
+        data = yield from self.docker._query(
+            url,
+            method='POST',
+            headers={"Content-Type": "application/json",},
+            data=config,
+        )
+        return DockerContainer(self.docker, ID=data['id'])
+
+    @asyncio.coroutine
     def get(self, container, **kwargs):
         data = yield from self.docker._query(
             "containers/{}/json".format(container),

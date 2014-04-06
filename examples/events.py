@@ -10,7 +10,12 @@ docker = Docker("http://localhost:4243/")
 @asyncio.coroutine
 def handler(events):
     queue = events.listen()
-    containers = docker.containers
+
+    # config = {
+    #     "Cmd": ["bash"], "Image": "debian",
+    # }
+    # container = yield from docker.containers.start(config, name='testing')
+    # print(container)
 
     while True:
         event = yield from queue.get()
