@@ -12,11 +12,18 @@ def handler(events):
     queue = events.listen()
 
     config = {
-        "Cmd":["bash"],
-        "Image":"debian",
+        "Cmd":["tail", "-f", "/var/log/dmesg"],
+        "Image":"debian:7.3",
+         "AttachStdin":False,
+         "AttachStdout":True,
+         "AttachStderr":True,
+         "Tty":False,
+         "OpenStdin":False,
+         "StdinOnce":False,
+
     }
 
-    container = yield from docker.containers.start(config, name='testing')
+    container = yield from docker.containers.run(config, name='testing')
 
     while True:
         event = yield from queue.get()
@@ -26,7 +33,7 @@ def handler(events):
 
 
 events = docker.events
-tasks = [asyncio.async(events.run()),
+tasks = [#asyncio.async(events.run()),
          asyncio.async(handler(events)),]
 
 loop.run_until_complete(asyncio.gather(*tasks))

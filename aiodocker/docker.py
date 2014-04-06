@@ -49,7 +49,7 @@ class DockerContainers:
         return [DockerContainer(self.docker **x) for x in data]
 
     @asyncio.coroutine
-    def start(self, config, name=None):
+    def create(self, config, name=None):
         url = "containers/create"
 
         config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
@@ -61,6 +61,18 @@ class DockerContainers:
             name=name
         )
         return DockerContainer(self.docker, id=data['Id'])
+
+    @asyncio.coroutine
+    def run(self, config, name=None):
+        x = yield from self.create(config, name=name)
+        yield from x.start({
+             "Binds":[],
+             "LxcConf":{"lxc.utsname":"docker"},
+             "PortBindings":{},
+             "PublishAllPorts":False,
+             "Privileged":False
+        })
+        return x
 
     @asyncio.coroutine
     def get(self, container, **kwargs):
@@ -92,6 +104,18 @@ class DockerContainer:
         data = yield from self.docker._query(
             "containers/{}/stop".format(self._id),
             method='POST',
+            **kwargs
+        )
+        return data
+
+    @asyncio.coroutine
+    def start(self, config, **kwargs):
+        config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
+        data = yield from self.docker._query(
+            "containers/{}/start".format(self._id),
+            method='POST',
+            headers={"content-type": "application/json",},
+            data=config,
             **kwargs
         )
         return data
