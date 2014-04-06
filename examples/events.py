@@ -20,7 +20,6 @@ def handler(events):
          "Tty":False,
          "OpenStdin":False,
          "StdinOnce":False,
-
     }
 
     container = yield from docker.containers.run(config, name='testing')
