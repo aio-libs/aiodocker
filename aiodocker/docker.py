@@ -46,7 +46,7 @@ class DockerContainers:
             method='GET',
             **kwargs
         )
-        return [DockerContainer(self.docker **x) for x in data]
+        return [DockerContainer(self.docker, **x) for x in data]
 
     @asyncio.coroutine
     def create(self, config, name=None):
