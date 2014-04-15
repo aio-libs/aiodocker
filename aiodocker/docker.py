@@ -31,6 +31,9 @@ class Docker:
             data = json.loads(chunk.decode('utf-8'))
         except aiohttp.EofStream:
             pass
+        except ValueError as e:
+            print("Server said", chunk)
+            raise e
         response.close()
         return data
 
@@ -53,12 +56,15 @@ class DockerContainers:
         url = "containers/create"
 
         config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
+        kwargs = {}
+        if name:
+            kwargs['name'] = name
         data = yield from self.docker._query(
             url,
             method='POST',
             headers={"content-type": "application/json",},
             data=config,
-            name=name
+            **kwargs
         )
         return DockerContainer(self.docker, id=data['Id'])
 
@@ -130,9 +136,18 @@ class DockerContainer:
         return data
 
     @asyncio.coroutine
+    def wait(self, **kwargs):
+        data = yield from self.docker._query(
+            "containers/{}/wait".format(self._id),
+            method='POST',
+            **kwargs
+        )
+        return data
+
+    @asyncio.coroutine
     def delete(self, **kwargs):
         data = yield from self.docker._query(
-            "containers/{}".format(self.container['id']),
+            "containers/{}".format(self._id),
             method='DELETE',
             **kwargs
         )
@@ -162,7 +177,9 @@ class DockerEvents:
                 if 'time' in data:
                     data['time'] = dt.datetime.fromtimestamp(data['time'])
 
-                if 'id' in data:
+                if 'id' in data and data['status'] in [
+                    "start", "create", "die",
+                ]:
                     data['container'] = yield from containers.get(data['id'])
 
                 asyncio.async(self.channel.put(data))
