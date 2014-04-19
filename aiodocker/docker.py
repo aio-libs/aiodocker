@@ -64,7 +64,8 @@ class DockerContainers:
             container = yield from self.get(name)
             # OK. Let's ensure they're the same thing.
             for k, v in config.items():
-                if container._container.get(k) != v:
+                config = container._container['Config']
+                if config.get(k) != v:
                     yield from container.delete()
                     container = None
                     break
