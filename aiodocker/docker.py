@@ -57,11 +57,17 @@ class DockerContainers:
         return [DockerContainer(self.docker, **x) for x in data]
 
     @asyncio.coroutine
-    def get_or_create(self, name, config):
+    def create_or_replace(self, name, config):
         container = None
 
         try:
             container = yield from self.get(name)
+            # OK. Let's ensure they're the same thing.
+            for k, v in config.items():
+                if container._container.get(k) != v:
+                    yield from container.delete()
+                    container = None
+                    break
         except ValueError:
             pass
 
