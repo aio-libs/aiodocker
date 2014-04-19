@@ -22,8 +22,13 @@ class Docker:
         url = self._endpoint(path, **kwargs)
         response = yield from aiohttp.request(
                 method, url, headers=headers, data=data)
-        # if response.status not in [200]:
-        #     raise ValueError("Got a failure from the server")
+
+        if (response.status // 100) in [4, 5]:
+            what = yield from response.read()
+            response.close()
+            raise ValueError("Got a failure from the server: '%s'" % (
+                what.decode('utf-8').strip()
+            ))
 
         data = None
         try:
@@ -50,6 +55,20 @@ class DockerContainers:
             **kwargs
         )
         return [DockerContainer(self.docker, **x) for x in data]
+
+    @asyncio.coroutine
+    def get_or_create(self, name, config):
+        container = None
+
+        try:
+            container = yield from self.get(name)
+        except ValueError:
+            pass
+
+        if container is None:
+            container = yield from self.create(config, name=name)
+
+        return container
 
     @asyncio.coroutine
     def create(self, config, name=None):
