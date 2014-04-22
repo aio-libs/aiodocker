@@ -95,18 +95,6 @@ class DockerContainers:
         return DockerContainer(self.docker, id=data['Id'])
 
     @asyncio.coroutine
-    def run(self, config, name=None):
-        x = yield from self.create(config, name=name)
-        yield from x.start({
-             "Binds":[],
-             "LxcConf":{"lxc.utsname":"docker"},
-             "PortBindings":{},
-             "PublishAllPorts":False,
-             "Privileged":False
-        })
-        return x
-
-    @asyncio.coroutine
     def get(self, container, **kwargs):
         data = yield from self.docker._query(
             "containers/{}/json".format(container),
