@@ -66,6 +66,10 @@ class DockerContainers:
             for k, v in config.items():
                 cfg = container._container['Config']
                 if cfg.get(k) != v:
+                    running = container._container.get(
+                        "State", {}).get("Running", False)
+                    if running:
+                        yield from container.stop()
                     yield from container.delete()
                     container = None
                     break
