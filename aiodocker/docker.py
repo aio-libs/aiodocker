@@ -7,21 +7,26 @@ from aiodocker.channel import Channel
 
 
 class Docker:
-    def __init__(self, url):
+    def __init__(self, url="/run/docker.sock"):
         self.url = url
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
+        self.connector = aiohttp.UnixSocketConnector(url)
 
     def _endpoint(self, path, **kwargs):
-        string = "/".join([self.url, path])
+        #string = "/".join([self.url, path])
+        string = path
         if kwargs:
             string += "?" + urllib.parse.urlencode(kwargs)
+        string = "http://fnord/%s" % (string)
         return string
 
     def _query(self, path, method='GET', data=None, headers=None, **kwargs):
         url = self._endpoint(path, **kwargs)
         response = yield from aiohttp.request(
-                method, url, headers=headers, data=data)
+            method, url,
+            connector=self.connector,
+            headers=headers, data=data)
 
         if (response.status // 100) in [4, 5]:
             what = yield from response.read()
@@ -185,7 +190,8 @@ class DockerEvents:
         containers = self.docker.containers
         response = yield from aiohttp.request(
             'GET',
-            self.docker._endpoint('events')
+            self.docker._endpoint('events'),
+            connector=self.docker.connector,
         )
 
         while True:
