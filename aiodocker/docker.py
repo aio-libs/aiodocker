@@ -3,7 +3,9 @@ import aiohttp
 import asyncio
 import json
 import datetime as dt
+
 from aiodocker.channel import Channel
+from aiodocker.utils import identical
 
 
 class Docker:
@@ -67,17 +69,13 @@ class DockerContainers:
 
         try:
             container = yield from self.get(name)
-            # OK. Let's ensure they're the same thing.
-            for k, v in config.items():
-                cfg = container._container['Config']
-                if cfg.get(k) != v:
-                    running = container._container.get(
-                        "State", {}).get("Running", False)
-                    if running:
-                        yield from container.stop()
-                    yield from container.delete()
-                    container = None
-                    break
+            if identical(config, container._container) is True:
+                running = container._container.get(
+                    "State", {}).get("Running", False)
+                if running:
+                    yield from container.stop()
+                yield from container.delete()
+                container = None
         except ValueError:
             pass
 
