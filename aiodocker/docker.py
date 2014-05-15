@@ -202,7 +202,7 @@ class DockerEvents:
                     data['time'] = dt.datetime.fromtimestamp(data['time'])
 
                 if 'id' in data and data['status'] in [
-                    "start", "create", "die",
+                    "start", "create",
                 ]:
                     data['container'] = yield from containers.get(data['id'])
 
