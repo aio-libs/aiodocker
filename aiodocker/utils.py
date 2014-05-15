@@ -16,7 +16,7 @@ def identical(d1, d2):
     if isinstance(d1, dict):
         keys = set(d1.keys()) | set(d2.keys())
         for key in keys:
-            if diff(d1.get(key, {}), d2.get(key, {})) is False:
+            if not identical(d1.get(key, {}), d2.get(key, {})):
                 return False
         return True
 
@@ -25,6 +25,6 @@ def identical(d1, d2):
             return False
 
         pairs = zip(d1, d2)
-        return all((diff(x, y) for (x, y) in pairs))
+        return all((identical(x, y) for (x, y) in pairs))
 
     return d1 == d2
