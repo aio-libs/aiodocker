@@ -17,17 +17,17 @@ class Docker:
 
     def _endpoint(self, path, **kwargs):
         string = "/".join([self.url, path])
-        #string = path
+        string = path
         if kwargs:
             string += "?" + urllib.parse.urlencode(kwargs)
-        #string = "http://fnord/%s" % (string)
+        string = "http://fnord/%s" % (string)
         return string
 
     def _query(self, path, method='GET', data=None, headers=None, **kwargs):
         url = self._endpoint(path, **kwargs)
         response = yield from aiohttp.request(
             method, url,
-            #connector=self.connector,
+            connector=self.connector,
             headers=headers, data=data)
 
         if (response.status // 100) in [4, 5]:
@@ -189,7 +189,7 @@ class DockerEvents:
         response = yield from aiohttp.request(
             'GET',
             self.docker._endpoint('events'),
-            #connector=self.docker.connector,
+            connector=self.docker.connector,
         )
 
         while True:
