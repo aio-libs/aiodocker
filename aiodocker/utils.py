@@ -1,14 +1,3 @@
-
-
-def parse_port_mapping(mapping):
-    host, hport = mapping.rsplit(":", 1)
-    ip, cport = host.rsplit(":", 1)
-    return {hport: [{
-        "HostIp": ip,
-        "HostPort": cport,
-    }]}
-
-
 def identical(d1, d2):
     if type(d1) != type(d2):
         return False

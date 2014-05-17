@@ -69,7 +69,7 @@ class DockerContainers:
 
         try:
             container = yield from self.get(name)
-            if identical(config, container._container) is True:
+            if not identical(config, container._container):
                 running = container._container.get(
                     "State", {}).get("Running", False)
                 if running:
