@@ -38,11 +38,12 @@ class Docker:
             ))
 
         data = None
+        chunk = b""
         try:
-            chunk = yield from response.content.read()  # XXX: Correct?
-            data = json.loads(chunk.decode('utf-8'))
+            while True:
+                chunk += yield from response.content.read()  # XXX: Correct?
         except aiohttp.EofStream:
-            pass
+            data = json.loads(chunk.decode('utf-8'))
         except ValueError as e:
             print("Server said", chunk)
             raise e
