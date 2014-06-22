@@ -116,7 +116,8 @@ class DockerContainer:
     def __init__(self, docker, **kwargs):
         self.docker = docker
         self._container = kwargs
-        self._id = self._container.get("id", self._container.get("ID"))
+        self._id = self._container.get("id", self._container.get(
+            "ID", self._container.get("Id")))
 
     @asyncio.coroutine
     def show(self, **kwargs):
