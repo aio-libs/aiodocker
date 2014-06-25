@@ -1,8 +1,12 @@
+import os
+import base64
 import urllib
 import aiohttp
 import asyncio
+import hashlib
 import json
 import datetime as dt
+from aiohttp import websocket
 
 from aiodocker.channel import Channel
 from aiodocker.utils import identical
@@ -118,6 +122,7 @@ class DockerContainer:
         self._container = kwargs
         self._id = self._container.get("id", self._container.get(
             "ID", self._container.get("Id")))
+        self.logs = DockerLog(docker, self)
 
     @asyncio.coroutine
     def show(self, **kwargs):
@@ -179,14 +184,21 @@ class DockerContainer:
 
 class DockerEvents:
     def __init__(self, docker):
+        self.running = False
         self.docker = docker
         self.channel = Channel()
 
     def listen(self):
         return self.channel.listen()
 
+    def saferun(self):
+        if self.running:
+            return
+        asyncio.async(self.run())
+
     @asyncio.coroutine
     def run(self):
+        self.running = True
         containers = self.docker.containers
         response = yield from aiohttp.request(
             'GET',
@@ -210,3 +222,38 @@ class DockerEvents:
             except aiohttp.EofStream:
                 break
         response.close()
+        self.running = False
+
+
+class DockerLog:
+    def __init__(self, docker, container):
+        self.docker = docker
+        self.channel = Channel()
+        self.container = container
+        self.running = False
+
+    def listen(self):
+        return self.channel.listen()
+
+    def saferun(self):
+        if self.running:
+            return
+        asyncio.async(self.run())
+
+    @asyncio.coroutine
+    def run(self):
+        self.running = True
+        containers = self.docker.containers
+        url = self.docker._endpoint(
+            'containers/{id}/logs'.format(id=self.container._id),
+            follow=True,
+            stdout=True,
+        )
+        response = yield from aiohttp.request(
+            'GET', url, connector=self.docker.connector)
+
+        while True:
+            msg = yield from response.content.read()
+            asyncio.async(self.channel.put(msg))
+
+        self.running = False
