@@ -6,7 +6,7 @@ long_description = "AsyncIO Docker bindings"
 
 setup(
     name="aiodocker",
-    version="0.1",
+    version="0.2",
     packages=['aiodocker',],  # This is empty without the line below
     author="Paul Tagliamonte",
     author_email="paultag@debian.org",
