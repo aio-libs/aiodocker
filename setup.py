@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-long_description = open('README.md', 'r').read()
+long_description = "AsyncIO Docker bindings"
 
 setup(
     name="aiodocker",

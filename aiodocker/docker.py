@@ -47,10 +47,12 @@ class Docker:
             while True:
                 chunk += yield from response.content.read()  # XXX: Correct?
         except aiohttp.EofStream:
+            if chunk == b'':
+                return None
             data = json.loads(chunk.decode('utf-8'))
         except ValueError as e:
             print("Server said", chunk)
-            raise e
+            raise
         response.close()
         return data
 
@@ -248,6 +250,7 @@ class DockerLog:
             'containers/{id}/logs'.format(id=self.container._id),
             follow=True,
             stdout=True,
+            stderr=True,
         )
         response = yield from aiohttp.request(
             'GET', url, connector=self.docker.connector)
