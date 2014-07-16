@@ -274,7 +274,7 @@ class DockerLog:
             'GET', url, connector=self.docker.connector)
 
         while True:
-            msg = yield from response.content.read()
+            msg = yield from response.content.readline()
             asyncio.async(self.channel.put(msg))
 
         self.running = False
