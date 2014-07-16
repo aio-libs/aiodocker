@@ -275,6 +275,8 @@ class DockerLog:
 
         while True:
             msg = yield from response.content.readline()
+            if msg == b'':
+                break
             asyncio.async(self.channel.put(msg))
 
         self.running = False
