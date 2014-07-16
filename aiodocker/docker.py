@@ -41,18 +41,20 @@ class Docker:
                 what.decode('utf-8').strip()
             ))
 
-        data = None
-        chunk = b""
+        if 'json' in response.headers.get("Content-Type", ""):
+            try:
+                data = yield from response.json(encoding='utf-8')
+            except ValueError as e:
+                print("Server said", chunk)
+                raise
+            return data
+
         try:
-            while True:
-                chunk += yield from response.content.read()  # XXX: Correct?
-        except aiohttp.EofStream:
-            if chunk == b'':
-                return None
-            data = json.loads(chunk.decode('utf-8'))
+            data = yield from response.content.read()  # XXX: Correct?
         except ValueError as e:
             print("Server said", chunk)
             raise
+
         response.close()
         return data
 
@@ -125,6 +127,22 @@ class DockerContainer:
         self._id = self._container.get("id", self._container.get(
             "ID", self._container.get("Id")))
         self.logs = DockerLog(docker, self)
+
+    @asyncio.coroutine
+    def log(self, stdout=False, stderr=False, **kwargs):
+        if stdout is False and stderr is False:
+            raise TypeError("Need one of stdout or stderr")
+
+        data = yield from self.docker._query(
+            "containers/{}/logs".format(self._id),
+            method='GET',
+            data={
+                "stdout": stdout,
+                "stderr": stderr,
+                "follow": False,
+            }
+        )
+        return data
 
     @asyncio.coroutine
     def show(self, **kwargs):
