@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 from setuptools import setup
+from aiodocker import __version__
 
 long_description = "AsyncIO Docker bindings"
 
 setup(
     name="aiodocker",
-    version="0.2",
+    version=__version__,
     packages=['aiodocker',],  # This is empty without the line below
     author="Paul Tagliamonte",
     author_email="paultag@debian.org",
