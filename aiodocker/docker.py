@@ -227,20 +227,23 @@ class DockerEvents:
         )
 
         while True:
-            try:
-                chunk = yield from response.content.read()  # XXX: Correct?
-                data = json.loads(chunk.decode('utf-8'))
-                if 'time' in data:
-                    data['time'] = dt.datetime.fromtimestamp(data['time'])
-
-                if 'id' in data and data['status'] in [
-                    "start", "create",
-                ]:
-                    data['container'] = yield from containers.get(data['id'])
-
-                asyncio.async(self.channel.put(data))
-            except aiohttp.EofStream:
+            chunk = yield from response.content.readany()
+            # XXX: WTF. WTF WTF WTF. 
+            # WHY AM I NOT GETTING A RETURN ON .READLINE()?! WHY NO NEWLINE
+            # https://github.com/dotcloud/docker/pull/4276 ADDED THEM
+            if chunk == b'':
                 break
+            data = json.loads(chunk.decode('utf-8'))
+
+            if 'time' in data:
+                data['time'] = dt.datetime.fromtimestamp(data['time'])
+
+            if 'id' in data and data['status'] in [
+                "start", "create",
+            ]:
+                data['container'] = yield from containers.get(data['id'])
+
+            asyncio.async(self.channel.put(data))
         response.close()
         self.running = False
 
