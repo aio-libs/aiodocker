@@ -30,9 +30,10 @@ class Docker:
         )
 
         while True:
-            msg = yield from response.content.readline()
+            msg = yield from response.content.readany()
             if msg == b'':
                 break
+            # print(msg)
         return
 
     def _endpoint(self, path, **kwargs):
