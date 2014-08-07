@@ -19,6 +19,22 @@ class Docker:
         self.containers = DockerContainers(self)
         self.connector = aiohttp.UnixSocketConnector(url)
 
+    @asyncio.coroutine
+    def pull(self, image):
+        url = self._endpoint("images/create", fromImage=image)
+
+        response = yield from aiohttp.request(
+            'POST', url,
+            connector=self.connector,
+            headers={"content-type": "application/json",},
+        )
+
+        while True:
+            msg = yield from response.content.readline()
+            if msg == b'':
+                break
+        return
+
     def _endpoint(self, path, **kwargs):
         string = "/".join([self.url, path])
         string = path
@@ -45,7 +61,6 @@ class Docker:
             try:
                 data = yield from response.json(encoding='utf-8')
             except ValueError as e:
-                print("Server said", chunk)
                 raise
             return data
 
