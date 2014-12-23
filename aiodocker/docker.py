@@ -17,7 +17,7 @@ class Docker:
         self.url = url
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
-        self.connector = aiohttp.UnixSocketConnector(url)
+        self.connector = aiohttp.connector.UnixConnector(url)
 
     @asyncio.coroutine
     def pull(self, image):
