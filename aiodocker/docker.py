@@ -1,9 +1,11 @@
+import io
 import os
 import base64
 import urllib
 import aiohttp
 import asyncio
 import hashlib
+import tarfile
 import json
 import datetime as dt
 from aiohttp import websocket
@@ -64,6 +66,10 @@ class Docker:
             except ValueError as e:
                 raise
             return data
+
+        if 'application/x-tar' in response.headers.get("Content-Type", ""):
+            what = yield from response.read()
+            return tarfile.open(mode='r', fileobj=io.BytesIO(what))
 
         try:
             data = yield from response.content.read()  # XXX: Correct?
@@ -157,6 +163,20 @@ class DockerContainer:
                 "stderr": stderr,
                 "follow": False,
             }
+        )
+        return data
+
+    @asyncio.coroutine
+    def copy(self, resource, **kwargs):
+        request = json.dumps({
+            "Resource": resource,
+        }, sort_keys=True, indent=4).encode('utf-8')
+        data = yield from self.docker._query(
+            "containers/{}/copy".format(self._id),
+            method='POST',
+            data=request,
+            headers={"content-type": "application/json",},
+            **kwargs
         )
         return data
 
