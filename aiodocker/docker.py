@@ -187,6 +187,7 @@ class DockerContainer:
             method='GET',
             **kwargs
         )
+        self._container = data
         return data
 
     @asyncio.coroutine
