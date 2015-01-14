@@ -46,12 +46,13 @@ class Docker:
         string = "http://fnord/%s" % (string)
         return string
 
-    def _query(self, path, method='GET', data=None, headers=None, **kwargs):
+    def _query(self, path, method='GET', params=None,
+               data=None, headers=None, **kwargs):
         url = self._endpoint(path, **kwargs)
         response = yield from aiohttp.request(
             method, url,
             connector=self.connector,
-            headers=headers, data=data)
+            params=params, headers=headers, data=data)
 
         if (response.status // 100) in [4, 5]:
             what = yield from response.read()
@@ -158,7 +159,7 @@ class DockerContainer:
         data = yield from self.docker._query(
             "containers/{}/logs".format(self._id),
             method='GET',
-            data={
+            params={
                 "stdout": stdout,
                 "stderr": stderr,
                 "follow": False,
