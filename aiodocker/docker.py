@@ -252,6 +252,7 @@ class DockerEvents:
     def saferun(self):
         if self.running:
             return
+        self.running = True
         asyncio.async(self.run())
 
     @asyncio.coroutine
@@ -317,8 +318,8 @@ class DockerLog:
 
         while True:
             msg = yield from response.content.readline()
+            asyncio.async(self.channel.put(msg))
             if msg == b'':
                 break
-            asyncio.async(self.channel.put(msg))
 
         self.running = False
