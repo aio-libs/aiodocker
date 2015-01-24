@@ -299,6 +299,7 @@ class DockerLog:
     def saferun(self):
         if self.running:
             return
+        self.running = True
         asyncio.async(self.run())
 
     @asyncio.coroutine
