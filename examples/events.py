@@ -4,7 +4,7 @@ import asyncio
 from aiodocker.docker import Docker
 
 loop = asyncio.get_event_loop()
-docker = Docker("http://localhost:4243/")
+docker = Docker()
 
 
 @asyncio.coroutine
@@ -13,7 +13,7 @@ def handler(events):
 
     config = {
         "Cmd":["tail", "-f", "/var/log/dmesg"],
-        "Image":"debian:7.3",
+        "Image":"debian:jessie",
          "AttachStdin":False,
          "AttachStdout":True,
          "AttachStderr":True,
@@ -22,17 +22,18 @@ def handler(events):
          "StdinOnce":False,
     }
 
-    container = yield from docker.containers.run(config, name='testing')
+    container = yield from docker.containers.create(config, name='testing')
+    yield from container.start(config)
 
     while True:
         event = yield from queue.get()
-        if event['status'] == 'create':
+        if event['status'] == 'start':
             yield from event['container'].stop()
             print("Killed {id} so hard".format(**event))
 
 
 events = docker.events
-tasks = [#asyncio.async(events.run()),
+tasks = [asyncio.async(events.run()),
          asyncio.async(handler(events)),]
 
 loop.run_until_complete(asyncio.gather(*tasks))
