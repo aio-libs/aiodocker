@@ -48,10 +48,8 @@ class Docker:
 
     def _endpoint(self, path, **kwargs):
         string = "/".join([self.url, path])
-        string = path
         if kwargs:
             string += "?" + urllib.parse.urlencode(kwargs)
-        string = "http://fnord/%s" % (string)
         return string
 
     def _query(self, path, method='GET', params=None,
@@ -96,7 +94,8 @@ class Docker:
                 'stderr': 1,
                 'stream': 1
             }
-        return yield from aiohttp.ws_connect(url, connector=self.connector, params=params)
+        ws = yield from aiohttp.ws_connect(url, connector=self.connector, params=params)
+        return ws
 
 
 class DockerContainers:
