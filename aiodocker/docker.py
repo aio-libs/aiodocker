@@ -8,6 +8,7 @@ import hashlib
 import tarfile
 import json
 import datetime as dt
+import ssl
 from aiohttp import websocket
 
 from aiodocker.channel import Channel
@@ -15,11 +16,16 @@ from aiodocker.utils import identical
 
 
 class Docker:
-    def __init__(self, url="/run/docker.sock"):
+    def __init__(self, url="/run/docker.sock", ssl_context=None):
         self.url = url
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
-        self.connector = aiohttp.connector.UnixConnector(url)
+        if url.startswith('http://'):
+            self.connector = aiohttp.TCPConnector()
+        elif url.startswith('https://'):
+            self.connector = aiohttp.TCPConnector(ssl_context=ssl_context)
+        else:
+            self.connector = aiohttp.connector.UnixConnector(url)
 
     @asyncio.coroutine
     def pull(self, image):
@@ -80,6 +86,15 @@ class Docker:
 
         response.close()
         return data
+
+    def _websocket(self, url, params=None):
+        if not params:
+            params = {
+                'stdout': 1,
+                'stderr': 1,
+                'stream': 1
+            }
+        return yield from aiohttp.ws_connect(url, connector=self.connector, params=params)
 
 
 class DockerContainers:
@@ -239,6 +254,12 @@ class DockerContainer:
         )
         return data
 
+    @asyncio.coroutine
+    def websocket(self, params=None):
+        url = "containers/{}/attach/ws".format(self._id)
+        ws = yield from self.docker._websocket(url, params)
+        return ws
+
 
 class DockerEvents:
     def __init__(self, docker):
@@ -267,7 +288,7 @@ class DockerEvents:
 
         while True:
             chunk = yield from response.content.readany()
-            # XXX: WTF. WTF WTF WTF. 
+            # XXX: WTF. WTF WTF WTF.
             # WHY AM I NOT GETTING A RETURN ON .READLINE()?! WHY NO NEWLINE
             # https://github.com/dotcloud/docker/pull/4276 ADDED THEM
             if chunk == b'':
