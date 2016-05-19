@@ -8,34 +8,30 @@ docker = Docker()
 
 
 @asyncio.coroutine
-def handler(events):
-    queue = events.listen()
-
+def handler():
     yield from docker.pull("debian:jessie")
 
     config = {
-        "Cmd":["tail", "-f", "/var/log/dmesg"],
+        "Cmd":["sh"],
         "Image":"debian:jessie",
-         "AttachStdin":False,
+         "AttachStdin":True,
          "AttachStdout":True,
          "AttachStderr":True,
          "Tty":False,
-         "OpenStdin":False,
-         "StdinOnce":False,
+         "OpenStdin":True,
+         "StdinOnce":True,
     }
 
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
     yield from container.start(config)
 
-    while True:
-        event = yield from queue.get()
-        if event.get('status', None) == 'start':
-            yield from event['container'].stop()
-            print("Killed {id} so hard".format(**event))
+    print("waiting for container to stop")
+    yield from container.wait(timeout=1)
+
+    print("removing container")
+    yield from container.remove(force=True)
 
 
-events = docker.events
-tasks = [asyncio.async(events.run()),
-         asyncio.async(handler(events)),]
+tasks = [asyncio.async(handler()),]
 
 loop.run_until_complete(asyncio.gather(*tasks))
