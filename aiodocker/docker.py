@@ -18,16 +18,22 @@ from aiodocker.utils import identical
 class Docker:
     def __init__(self,
                  url=os.environ.get('DOCKER_HOST', "/run/docker.sock"),
+                 connector=None,
                  ssl_context=None):
         self.url = url
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
-        if url.startswith('http://'):
-            self.connector = aiohttp.TCPConnector()
-        elif url.startswith('https://'):
-            self.connector = aiohttp.TCPConnector(ssl_context=ssl_context)
-        else:
-            self.connector = aiohttp.connector.UnixConnector(url)
+        if connector is None:
+            if url.startswith('http://'):
+                connector = aiohttp.TCPConnector()
+            elif url.startswith('https://'):
+                connector = aiohttp.TCPConnector(ssl_context=ssl_context)
+            elif url.startswith('/'):
+                connector = aiohttp.connector.UnixConnector(url)
+                self.url = "http://docker" + url #aiohttp complains if it cant parse a hostname
+            else:
+                connector = aiohttp.connector.UnixConnector(url)
+        self.connector = connector
 
     @asyncio.coroutine
     def pull(self, image):
