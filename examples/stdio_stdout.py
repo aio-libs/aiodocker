@@ -23,6 +23,7 @@ def handler():
          "StdinOnce":True,
     }
 
+
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
     yield from container.start(config)
 
@@ -33,7 +34,6 @@ def handler():
     ws.close()
 
     output = yield from container.log(stdout=True)
-
     print("log output:", output)
 
     print("waiting for container to stop")

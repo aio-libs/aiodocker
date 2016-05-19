@@ -35,7 +35,6 @@ class Docker:
             "images/create", "POST",
             params={"fromImage": image},
             headers={"content-type": "application/json",},
-            stream=True,
         )
         yield from response.release()
         return
@@ -44,7 +43,7 @@ class Docker:
         return "/".join([self.url, path])
 
     def _query(self, path, method='GET', params=None, timeout=None,
-               data=None, headers=None, stream=False, **kwargs):
+               data=None, headers=None, **kwargs):
         url = self._endpoint(path)
         future = asyncio.ensure_future(aiohttp.request(
             method, url,
@@ -63,24 +62,29 @@ class Docker:
                 what.decode('utf-8').strip()
             ))
 
-        if stream: #TODO return response by default, use _result and _raise_for_status instead
-            return response
+        return response
 
-        if 'json' in response.headers.get("Content-Type", ""):
-            data = yield from response.json(encoding='utf-8')
-            return data
-
-        if 'application/x-tar' in response.headers.get("Content-Type", ""):
+    def _result(self, response, response_type=None):
+        if not response_type:
+            ct = response.headers.get("Content-Type", "")
+            if 'json' in ct:
+                response_type = 'json'
+            elif 'x-tar' in ct:
+                response_tye = 'tar'
+            else:
+                raise TypeError("Unrecognized response type: {}".format(ct))
+        if 'tar' == response_type:
             what = yield from response.read()
             return tarfile.open(mode='r', fileobj=io.BytesIO(what))
 
-        try:
-            data = yield from response.content.read()  # XXX: Correct?
-        except ValueError as e:
-            print("Server said", chunk)
-            raise
+        if 'json' == response_type:
+            data = yield from response.json(encoding='utf-8')
+        elif 'text' ==  response_type:
+            data = yield from response.text(encoding='utf-8')
+        else:
+            data = yield from response.read()
 
-        response.close()
+        response.release()
         return data
 
     def _websocket(self, url, **params):
@@ -94,14 +98,19 @@ class Docker:
         ws = yield from aiohttp.ws_connect(url, connector=self.connector)
         return ws
 
+    def _query_json(self, *args, **kwargs):
+        response = yield from self._query(*args, **kwargs)
+        data = yield from self._result(response, 'json')
+        return data
 
-class DockerContainers:
+
+class DockerContainers(object):
     def __init__(self, docker):
         self.docker = docker
 
     @asyncio.coroutine
     def list(self, **kwargs):
-        data = yield from self.docker._query(
+        data = yield from self.docker._query_json(
             "containers/json",
             method='GET',
             params=kwargs
@@ -137,7 +146,7 @@ class DockerContainers:
         kwargs = {}
         if name:
             kwargs['name'] = name
-        data = yield from self.docker._query(
+        data = yield from self.docker._query_json(
             url,
             method='POST',
             headers={"content-type": "application/json",},
@@ -148,7 +157,7 @@ class DockerContainers:
 
     @asyncio.coroutine
     def get(self, container, **kwargs):
-        data = yield from self.docker._query(
+        data = yield from self.docker._query_json(
             "containers/{}/json".format(container),
             method='GET',
             params=kwargs
@@ -165,19 +174,25 @@ class DockerContainer:
         self.logs = DockerLog(docker, self)
 
     @asyncio.coroutine
-    def log(self, stdout=False, stderr=False, **kwargs):
+    def log(self, stdout=False, stderr=False, follow=False, **kwargs):
         if stdout is False and stderr is False:
             raise TypeError("Need one of stdout or stderr")
 
-        data = yield from self.docker._query(
+        params = {
+            "stdout": stdout,
+            "stderr": stderr,
+            "follow": follow,
+        }
+        params.update(kwargs)
+
+        response = yield from self.docker._query(
             "containers/{}/logs".format(self._id),
             method='GET',
-            params={
-                "stdout": stdout,
-                "stderr": stderr,
-                "follow": False,
-            }
+            params=params,
         )
+        if follow:
+            return response.content
+        data = yield from response.text()
         return data
 
     @asyncio.coroutine
@@ -196,7 +211,7 @@ class DockerContainer:
 
     @asyncio.coroutine
     def show(self, **kwargs):
-        data = yield from self.docker._query(
+        data = yield from self.docker._query_json(
             "containers/{}/json".format(self._id),
             method='GET',
             params=kwargs
@@ -206,28 +221,30 @@ class DockerContainer:
 
     @asyncio.coroutine
     def stop(self, **kwargs):
-        data = yield from self.docker._query(
+        response = yield from self.docker._query(
             "containers/{}/stop".format(self._id),
             method='POST',
             params=kwargs
         )
-        return data
+        yield from response.release()
+        return
 
     @asyncio.coroutine
     def start(self, config, **kwargs):
         config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
-        data = yield from self.docker._query(
+        response = yield from self.docker._query(
             "containers/{}/start".format(self._id),
             method='POST',
             headers={"content-type": "application/json",},
             data=config,
             params=kwargs
         )
-        return data
+        yield from response.release()
+        return
 
     @asyncio.coroutine
     def kill(self, **kwargs):
-        data = yield from self.docker._query(
+        data = yield from self.docker._query_json(
             "containers/{}/kill".format(self._id),
             method='POST',
             params=kwargs
@@ -236,7 +253,7 @@ class DockerContainer:
 
     @asyncio.coroutine
     def wait(self, timeout=None, **kwargs):
-        data = yield from self.docker._query(
+        data = yield from self.docker._query_json(
             "containers/{}/wait".format(self._id),
             method='POST',
             params=kwargs,
@@ -246,12 +263,13 @@ class DockerContainer:
 
     @asyncio.coroutine
     def delete(self, **kwargs):
-        data = yield from self.docker._query(
+        response = yield from self.docker._query(
             "containers/{}".format(self._id),
             method='DELETE',
             params=kwargs
         )
-        return data
+        yield from response.release()
+        return
 
     @asyncio.coroutine
     def websocket(self, **params):
@@ -281,8 +299,7 @@ class DockerEvents:
         containers = self.docker.containers
         response = yield from self.docker._query(
             'events',
-            method='GET',
-            stream=True
+            method='GET'
         )
 
         while True:
@@ -330,8 +347,7 @@ class DockerLog:
                 follow=True,
                 stdout=True,
                 stderr=True,
-            ),
-            stream=True,
+            )
         )
 
         for msg in response:
