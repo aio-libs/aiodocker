@@ -16,7 +16,9 @@ from aiodocker.utils import identical
 
 
 class Docker:
-    def __init__(self, url="/run/docker.sock", ssl_context=None):
+    def __init__(self,
+                 url=os.environ.get('DOCKER_HOST', "/run/docker.sock"),
+                 ssl_context=None):
         self.url = url
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
