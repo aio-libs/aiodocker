@@ -63,7 +63,7 @@ class Docker:
                 what.decode('utf-8').strip()
             ))
 
-        if stream:
+        if stream: #TODO return response by default, use _result and _raise_for_status instead
             return response
 
         if 'json' in response.headers.get("Content-Type", ""):
@@ -83,14 +83,15 @@ class Docker:
         response.close()
         return data
 
-    def _websocket(self, url, params=None):
+    def _websocket(self, url, **params):
         if not params:
             params = {
                 'stdout': 1,
                 'stderr': 1,
                 'stream': 1
             }
-        ws = yield from aiohttp.ws_connect(url, connector=self.connector, params=params)
+        url = self._endpoint(url) + "?" + urllib.parse.urlencode(params)
+        ws = yield from aiohttp.ws_connect(url, connector=self.connector)
         return ws
 
 
@@ -253,9 +254,9 @@ class DockerContainer:
         return data
 
     @asyncio.coroutine
-    def websocket(self, params=None):
+    def websocket(self, **params):
         url = "containers/{}/attach/ws".format(self._id)
-        ws = yield from self.docker._websocket(url, params)
+        ws = yield from self.docker._websocket(url, **params)
         return ws
 
 
