@@ -30,7 +30,7 @@ class Docker:
                 connector = aiohttp.TCPConnector(ssl_context=ssl_context)
             elif url.startswith('/'):
                 connector = aiohttp.connector.UnixConnector(url)
-                self.url = "http://docker" + url #aiohttp complains if it cant parse a hostname
+                self.url = "http://docker" #aiohttp treats this as a proxy
             else:
                 connector = aiohttp.connector.UnixConnector(url)
         self.connector = connector
