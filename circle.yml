@@ -4,6 +4,7 @@ machine:
     python:
         version: 3.5.0
 dependencies:
+    override:
         - pip install requirements.txt
         - pip install pytest pytest-asyncio
 test:
