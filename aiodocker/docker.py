@@ -170,6 +170,13 @@ class DockerContainers(object):
         )
         return DockerContainer(self.docker, **data)
 
+    def container(self, container_id, **kwargs):
+        data = {
+            'id': container_id
+        }
+        data.update(kwargs)
+        return DockerContainer(self.docker, **data)
+
 
 class DockerContainer:
     def __init__(self, docker, **kwargs):
@@ -236,14 +243,14 @@ class DockerContainer:
         return
 
     @asyncio.coroutine
-    def start(self, config, **kwargs):
+    def start(self, _config=None, **config):
+        config = _config or config
         config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
         response = yield from self.docker._query(
             "containers/{}/start".format(self._id),
             method='POST',
             headers={"content-type": "application/json",},
-            data=config,
-            params=kwargs
+            data=config
         )
         yield from response.release()
         return
@@ -282,6 +289,12 @@ class DockerContainer:
         url = "containers/{}/attach/ws".format(self._id)
         ws = yield from self.docker._websocket(url, **params)
         return ws
+
+    def __getitem__(self, key):
+        return self._container[key]
+
+    def __hasitem__(self, key):
+        return key in self._container
 
 
 class DockerEvents:
