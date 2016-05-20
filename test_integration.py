@@ -38,3 +38,44 @@ def test_container_lifecycles():
 
     for container in containers:
         yield from container.delete(force=True)
+
+
+@pytest.mark.asyncio
+def test_stdio_stdin():
+    docker = Docker()
+
+    yield from docker.pull("debian:jessie")
+
+    config = {
+        "Cmd":["sh"],
+        "Image":"debian:jessie",
+         "AttachStdin":True,
+         "AttachStdout":True,
+         "AttachStderr":True,
+         "Tty":False,
+         "OpenStdin":True,
+         "StdinOnce":True,
+    }
+
+
+    container = yield from docker.containers.create_or_replace(config=config, name='testing')
+    yield from container.start(config)
+
+    ws = yield from container.websocket(stdin=True, stdout=True, stream=True)
+    ws.send_str('echo hello world\n')
+    resp = yield from ws.receive()
+    assert resp.data == "hello world\n"
+    ws.close()
+
+    output = yield from container.log(stdout=True)
+    print("log output:", output)
+    assert output == "hello world\n"
+
+    print("waiting for container to stop")
+    try:
+        yield from container.wait(timeout=1)
+    except TimeoutError:
+        pass
+
+    print("removing container")
+    yield from container.delete(force=True)

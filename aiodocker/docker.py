@@ -11,8 +11,9 @@ import datetime as dt
 import ssl
 from aiohttp import websocket
 
-from aiodocker.channel import Channel
-from aiodocker.utils import identical
+from .channel import Channel
+from .utils import identical
+from .multiplexed import MultiplexedResult
 
 
 class Docker:
@@ -70,6 +71,7 @@ class Docker:
 
         return response
 
+    @asyncio.coroutine
     def _result(self, response, response_type=None):
         if not response_type:
             ct = response.headers.get("Content-Type", "")
@@ -92,6 +94,9 @@ class Docker:
 
         response.release()
         return data
+
+    def _multiplexed_result(self, response):
+        return MultiplexedResult(response)
 
     def _websocket(self, url, **params):
         if not params:
@@ -203,10 +208,22 @@ class DockerContainer:
             method='GET',
             params=params,
         )
+        log_stream = self.docker._multiplexed_result(response)
         if follow:
-            return response.content
-        data = yield from response.text()
-        return data
+            return log_stream
+        log_lines = []
+
+        #TODO 3.5 cleans up this syntax
+        i = yield from log_stream.__aiter__()
+        while True:
+            try:
+                line = yield from i.__anext__()
+            except StopAsyncIteration:
+                break
+            else:
+                log_lines.append(line.decode('utf-8'))
+            
+        return ''.join(log_lines)
 
     @asyncio.coroutine
     def copy(self, resource, **kwargs):

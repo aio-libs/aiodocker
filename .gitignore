@@ -3,3 +3,4 @@
 *aiodocker*egg*
 dist
 __pycache__
+.cache
