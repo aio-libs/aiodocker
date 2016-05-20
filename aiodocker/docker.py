@@ -20,6 +20,7 @@ class Docker:
     def __init__(self,
                  url=os.environ.get('DOCKER_HOST', "/run/docker.sock"),
                  connector=None,
+                 session=None,
                  ssl_context=None):
         self.url = url
         self.events = DockerEvents(self)
@@ -35,6 +36,9 @@ class Docker:
             else:
                 connector = aiohttp.connector.UnixConnector(url)
         self.connector = connector
+        if session is None:
+            session = aiohttp.ClientSession(connector=self.connector)
+        self.session = session
 
     @asyncio.coroutine
     def pull(self, image):
@@ -52,9 +56,8 @@ class Docker:
     def _query(self, path, method='GET', params=None, timeout=None,
                data=None, headers=None, **kwargs):
         url = self._endpoint(path)
-        future = asyncio.ensure_future(aiohttp.request(
+        future = asyncio.ensure_future(self.session.request(
             method, url,
-            connector=self.connector,
             params=params, headers=headers, data=data, **kwargs))
 
         if timeout:
@@ -83,6 +86,7 @@ class Docker:
                 raise TypeError("Unrecognized response type: {}".format(ct))
         if 'tar' == response_type:
             what = yield from response.read()
+            yield from response.release()
             return tarfile.open(mode='r', fileobj=io.BytesIO(what))
 
         if 'json' == response_type:
@@ -92,7 +96,7 @@ class Docker:
         else:
             data = yield from response.read()
 
-        response.release()
+        yield from response.release()
         return data
 
     def _multiplexed_result(self, response):
@@ -222,11 +226,12 @@ class DockerContainer:
                 break
             else:
                 log_lines.append(line.decode('utf-8'))
-            
+
         return ''.join(log_lines)
 
     @asyncio.coroutine
     def copy(self, resource, **kwargs):
+        #TODO this is deprecated, use get_archive instead
         request = json.dumps({
             "Resource": resource,
         }, sort_keys=True, indent=4).encode('utf-8')
@@ -353,7 +358,7 @@ class DockerEvents:
                 data['container'] = yield from containers.get(data['id'])
 
             asyncio.async(self.channel.put(data))
-        response.close()
+        yield from response.release()
         self.running = False
 
 
@@ -389,5 +394,7 @@ class DockerLog:
         for msg in response:
             msg = yield from msg
             asyncio.async(self.channel.put(msg))
+
+        yield from response.release()
 
         self.running = False
