@@ -71,11 +71,37 @@ def test_stdio_stdin():
     print("log output:", output)
     assert output == "hello world\n"
 
+    print("removing container")
+    yield from container.delete(force=True)
+
+
+@pytest.mark.asyncio
+def test_wait_timeout():
+    docker = Docker()
+
+    yield from docker.pull("debian:jessie")
+
+    config = {
+        "Cmd":["sh"],
+        "Image":"debian:jessie",
+         "AttachStdin":True,
+         "AttachStdout":True,
+         "AttachStderr":True,
+         "Tty":False,
+         "OpenStdin":True,
+         "StdinOnce":True,
+    }
+
+    container = yield from docker.containers.create_or_replace(config=config, name='testing')
+    yield from container.start(config)
+
     print("waiting for container to stop")
     try:
         yield from container.wait(timeout=1)
     except TimeoutError:
         pass
+    else:
+        assert "TimeoutError should have occured"
 
     print("removing container")
     yield from container.delete(force=True)
