@@ -8,7 +8,7 @@ services:
 env:
   DOCKER_COMPOSE_VERSION: 1.7.1
 
-before_install:
+install:
   - sudo apt-get update
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
   - sudo rm /usr/local/bin/docker-compose
