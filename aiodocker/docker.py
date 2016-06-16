@@ -14,6 +14,7 @@ from aiohttp import websocket
 from .channel import Channel
 from .utils import identical
 from .multiplexed import MultiplexedResult
+from .jsonstream import JsonStreamResult
 
 
 class Docker:
@@ -41,14 +42,26 @@ class Docker:
         self.session = session
 
     @asyncio.coroutine
-    def pull(self, image):
+    def pull(self, image, stream=False):
         response = yield from self._query(
             "images/create", "POST",
             params={"fromImage": image},
             headers={"content-type": "application/json",},
         )
-        yield from response.release()
-        return
+        json_stream = self._json_stream_result(response)
+        if stream:
+            return json_stream
+        data = []
+        i = yield from json_stream.__aiter__()
+        while True:
+            try:
+                line = yield from i.__anext__()
+            except StopAsyncIteration:
+                break
+            else:
+                data.append(line)
+
+        return data
 
     def _endpoint(self, path):
         return "/".join([self.url, path])
@@ -100,6 +113,9 @@ class Docker:
 
         yield from response.release()
         return data
+
+    def _json_stream_result(self, response):
+        return JsonStreamResult(response)
 
     def _multiplexed_result(self, response):
         return MultiplexedResult(response)
@@ -325,6 +341,29 @@ class DockerContainer:
         url = "containers/{}/attach/ws".format(self._id)
         ws = yield from self.docker._websocket(url, **params)
         return ws
+
+    @asyncio.coroutine
+    def port(self, private_port):
+        if 'NetworkSettings' not in self._container:
+            yield from self.show()
+
+        private_port = str(private_port)
+        h_ports = None
+
+        # Port settings is None when the container is running with
+        # network_mode=host.
+        port_settings = self._container.get('NetworkSettings', {}).get('Ports')
+        if port_settings is None:
+            return None
+
+        if '/' in private_port:
+            return port_settings.get(private_port)
+
+        h_ports = port_settings.get(private_port + '/tcp')
+        if h_ports is None:
+            h_ports = port_settings.get(private_port + '/udp')
+
+        return h_ports
 
     def __getitem__(self, key):
         return self._container[key]

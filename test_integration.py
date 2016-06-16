@@ -150,3 +150,26 @@ def test_put_archive():
 
     print("removing container")
     yield from container.delete(force=True)
+
+@pytest.mark.asyncio
+def test_port():
+    docker = Docker()
+
+    yield from docker.pull("redis:latest")
+
+    config = {
+        "Image":"redis:latest",
+        "PublishAllPorts": True,
+    }
+
+    container = yield from docker.containers.create_or_replace(config=config, name='testing')
+    #print("put archive response:", result)
+    yield from container.start(config)
+
+    port = yield from container.port(6379)
+
+    print(container._container.get("NetworkSettings"))
+
+    assert port
+
+    yield from container.delete(force=True)
