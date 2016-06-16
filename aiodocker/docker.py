@@ -81,7 +81,9 @@ class Docker:
             if 'json' in ct:
                 response_type = 'json'
             elif 'x-tar' in ct:
-                response_tye = 'tar'
+                response_type = 'tar'
+            elif 'text/plain' in ct:
+                response_type = 'text'
             else:
                 raise TypeError("Unrecognized response type: {}".format(ct))
         if 'tar' == response_type:
@@ -242,6 +244,18 @@ class DockerContainer:
             headers={"content-type": "application/json",},
             params=kwargs
         )
+        return data
+
+    @asyncio.coroutine
+    def put_archive(self, path, data):
+        response = yield from self.docker._query(
+            "containers/{}/archive".format(self._id),
+            method='PUT',
+            data=data,
+            headers={"content-type": "application/json",},
+            params={'path': path}
+        )
+        data = yield from self.docker._result(response)
         return data
 
     @asyncio.coroutine
