@@ -1,6 +1,7 @@
 import asyncio
 import pytest
 import tarfile
+import time
 import io
 from io import StringIO
 from aiodocker.docker import Docker
@@ -118,7 +119,7 @@ def test_put_archive():
     yield from docker.pull("debian:jessie")
 
     config = {
-        "Cmd":["cat", "/tmp/foo.txt"],
+        "Cmd":["cat", "/tmp/bar/foo.txt"],
         #"Cmd":["ls", "-l", "/tmp"],
         "Image":"debian:jessie",
          "AttachStdin":True,
@@ -131,7 +132,14 @@ def test_put_archive():
     file_data = b"hello world"
     file_like_object = io.BytesIO()
     tar = tarfile.open(fileobj=file_like_object, mode='w')
-    tarinfo = tarfile.TarInfo(name="foo.txt")
+
+    info = tarfile.TarInfo(name='bar')
+    info.type = tarfile.DIRTYPE
+    info.mode = 493 #755 oct -> dec
+    info.mtime = time.time()
+    tar.addfile(tarinfo=info)
+
+    tarinfo = tarfile.TarInfo(name="bar/foo.txt")
     tarinfo.size = len(file_data)
     tar.addfile(tarinfo, io.BytesIO(file_data))
     tar.list()
@@ -171,5 +179,35 @@ def test_port():
     print(container._container.get("NetworkSettings"))
 
     assert port
+
+    yield from container.delete(force=True)
+
+@pytest.mark.asyncio
+def test_events():
+    docker = Docker()
+    queue = yield from docker.events.query()
+
+    yield from docker.pull("debian:jessie")
+
+    config = {
+        "Cmd":["sh"],
+        "Image":"debian:jessie",
+    }
+
+    container = yield from docker.containers.create_or_replace(config=config, name='testing')
+    #print("put archive response:", result)
+    yield from container.start(config)
+
+    i = yield from queue.__aiter__()
+    while True:
+        try:
+            event = yield from asyncio.wait_for(i.__anext__(), 2)
+        except StopAsyncIteration:
+            assert False, "Event queue should not terminate"
+        else:
+            if event.get('status', None) == 'start':
+                if event['id'] == container._id:
+                    yield from container.stop()
+                    break
 
     yield from container.delete(force=True)

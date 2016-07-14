@@ -66,6 +66,7 @@ class Docker:
     def _endpoint(self, path):
         return "/".join([self.url, path])
 
+    @asyncio.coroutine
     def _query(self, path, method='GET', params=None, timeout=None,
                data=None, headers=None, **kwargs):
         url = self._endpoint(path)
@@ -114,12 +115,13 @@ class Docker:
         yield from response.release()
         return data
 
-    def _json_stream_result(self, response):
-        return JsonStreamResult(response)
+    def _json_stream_result(self, response, transform=None):
+        return JsonStreamResult(response, transform)
 
     def _multiplexed_result(self, response):
         return MultiplexedResult(response)
 
+    @asyncio.coroutine
     def _websocket(self, url, **params):
         if not params:
             params = {
@@ -131,6 +133,7 @@ class Docker:
         ws = yield from aiohttp.ws_connect(url, connector=self.connector)
         return ws
 
+    @asyncio.coroutine
     def _query_json(self, *args, **kwargs):
         response = yield from self._query(*args, **kwargs)
         data = yield from self._result(response, 'json')
@@ -388,30 +391,40 @@ class DockerEvents:
         asyncio.async(self.run())
 
     @asyncio.coroutine
+    def query(self, **params):
+        response = yield from self.docker._query(
+            "events",
+            method="GET",
+            params=params,
+        )
+        json_stream = self.docker._json_stream_result(response, self._transform_event)
+        return json_stream
+
+    def _transform_event(self, data):
+        if 'time' in data:
+            data['time'] = dt.datetime.fromtimestamp(data['time'])
+        return data
+
+    @asyncio.coroutine
     def run(self):
         self.running = True
         containers = self.docker.containers
-        response = yield from self.docker._query(
-            'events',
-            method='GET'
-        )
+        json_stream = yield from self.query()
 
+
+        i = yield from json_stream.__aiter__()
         while True:
-            msg = yield from response.content.readline()
-            if not msg:
+            try:
+                data = yield from i.__anext__()
+            except StopAsyncIteration:
                 break
-            data = json.loads(msg.decode('utf-8'))
+            else:
+                if 'id' in data and data['status'] in [
+                    "start", "create",
+                ]:
+                    data['container'] = yield from containers.get(data['id'])
 
-            if 'time' in data:
-                data['time'] = dt.datetime.fromtimestamp(data['time'])
-
-            if 'id' in data and data['status'] in [
-                "start", "create",
-            ]:
-                data['container'] = yield from containers.get(data['id'])
-
-            asyncio.async(self.channel.put(data))
-        yield from response.release()
+                asyncio.async(self.channel.put(data))
         self.running = False
 
 
