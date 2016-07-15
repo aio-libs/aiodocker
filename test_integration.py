@@ -1,3 +1,4 @@
+import aiohttp
 import asyncio
 import pytest
 import tarfile
@@ -7,6 +8,16 @@ from io import StringIO
 from aiodocker.docker import Docker
 from concurrent.futures import TimeoutError
 
+
+@pytest.mark.asyncio
+def test_closed_unix_socket():
+    docker = Docker('unix://var/run/does-not-exist-docker.sock')
+    try:
+        info = yield from docker.containers.list()
+    except aiohttp.errors.ClientOSError as error:
+        assert "No such file or directory" in str(error)
+    else:
+        assert False, "docker commands should not work with invalid hosts"
 
 @pytest.mark.asyncio
 def test_container_lifecycles():
