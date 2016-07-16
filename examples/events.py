@@ -11,6 +11,8 @@ docker = Docker()
 def handler(events):
     queue = events.listen()
 
+    yield from docker.pull("debian:jessie")
+
     config = {
         "Cmd":["tail", "-f", "/var/log/dmesg"],
         "Image":"debian:jessie",
@@ -22,12 +24,12 @@ def handler(events):
          "StdinOnce":False,
     }
 
-    container = yield from docker.containers.create(config, name='testing')
+    container = yield from docker.containers.create_or_replace(config=config, name='testing')
     yield from container.start(config)
 
     while True:
         event = yield from queue.get()
-        if event['status'] == 'start':
+        if event.get('status', None) == 'start':
             yield from event['container'].stop()
             print("Killed {id} so hard".format(**event))
 

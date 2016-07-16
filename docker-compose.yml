@@ -1,0 +1,14 @@
+version: '2'
+services:
+  aiodocker:
+    build: .
+    links:
+      - docker
+    volumes:
+      - "./:/usr/src/aiodocker"
+    environment:
+      DOCKER_HOST: "http://docker:2375"
+
+  docker:
+    image: docker:dind
+    privileged: true
