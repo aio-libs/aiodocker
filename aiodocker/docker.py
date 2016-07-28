@@ -45,6 +45,16 @@ class Docker:
         self.session = session
 
     @asyncio.coroutine
+    def images(self, **params):
+        #TODO image resource
+        response = yield from self._query_json(
+            "images/json", "GET",
+            params=params,
+            headers={"content-type": "application/json",},
+        )
+        return response
+
+    @asyncio.coroutine
     def pull(self, image, stream=False):
         response = yield from self._query(
             "images/create", "POST",
