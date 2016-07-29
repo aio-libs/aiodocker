@@ -55,6 +55,15 @@ class Docker:
         return response
 
     @asyncio.coroutine
+    def auth(self, **credentials):
+        response = yield from self._query_json(
+            "auth", "POST",
+            data=credentials,
+            headers={"content-type": "application/json",},
+        )
+        return response
+
+    @asyncio.coroutine
     def pull(self, image, stream=False):
         response = yield from self._query(
             "images/create", "POST",
