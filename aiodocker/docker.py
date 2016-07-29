@@ -26,6 +26,7 @@ class Docker:
         self.url = url
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
+        self.images = DockerImages(self)
         if connector is None:
             if url.startswith('http://'):
                 connector = aiohttp.TCPConnector()
@@ -43,16 +44,6 @@ class Docker:
         if session is None:
             session = aiohttp.ClientSession(connector=self.connector)
         self.session = session
-
-    @asyncio.coroutine
-    def images(self, **params):
-        #TODO image resource
-        response = yield from self._query_json(
-            "images/json", "GET",
-            params=params,
-            headers={"content-type": "application/json",},
-        )
-        return response
 
     @asyncio.coroutine
     def auth(self, **credentials):
@@ -160,6 +151,82 @@ class Docker:
         response = yield from self._query(*args, **kwargs)
         data = yield from self._result(response, 'json')
         return data
+
+
+class DockerImages(object):
+    def __init__(self, docker):
+        self.docker = docker
+
+    @asyncio.coroutine
+    def list(self, **params):
+        response = yield from self.docker._query_json(
+            "images/json", "GET",
+            params=params,
+            headers={"content-type": "application/json",},
+        )
+        return response
+
+    @asyncio.coroutine
+    def get(self, name):
+        response = yield from self.docker._query_json(
+            "images/{0}/json".format(name),
+            headers={"content-type": "application/json",},
+        )
+        return response
+
+    @asyncio.coroutine
+    def history(self, name):
+        response = yield from self.docker._query_json(
+            "images/{0}/history".format(name),
+            headers={"content-type": "application/json",},
+        )
+        return response
+
+    @asyncio.coroutine
+    def push(self, name, tag=None, auth=None):
+        headers = {"content-type": "application/json"}
+        params = {}
+        if auth:
+            if isinstance(auth, dict):
+                auth = json.dumps(auth)
+                auth = base64.b64encode(auth)
+            if not isinstance(auth, bytes):
+                raise TypeError("auth must be base64 encoded bytes or a dictionary")
+            headers['X-Registry-Auth'] = auth
+        if tag:
+            params['tag'] = tag
+        response = yield from self.docker._query_json(
+            "images/{0}/push".format(name),
+            "POST",
+            params=params,
+            headers=headers,
+        )
+        return response
+
+    @asyncio.coroutine
+    def tag(self, name, tag=None, repo=None):
+        params = {}
+        if tag:
+            params['tag'] = tag
+        if repo:
+            params['repo'] = repo
+        response = yield from self.docker._query_json(
+            "images/{0}/tag".format(name),
+            "POST",
+            params=params,
+            headers={"content-type": "application/json"},
+        )
+        return response
+
+    @asyncio.coroutine
+    def delete(self, name, **params):
+        response = yield from self.docker._query_json(
+            "images/{0}/tag".format(name),
+            "DELETE",
+            params=params,
+            headers={"content-type": "application/json",},
+        )
+        return response
 
 
 class DockerContainers(object):
