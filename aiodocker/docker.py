@@ -190,8 +190,10 @@ class DockerImages(object):
             if isinstance(auth, dict):
                 auth = json.dumps(auth).encode('utf8')
                 auth = base64.b64encode(auth)
-            if not isinstance(auth, bytes):
-                raise TypeError("auth must be base64 encoded bytes or a dictionary")
+            if not isinstance(auth, (bytes, str)):
+                raise TypeError("auth must be base64 encoded string/bytes or a dictionary")
+            if isinstance(auth, bytes):
+                auth = auth.decode('ascii')
             headers['X-Registry-Auth'] = auth
         if tag:
             params['tag'] = tag
