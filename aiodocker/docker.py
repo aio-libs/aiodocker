@@ -188,7 +188,7 @@ class DockerImages(object):
         params = {}
         if auth:
             if isinstance(auth, dict):
-                auth = json.dumps(auth)
+                auth = json.dumps(auth).encode('utf8')
                 auth = base64.b64encode(auth)
             if not isinstance(auth, bytes):
                 raise TypeError("auth must be base64 encoded bytes or a dictionary")
