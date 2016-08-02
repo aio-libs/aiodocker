@@ -61,20 +61,8 @@ class Docker:
             params={"fromImage": image},
             headers={"content-type": "application/json",},
         )
-        json_stream = self._json_stream_result(response)
-        if stream:
-            return json_stream
-        data = []
-        i = yield from json_stream.__aiter__()
-        while True:
-            try:
-                line = yield from i.__anext__()
-            except StopAsyncIteration:
-                break
-            else:
-                data.append(line)
-
-        return data
+        json_stream = yield from self._json_stream_result(response, stream=stream)
+        return json_stream
 
     def _endpoint(self, path):
         return "/".join([self.url, path])
@@ -128,8 +116,21 @@ class Docker:
         yield from response.release()
         return data
 
-    def _json_stream_result(self, response, transform=None):
-        return JsonStreamResult(response, transform)
+    def _json_stream_result(self, response, transform=None, stream=True):
+        json_stream = JsonStreamResult(response, transform)
+        if stream:
+            return json_stream
+        data = []
+        i = yield from json_stream.__aiter__()
+        while True:
+            try:
+                line = yield from i.__anext__()
+            except StopAsyncIteration:
+                break
+            else:
+                data.append(line)
+
+        return data
 
     def _multiplexed_result(self, response):
         return MultiplexedResult(response)
@@ -183,12 +184,15 @@ class DockerImages(object):
         return response
 
     @asyncio.coroutine
-    def push(self, name, tag=None, auth=None):
-        headers = {"content-type": "application/json"}
+    def push(self, name, tag=None, auth=None, stream=False):
+        headers = {
+            "content-type": "application/json",
+            "X-Registry-Auth": "FOO",
+        }
         params = {}
         if auth:
             if isinstance(auth, dict):
-                auth = json.dumps(auth).encode('utf8')
+                auth = json.dumps(auth).encode('ascii')
                 auth = base64.b64encode(auth)
             if not isinstance(auth, (bytes, str)):
                 raise TypeError("auth must be base64 encoded string/bytes or a dictionary")
@@ -197,13 +201,14 @@ class DockerImages(object):
             headers['X-Registry-Auth'] = auth
         if tag:
             params['tag'] = tag
-        response = yield from self.docker._query_json(
+        response = yield from self.docker._query(
             "images/{0}/push".format(name),
             "POST",
             params=params,
             headers=headers,
         )
-        return response
+        json_stream = yield from self.docker._json_stream_result(response, stream=stream)
+        return json_stream
 
     @asyncio.coroutine
     def tag(self, name, tag=None, repo=None):
@@ -488,7 +493,7 @@ class DockerEvents:
             method="GET",
             params=params,
         )
-        json_stream = self.docker._json_stream_result(response, self._transform_event)
+        json_stream = yield from self.docker._json_stream_result(response, self._transform_event)
         return json_stream
 
     def _transform_event(self, data):
