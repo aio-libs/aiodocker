@@ -26,6 +26,7 @@ class Docker:
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
         self.images = DockerImages(self)
+        self.volumes = DockerVolumes(self)
         if connector is None:
             if url.startswith('http://'):
                 connector = aiohttp.TCPConnector()
@@ -463,6 +464,22 @@ class DockerContainer:
 
         return h_ports
 
+    @asyncio.coroutine
+    def stats(self, stream=True):
+        if stream:
+            response = yield from self.docker._query(
+                "containers/{}/stats".format(self._id),
+                params={'stream': '1'},
+            )
+            json_stream = yield from self.docker._json_stream_result(response)
+            return json_stream
+        else:
+            data = yield from self.docker._query_json(
+                "containers/{}/stats".format(self._id),
+                params={'stream': '0'},
+            )
+            return data
+
     def __getitem__(self, key):
         return self._container[key]
 
@@ -559,3 +576,46 @@ class DockerLog:
         yield from response.release()
 
         self.running = False
+
+
+class DockerVolumes:
+    def __init__(self, docker):
+        self.docker = docker
+
+    @asyncio.coroutine
+    def list(self):
+        data = yield from self.docker._query_json("volumes")
+        return data
+
+    @asyncio.coroutine
+    def create(self, config):
+        config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
+        data = yield from self.docker._query_json(
+            "volumes",
+            method="POST",
+            headers={"content-type": "application/json",},
+            data=config,
+        )
+        return DockerVolume(self.docker, data['Name'])
+
+
+class DockerVolume:
+    def __init__(self, docker, name):
+        self.docker = docker
+        self.name = name
+
+    @asyncio.coroutine
+    def show(self):
+        data = yield from self.docker._query_json(
+            "volumes/{}".format(self.name)
+        )
+        return data
+
+    @asyncio.coroutine
+    def delete(self):
+        response = yield from self.docker._query_json(
+            "volumes/{0}".format(name),
+            method="DELETE",
+            headers={"content-type": "application/json",},
+        )
+        return response
