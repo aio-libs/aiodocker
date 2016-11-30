@@ -55,6 +55,11 @@ class Docker:
         return response
 
     @asyncio.coroutine
+    def version(self):
+        data = yield from self._query_json("version")
+        return data
+
+    @asyncio.coroutine
     def pull(self, image, stream=False):
         response = yield from self._query(
             "images/create", "POST",
