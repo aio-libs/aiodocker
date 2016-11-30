@@ -591,7 +591,7 @@ class DockerVolumes:
     def create(self, config):
         config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
         data = yield from self.docker._query_json(
-            "volumes",
+            "volumes/create",
             method="POST",
             headers={"content-type": "application/json",},
             data=config,
