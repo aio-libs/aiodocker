@@ -413,12 +413,13 @@ class DockerContainer:
 
     @asyncio.coroutine
     def kill(self, **kwargs):
-        data = yield from self.docker._query_json(
+        response = yield from self.docker._query(
             "containers/{}/kill".format(self._id),
             method='POST',
             params=kwargs
         )
-        return data
+        yield from response.release()
+        return
 
     @asyncio.coroutine
     def wait(self, timeout=None, **kwargs):
