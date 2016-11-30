@@ -613,9 +613,9 @@ class DockerVolume:
 
     @asyncio.coroutine
     def delete(self):
-        response = yield from self.docker._query_json(
+        response = yield from self.docker._query(
             "volumes/{0}".format(name),
             method="DELETE",
-            headers={"content-type": "application/json",},
         )
-        return response
+        yield from response.release()
+        return
