@@ -9,7 +9,6 @@ import tarfile
 import json
 import datetime as dt
 import ssl
-from aiohttp import websocket
 
 from .channel import Channel
 from .utils import identical
