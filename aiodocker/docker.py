@@ -526,23 +526,20 @@ class DockerEvents:
     def run(self):
         self.running = True
         containers = self.docker.containers
-        json_stream = yield from self.query()
+        self.json_stream = yield from self.query()
 
-
-        i = yield from json_stream.__aiter__()
+        i = yield from self.json_stream.__aiter__()
         while True:
             try:
                 data = yield from i.__anext__()
-            except StopAsyncIteration:
+            except (StopAsyncIteration, asyncio.CancelledError):
                 break
             else:
-                if 'id' in data and data['status'] in [
-                    "start", "create",
-                ]:
-                    data['container'] = yield from containers.get(data['id'])
-
                 asyncio.async(self.channel.put(data))
         self.running = False
+
+    def stop(self):
+        self.json_stream.close()
 
 
 class DockerLog:

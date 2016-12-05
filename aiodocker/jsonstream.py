@@ -23,3 +23,6 @@ class JsonStreamResult(object):
 
         yield from self.response.release()
         raise StopAsyncIteration
+
+    def close(self):
+        self.response.close()
