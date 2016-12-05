@@ -11,6 +11,7 @@ import datetime as dt
 import ssl
 
 from .channel import Channel
+from .exceptions import DockerError
 from .utils import identical
 from .multiplexed import MultiplexedResult
 from .jsonstream import JsonStreamResult
@@ -88,9 +89,7 @@ class Docker:
         if (response.status // 100) in [4, 5]:
             what = yield from response.read()
             response.close()
-            raise ValueError("Got a failure from the server: '%s'" % (
-                what.decode('utf-8').strip()
-            ))
+            raise DockerError(response.status, json.loads(what.decode('utf8')))
 
         return response
 
@@ -267,7 +266,7 @@ class DockerContainers(object):
                     yield from container.stop()
                 yield from container.delete()
                 container = None
-        except ValueError:
+        except DockerError:
             pass
 
         if container is None:
