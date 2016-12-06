@@ -1,6 +1,8 @@
 import asyncio
 import json
 
+import aiohttp.errors
+
 
 class JsonStreamResult(object):
     def __init__(self, response, transform=None):
@@ -15,7 +17,10 @@ class JsonStreamResult(object):
     @asyncio.coroutine
     def __anext__(self):
         while self._open:
-            data = yield from self.response.content.readany()
+            try:
+                data = yield from self.response.content.readline()
+            except aiohttp.errors.ClientDisconnectedError:
+                data = None
             if not data:
                 self._open = False
                 break

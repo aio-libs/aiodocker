@@ -532,10 +532,10 @@ class DockerEvents:
         while True:
             try:
                 data = yield from i.__anext__()
-            except (StopAsyncIteration, asyncio.CancelledError):
+            except (StopAsyncIteration, asyncio.TimeoutError):
                 break
             else:
-                asyncio.async(self.channel.put(data))
+                yield from self.channel.put(data)
         self.running = False
 
     def stop(self):
