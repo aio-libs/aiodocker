@@ -1,33 +1,37 @@
 import asyncio
 import json
+import logging
 
 import aiohttp.errors
 
+log = logging.getLogger(__name__)
 
-class JsonStreamResult(object):
+
+class JsonStreamResult:
     def __init__(self, response, transform=None):
         self.response = response
         self.transform = transform or (lambda x: x)
 
-    @asyncio.coroutine
-    def __aiter__(self):
-        self._open = True
-        return self
-
-    @asyncio.coroutine
-    def __anext__(self):
-        while self._open:
+    async def fetch(self):
+        while True:
             try:
-                data = yield from self.response.content.readline()
-            except aiohttp.errors.ClientDisconnectedError:
-                data = None
-            if not data:
-                self._open = False
+                data = await self.response.content.readline()
+                if not data:
+                    break
+            except (aiohttp.errors.ClientDisconnectedError,
+                    aiohttp.errors.ServerDisconnectedError):
                 break
-            return self.transform(json.loads(data.decode('utf8')))
+            yield self.transform(json.loads(data.decode('utf8')))
 
-        yield from self.response.release()
-        raise StopAsyncIteration
+    async def close(self):
+        await self.response.release()
 
-    def close(self):
-        self.response.close()
+
+async def json_stream_result(response, transform=None, stream=True):
+    json_stream = JsonStreamResult(response, transform)
+    if stream:
+        return json_stream
+    data = []
+    async for obj in json_stream.fetch():
+        data.append(obj)
+    return data
