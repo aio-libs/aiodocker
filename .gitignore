@@ -1,6 +1,29 @@
-*swp
-*pyc
-*aiodocker*egg*
-dist
-__pycache__
-.cache
+### Bazel ###
+#############
+*~
+.*.swp
+/.classpath
+/.factorypath
+/.project
+/.settings
+/WORKSPACE.user.bzl
+/bazel-monolith
+/bazel-bazel
+/bazel-bin
+/bazel-genfiles
+/bazel-io_bazel
+/bazel-out
+/bazel-testlogs
+/bazel.iml
+/output/
+
+### Files ###
+#############
+*.py[cod]
+*.log
+
+### Folders ###
+###############
+__pycache__/
+.cache/
+.idea/

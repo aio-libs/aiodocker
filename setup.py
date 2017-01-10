@@ -1,19 +1,17 @@
-#!/usr/bin/env python
-
-from setuptools import setup
-
-version = "0.6"
-long_description = "AsyncIO Docker bindings"
+from setuptools import setup, find_packages
 
 setup(
-    name="aiodocker",
-    version=version,
-    packages=['aiodocker',],  # This is empty without the line below
-    author="Paul Tagliamonte",
-    author_email="paultag@debian.org",
-    long_description=long_description,
+    name='aiodocker',
+    version='0.6.1',
+    author='Paul Tagliamonte, Konstantin Itskov',
+    author_email='paultag@debian.org, konstantin.itskov@findmine.com',
+    long_description='AsyncIO Docker bindings',
     description='does some stuff with things & stuff',
-    license="Expat",
-    url="",
-    platforms=['any']
+    license='MIT',
+    platforms=['any'],
+    install_requires=[
+        'aiohttp==1.2.0',
+        'ujson==1.35'
+    ],
+    packages=find_packages()
 )
