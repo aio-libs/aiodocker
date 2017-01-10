@@ -24,7 +24,10 @@ class JsonStreamResult:
             yield self.transform(json.loads(data.decode('utf8')))
 
     async def close(self):
-        await self.response.release()
+        # response.release() indefinitely hangs because the server is sending
+        # an infinite stream of messages.
+        # (see https://github.com/KeepSafe/aiohttp/issues/739)
+        await self.response.close()
 
 
 async def json_stream_result(response, transform=None, stream=True):
