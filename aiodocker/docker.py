@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse
 
 import aiohttp
 
-from .handles import ImageHandles
+from .handles import ContainerHandles, ImageHandles
 
 
 class Docker:
@@ -100,9 +100,9 @@ class Docker:
     def client(self):
         return self._client
 
-    # @property
-    # def containers(self):
-    #     return ContainerCollection(client=self)
+    @property
+    def containers(self):
+        return ContainerHandles(docker=self)
 
     @property
     def images(self):

@@ -38,25 +38,33 @@ class TestImages(unittest.TestCase):
     @asyncio.coroutine
     def test_create(self):
         docker = Docker()
-        image = yield from docker.images.create(name='ubuntu:16.04')
+        image = yield from docker.images.create(from_image='ubuntu:16.04')
         self.assertIsNotNone(image)
         docker.close()
 
     @aiotest
     @asyncio.coroutine
-    def test_get_inspect(self):
+    def test_inspect(self):
         docker = Docker()
-        yield from docker.images.create(name='ubuntu:16.04')
-        image = yield from docker.images.get(name='ubuntu:16.04')
-        self.assertIsNotNone(image)
+        attrs = yield from docker.images.inspect(name='ubuntu:16.04')
+        self.assertIsInstance(attrs, dict)
         docker.close()
 
     @aiotest
     @asyncio.coroutine
     def test_history(self):
         docker = Docker()
-        image = yield from docker.images.create(name='ubuntu:16.04')
-        self.assertIsNotNone(image)
-        history1 = yield from docker.images.history(name='ubuntu:16.04')
-        self.assertListEqual(history1, image.history)
+        image = yield from docker.images.create(from_image='ubuntu:16.04')
+        history = yield from docker.images.history(name='ubuntu:16.04')
+        self.assertListEqual(history, image.history)
         docker.close()
+
+    @aiotest
+    @asyncio.coroutine
+    def test_get(self):
+        docker = Docker()
+        image1 = yield from docker.images.create(from_image='ubuntu:16.04')
+        image2 = yield from docker.images.get(name='ubuntu:16.04')
+        self.assertEqual(image1.id, image2.id)
+        docker.close()
+

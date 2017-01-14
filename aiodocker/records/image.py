@@ -18,13 +18,13 @@ class Image(Record):
         return self.id[:10]
 
     @property
-    def history(self):
-        return self._history
-
-    @property
     def tags(self):
         tags = self._attrs.get('RepoTags', [])
         return [tag for tag in tags if tag != '<none>:<none>']
+
+    @property
+    def history(self):
+        return self._history
 
     @asyncio.coroutine
     def reload(self):
