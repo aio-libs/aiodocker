@@ -1,28 +1,38 @@
-import struct
 import asyncio
+import struct
+
 from . import constants
 
 
-class MultiplexedResult(object):
+class MultiplexedResult:
     def __init__(self, response):
         self.response = response
 
-    @asyncio.coroutine
-    def __aiter__(self):
-        return self
-
-    @asyncio.coroutine
-    def __anext__(self):
+    async def fetch(self):
         while True:
-            header = yield from self.response.content.read(constants.STREAM_HEADER_SIZE_BYTES)
-            if not header:
+            try:
+                hdrlen = constants.STREAM_HEADER_SIZE_BYTES
+                header = await self.response.content.readexactly(hdrlen)
+                _, length = struct.unpack('>BxxxL', header)
+                if not length:
+                    continue
+                data = await self.response.content.readexactly(length)
+            except (aiohttp.errors.ClientDisconnectedError,
+                    aiohttp.errors.ServerDisconnectedError):
                 break
-            _, length = struct.unpack('>BxxxL', header)
-            if not length:
-                continue
-            data = yield from self.response.content.read(length)
-            if not data:
+            except asyncio.IncompleteReadError:
                 break
-            return data
-        yield from self.response.release()
-        raise StopAsyncIteration
+            yield data.decode('utf8')
+
+    async def close(self):
+        await self.response.release()
+
+
+async def multiplexed_result(response, follow=False):
+    log_stream = MultiplexedResult(response)
+    if follow:
+        return log_stream
+    data = []
+    async for record in log_stream.fetch():
+        data.append(record)
+    return data

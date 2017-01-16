@@ -4,6 +4,7 @@ import pytest
 import tarfile
 import time
 import io
+import os
 from io import StringIO
 from aiodocker.docker import Docker
 from concurrent.futures import TimeoutError
@@ -48,7 +49,7 @@ def test_container_lifecycles():
     assert len(containers) == 3
 
     f_container = containers[0]
-    yield from f_container.start(config)
+    yield from f_container.start()
     info = yield from f_container.show()
 
     for container in containers:
@@ -74,7 +75,7 @@ def test_stdio_stdin():
 
 
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
-    yield from container.start(config)
+    yield from container.start()
 
     ws = yield from container.websocket(stdin=True, stdout=True, stream=True)
     ws.send_str('echo hello world\n')
@@ -110,7 +111,7 @@ def test_wait_timeout():
     }
 
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
-    yield from container.start(config)
+    yield from container.start()
 
     print("waiting for container to stop")
     try:
@@ -159,7 +160,7 @@ def test_put_archive():
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
     result = yield from container.put_archive(path='/tmp', data=file_like_object.getvalue())
     #print("put archive response:", result)
-    yield from container.start(config)
+    yield from container.start()
 
     yield from container.wait(timeout=1)
 
@@ -183,7 +184,7 @@ def test_port():
 
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
     #print("put archive response:", result)
-    yield from container.start(config)
+    yield from container.start()
 
     port = yield from container.port(6379)
 
@@ -207,7 +208,7 @@ def test_events():
 
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
     #print("put archive response:", result)
-    yield from container.start(config)
+    yield from container.start()
 
     i = yield from queue.__aiter__()
     while True:
@@ -222,3 +223,11 @@ def test_events():
                     break
 
     yield from container.delete(force=True)
+
+@pytest.mark.asyncio
+def test_image_push():
+    docker = Docker()
+    yield from docker.pull("debian")
+    yield from docker.images.tag("debian", repo=os.environ['DOCKER_REGISTRY']+"/debian")
+    #push_results = yield from docker.images.push(os.environ['DOCKER_REGISTRY']+"/debian")
+    #assert False, str(push_results)

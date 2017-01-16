@@ -1,6 +1,9 @@
 *swp
 *pyc
 *aiodocker*egg*
+build
 dist
 __pycache__
 .cache
+venv
+.env

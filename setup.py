@@ -8,12 +8,19 @@ long_description = "AsyncIO Docker bindings"
 setup(
     name="aiodocker",
     version=version,
-    packages=['aiodocker',],  # This is empty without the line below
     author="Paul Tagliamonte",
     author_email="paultag@debian.org",
     long_description=long_description,
-    description='does some stuff with things & stuff',
+    description="Provides coroutine-based API wrapper for Docker daemons",
     license="Expat",
     url="",
-    platforms=['any']
+    platforms=['any'],
+    packages=[
+        'aiodocker',
+    ],
+    python_requires='>=3.6',
+    install_requires=[
+        'aiohttp>=1.1',
+        'async_timeout',
+    ],
 )
