@@ -1,8 +1,11 @@
 import asyncio
 import ujson
 
+import struct
+
 from .handle import Handle
 from ..records import Container
+from ..stream import StreamReader
 
 
 class ContainerHandles(Handle):
@@ -43,7 +46,7 @@ class ContainerHandles(Handle):
                tty=None, open_stdin=None, env=None, labels=None, cmd=None,
                entry_point=None, image=None, volumes=None, working_dir=None,
                network_disabled=None, exposed_ports=None, stop_signal=None,
-               host_config=None):
+               host_config=None, networking_config=None):
         headers = {'Content-Type': 'application/json'}
         params = {'name': name} if name else {}
         payload = {}
@@ -85,6 +88,8 @@ class ContainerHandles(Handle):
             payload['StopSignal'] = stop_signal
         if host_config is not None:
             payload['HostConfig'] = host_config
+        if networking_config is not None:
+            payload['NetworkingConfig'] = networking_config
 
         response = yield from self.client.post(
             url=self.url('/containers/create'),
@@ -135,11 +140,11 @@ class ContainerHandles(Handle):
         if details is not None:
             params['details'] = details
         if follow is not None:
-            params['follow'] = follow
+            params['follow'] = int(follow)
         if stdout is not None:
-            params['stdout'] = stdout
+            params['stdout'] = int(stdout)
         if stderr is not None:
-            params['stderr'] = stderr
+            params['stderr'] = int(stderr)
         if since is not None:
             params['since'] = since
         if timestamps is not None:
@@ -148,10 +153,21 @@ class ContainerHandles(Handle):
             params['tail'] = tail
 
         response = yield from self.client.get(
-            url=self.url('/containers/{}/json'.format(id_name))
+            url=self.url('/containers/{}/logs'.format(id_name)),
+            params=params
         )
         self._check_status(response.status)
-        return (yield from response.json(encoding='utf-8'))
+        if bool(follow):
+            return StreamReader(response)
+
+        logs = []
+        while not response.content.at_eof():
+            buffer = yield from response.content.readexactly(8)  # type: bytes
+            _type, _, _, _, _size = struct.unpack('!BBBBI', buffer)
+            _line = yield from response.content.readexactly(_size)
+            logs.append((_type, _line.decode('utf-8')))
+        response.close()
+        return logs
 
     @asyncio.coroutine
     def changes(self, id_name):
@@ -188,6 +204,7 @@ class ContainerHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def stop(self, id_name, timeout=None):
@@ -199,6 +216,7 @@ class ContainerHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def restart(self, id_name, timeout=None):
@@ -221,6 +239,7 @@ class ContainerHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def update(self, id_name, block_io_weight=None, cpu_shares=None,
@@ -270,6 +289,7 @@ class ContainerHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def pause(self, id_name):
@@ -277,6 +297,7 @@ class ContainerHandles(Handle):
             url=self.url('/containers/{}/pause'.format(id_name))
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def unpause(self, id_name):
@@ -284,6 +305,7 @@ class ContainerHandles(Handle):
             url=self.url('/containers/{}/unpause'.format(id_name))
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def attach(self, id_name):
@@ -299,6 +321,7 @@ class ContainerHandles(Handle):
             url=self.url('/containers/{}/wait'.format(id_name))
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def remove(self, id_name, volumes=None, force=None):
@@ -313,3 +336,4 @@ class ContainerHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()

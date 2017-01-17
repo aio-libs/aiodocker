@@ -28,10 +28,5 @@ class Image(Record):
 
     @asyncio.coroutine
     def reload(self):
-        attrs = self.docker.images.inspect(name=self.id)
-        history = self.docker.images.history(name=self.id)
-        if attrs is None or history is None:
-            raise LookupError('Image was not found in local registry')
-        self._attrs = attrs
-        self._history = history
-        return self
+        self._attrs = self.docker.images.inspect(name=self.id)
+        self._history = self.docker.images.history(name=self.id)

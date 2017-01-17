@@ -17,10 +17,21 @@ class Container(Record):
 
     @asyncio.coroutine
     def reload(self):
-        self._attrs = yield from self.docker.containers.inspect(
-            id_name=self.id
-        )
-        return self
+        self._attrs = yield from self.docker.containers.inspect(id_name=self.id)
+
+    @asyncio.coroutine
+    def logs(self, details=None, follow=None, stdout=None, stderr=None,
+             since=None, timestamps=None, tail=None):
+        return (yield from self.docker.containers.logs(
+            id_name=self.id,
+            details=details,
+            follow=follow,
+            stdout=stdout,
+            stderr=stderr,
+            since=since,
+            timestamps=timestamps,
+            tail=tail
+        ))
 
     @asyncio.coroutine
     def start(self, detach_keys=None):
@@ -28,6 +39,7 @@ class Container(Record):
             id_name=self.id,
             detach_keys=detach_keys
         )
+        yield from self.reload()
 
     @asyncio.coroutine
     def stop(self, timeout=None):
@@ -35,6 +47,7 @@ class Container(Record):
             id_name=self.id,
             timeout=timeout
         )
+        yield from self.reload()
 
     @asyncio.coroutine
     def restart(self, timeout=None):
@@ -42,6 +55,7 @@ class Container(Record):
             id_name=self.id,
             timeout=timeout
         )
+        yield from self.reload()
 
     @asyncio.coroutine
     def kill(self, signal=None):
@@ -49,6 +63,7 @@ class Container(Record):
             id_name=self.id,
             signal=signal
         )
+        yield from self.reload()
 
     @asyncio.coroutine
     def rename(self, name=None):
@@ -56,18 +71,22 @@ class Container(Record):
             id_name=self.id,
             name=name
         )
+        yield from self.reload()
 
     @asyncio.coroutine
     def pause(self):
         yield from self.docker.containers.pause(id_name=self.id)
+        yield from self.reload()
 
     @asyncio.coroutine
     def unpause(self):
         yield from self.docker.containers.unpause(id_name=self.id)
+        yield from self.reload()
 
     @asyncio.coroutine
     def wait(self):
         yield from self.docker.containers.wait(id_name=self.id)
+        yield from self.reload()
 
     @asyncio.coroutine
     def remove(self, volumes=None, force=None):
@@ -76,4 +95,3 @@ class Container(Record):
             volumes=volumes,
             force=force
         )
-

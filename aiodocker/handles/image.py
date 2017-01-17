@@ -106,6 +106,7 @@ class ImageHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def tag(self, name, repo=None, tag=None):
@@ -119,6 +120,7 @@ class ImageHandles(Handle):
             url=self.url('/images/{}/tag'.format(name))
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def delete(self, name, force=None, noprune=None):
@@ -133,6 +135,7 @@ class ImageHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()
 
     @asyncio.coroutine
     def search(self, term=None, limit=None, filters=None):
@@ -149,3 +152,4 @@ class ImageHandles(Handle):
             params=params
         )
         self._check_status(response.status)
+        response.close()
