@@ -1,5 +1,6 @@
 import asyncio
 import base64
+from _ssl import PROTOCOL_TLS
 from collections import ChainMap
 import datetime as dt
 import hashlib
@@ -46,6 +47,14 @@ class Docker:
             elif url.startswith('/'):
                 connector = aiohttp.connector.UnixConnector(url)
                 self.url = "http://docker" #aiohttp treats this as a proxy
+            elif url.startswith('tcp://') and os.environ.get('DOCKER_TLS_VERIFY', None) == '1':
+                connector = aiohttp.TCPConnector(ssl_context=self._docker_machine_ssl_context())
+                self.url = url.replace('tcp://', 'https://')
+
+            elif url.startswith('tcp://') and os.environ.get('DOCKER_TLS_VERIFY', None) == '0':
+                connector = aiohttp.TCPConnector()
+                self.url = url.replace('tcp://', 'http://')
+
             else:
                 connector = aiohttp.connector.UnixConnector(url)
         self.connector = connector
@@ -148,6 +157,23 @@ class Docker:
         response = await self._query(*args, **kwargs)
         data = await Docker._result(response, 'json')
         return data
+
+    @staticmethod
+    def _docker_machine_ssl_context():
+        """Create a SSLContext object using DOCKER_* env vars.
+
+        """
+        context = ssl.SSLContext(PROTOCOL_TLS)
+        context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
+        certs_path = os.environ.get('DOCKER_CERT_PATH', None)
+        if certs_path is None:
+            raise ValueError('Cannot create ssl context, DOCKER_CERT_PATH is not set!')
+
+        def file_path(file):
+            return os.path.join(certs_path, file)
+        context.load_verify_locations(cafile=file_path('ca.pem'))
+        context.load_cert_chain(certfile=file_path('cert.pem'), keyfile=file_path('key.pem'))
+        return context
 
 
 class DockerImages(object):
