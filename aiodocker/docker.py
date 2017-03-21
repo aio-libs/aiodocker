@@ -355,12 +355,16 @@ class DockerContainer:
         }
         params.update(kwargs)
 
+        inspect_info = await self.show()
+
+        isTty = inspect_info['Tty']
+
         response = await self.docker._query(
             f"containers/{self._id}/logs",
             method='GET',
             params=params,
         )
-        return (await multiplexed_result(response, follow))
+        return (await multiplexed_result(response, follow, isTty=isTty))
 
     async def copy(self, resource, **kwargs):
         #TODO this is deprecated, use get_archive instead
