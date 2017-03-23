@@ -1,6 +1,8 @@
 import asyncio
 import struct
 
+import aiohttp
+
 from . import constants
 
 
@@ -17,8 +19,8 @@ class MultiplexedResult:
                 if not length:
                     continue
                 data = await self.response.content.readexactly(length)
-            except (aiohttp.errors.ClientDisconnectedError,
-                    aiohttp.errors.ServerDisconnectedError):
+            except (aiohttp.ClientConnectionError,
+                    aiohttp.ServerConnectionError):
                 break
             except asyncio.IncompleteReadError:
                 break

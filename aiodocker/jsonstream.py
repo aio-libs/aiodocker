@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 
-import aiohttp.errors
+import aiohttp
 
 log = logging.getLogger(__name__)
 
@@ -18,8 +18,8 @@ class JsonStreamResult:
                 data = await self.response.content.readline()
                 if not data:
                     break
-            except (aiohttp.errors.ClientDisconnectedError,
-                    aiohttp.errors.ServerDisconnectedError):
+            except (aiohttp.ClientConnectionError,
+                    aiohttp.ServerConnectionError):
                 break
             yield self.transform(json.loads(data.decode('utf8')))
 

@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 class Docker:
     def __init__(self,
-                 url=os.environ.get('DOCKER_HOST', "/run/docker.sock"),
+                 url=os.environ.get('DOCKER_HOST', "/var/run/docker.sock"),
                  connector=None,
                  session=None,
                  ssl_context=None):
@@ -42,16 +42,19 @@ class Docker:
                 connector = aiohttp.TCPConnector(ssl_context=ssl_context)
             elif url.startswith('unix://'):
                 connector = aiohttp.connector.UnixConnector(url[8:])
-                self.url = "http://docker" #aiohttp treats this as a proxy
+                self.url = "http://docker"  # aiohttp treats this as a proxy when decomposing URLs
             elif url.startswith('/'):
                 connector = aiohttp.connector.UnixConnector(url)
-                self.url = "http://docker" #aiohttp treats this as a proxy
+                self.url = "http://docker"  # aiohttp treats this as a proxy when decomposing URLs
             else:
                 connector = aiohttp.connector.UnixConnector(url)
         self.connector = connector
         if session is None:
             session = aiohttp.ClientSession(connector=self.connector)
         self.session = session
+
+    async def close(self):
+        await self.session.close()
 
     async def auth(self, **credentials):
         response = await self._query_json(
@@ -137,8 +140,8 @@ class Docker:
                 'stderr': 1,
                 'stream': 1
             }
-        url = self._endpoint(url) + "?" + urllib.parse.urlencode(params)
-        ws = await aiohttp.ws_connect(url, connector=self.connector)
+        url = self._endpoint(url) + "?" + urllib.parse.urlencode(httpize(params))
+        ws = await self.session.ws_connect(url, autoping=True, autoclose=True)
         return ws
 
     async def _query_json(self, *args, **kwargs):
@@ -537,8 +540,8 @@ class DockerLog:
                 if not msg:
                     break
                 await self.channel.publish(msg)
-        except (aiohttp.errors.ClientDisconnectedError,
-                aiohttp.errors.ServerDisconnectedError):
+        except (aiohttp.ClientConnectionError,
+                aiohttp.ServerConnectionError):
             pass
         finally:
             # signal termination to subscribers

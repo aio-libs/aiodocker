@@ -2,11 +2,10 @@ machine:
     services:
         - docker
     python:
-        version: 3.5.0
+        version: 3.6.0
 dependencies:
     override:
-        - pip install -r requirements.txt
-        - pip install pytest pytest-asyncio
+        - pip install -e '.[test]'
 test:
     override:
-        - py.test
+        - python -m pytest tests
