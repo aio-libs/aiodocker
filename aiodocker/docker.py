@@ -320,6 +320,30 @@ class DockerContainers(object):
         )
         return DockerContainer(self.docker, id=data['Id'])
 
+    async def run(self, config, name=None):
+
+        try:
+            container = await self.create(config, name)
+        except DockerError as e:
+
+            # image not find, try pull it
+
+            if e.status == 404 and e.message.startswith("No such image:"):
+
+                if 'Image' in config:
+                    try:
+                        await self.docker.pull(config['Image'])
+                    except DockerError as e:
+                        raise e
+
+                    container = await self.create(config, name)
+            else:
+                raise e
+
+        await container.start('')
+
+        return container
+
     async def get(self, container, **kwargs):
         data = await self.docker._query_json(
             f"containers/{container}/json",
@@ -357,7 +381,7 @@ class DockerContainer:
 
         inspect_info = await self.show()
 
-        isTty = inspect_info['Tty']
+        isTty = inspect_info['Config']['Tty']
 
         response = await self.docker._query(
             f"containers/{self._id}/logs",

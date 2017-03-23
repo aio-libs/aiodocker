@@ -4,6 +4,12 @@ import aiohttp
 
 from . import constants
 
+# aiohttp has no errors.py
+try:
+    import aiohttp.errors as errors
+except:
+    import aiohttp.client_exceptions as errors
+
 
 class MultiplexedResult:
     def __init__(self, response):
@@ -19,8 +25,9 @@ class MultiplexedResult:
                     if not length:
                         continue
                     data = await self.response.content.readexactly(length)
-            except (aiohttp.ClientConnectionError,
-                    aiohttp.ServerDisconnectedError):
+                #except (aiohttp.errors.ClientDisconnectedError,
+                #        aiohttp.errors.ServerDisconnectedError):
+                except errors.ServerDisconnectedError:
                     break
                 except asyncio.IncompleteReadError:
                     break
@@ -38,18 +45,33 @@ class MultiplexedResult:
             await self.close()
 
     async def close(self):
-        await self.response.release()
+
+        if self.response.release():
+            await self.response.release()
 
 
 async def multiplexed_result(response, follow=False, isTty=False):
     log_stream = MultiplexedResult(response)
-    if not follow:
-        return await log_stream.response.text()
 
     if isTty:
-        return log_stream.fetch_raw()
+        if follow:
+            return log_stream.fetch_raw()
+        else:
+            d = ''
+            async for l in log_stream.fetch_raw():
+                d = d + l
+
+            return d
     else:
-        return log_stream.fetch()
+        if follow:
+            return log_stream.fetch()
+        else:
+            d = ''
+            async for l in log_stream.fetch():
+                d = d + l
+
+            return d
+
 #    data = []
 #    async for record in log_stream.fetch():
 #        data.append(record)

@@ -2,7 +2,12 @@ import asyncio
 import json
 import logging
 
-import aiohttp
+# aiohttp has no errors.py
+try:
+    import aiohttp.errors as errors
+except:
+    import aiohttp.client_exceptions as errors
+
 
 log = logging.getLogger(__name__)
 
@@ -18,8 +23,9 @@ class JsonStreamResult:
                 data = await self.response.content.readline()
                 if not data:
                     break
-            except (aiohttp.ClientConnectionError,
-                    aiohttp.ServerDisconnectedError):
+            #except (errors.ClientDisconnectedError,
+            #        errors.ServerDisconnectedError):
+            except errors.ServerDisconnectedError:
                 break
             yield self.transform(json.loads(data.decode('utf8')))
 
@@ -27,7 +33,10 @@ class JsonStreamResult:
         # response.release() indefinitely hangs because the server is sending
         # an infinite stream of messages.
         # (see https://github.com/KeepSafe/aiohttp/issues/739)
-        await self.response.close()
+
+        # response error , it has been closed
+        if self.response.close():
+            await self.response.close()
 
 
 async def json_stream_result(response, transform=None, stream=True):
