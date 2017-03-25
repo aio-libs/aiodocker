@@ -21,6 +21,7 @@ async def test_closed_unix_socket():
         assert "No such file or directory" in str(error)
     else:
         assert False, "docker commands should not work with invalid hosts"
+    await docker.close()
 
 
 @pytest.mark.asyncio

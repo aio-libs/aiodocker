@@ -7,6 +7,7 @@ import io
 import json
 import logging
 import os
+from pathlib import Path
 import ssl
 import tarfile
 import urllib
@@ -22,13 +23,25 @@ from .jsonstream import json_stream_result
 
 log = logging.getLogger(__name__)
 
+_sock_search_paths = [
+    Path('/run/docker.sock'),
+    Path('/var/run/docker.sock'),
+]
+
 
 class Docker:
     def __init__(self,
-                 url=os.environ.get('DOCKER_HOST', "/var/run/docker.sock"),
+                 url=None,
                  connector=None,
                  session=None,
                  ssl_context=None):
+        if url is None:
+            url = os.environ.get('DOCKER_HOST', None)
+        if url is None:
+            for sockpath in _sock_search_paths:
+                if sockpath.is_socket():
+                    url = str(sockpath)
+                    break
         self.url = url
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
