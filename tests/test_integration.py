@@ -7,7 +7,6 @@ import time
 
 import aiohttp
 import pytest
-from async_timeout import timeout
 
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
@@ -63,7 +62,7 @@ async def test_container_lifecycles(docker, testing_images):
 async def test_stdio_stdin(docker, testing_images, shell_container):
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
     await ws.send_str('echo "hello world"\n')
-    with timeout(2):
+    with aiohttp.Timeout(2):
         # TODO: fix timeout
         resp = await ws.receive()
     print(resp)
@@ -150,7 +149,7 @@ async def test_events(docker, testing_images, event_loop):
     events_occurred = []
     while True:
         try:
-            with timeout(0.2):
+            with aiohttp.Timeout(0.2):
                 event = await subscriber.get()
             if event['Actor']['ID'] == container._id:
                 events_occurred.append(event['Action'])

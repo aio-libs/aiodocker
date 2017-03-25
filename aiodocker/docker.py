@@ -13,7 +13,6 @@ import urllib
 import warnings
 
 import aiohttp
-from async_timeout import timeout as _timeout
 
 from .channel import Channel
 from .exceptions import DockerError
@@ -87,7 +86,7 @@ class Docker:
         '''
         url = self._endpoint(path)
         try:
-            with _timeout(timeout):
+            with aiohttp.Timeout(timeout):
                 response = await self.session.request(
                     method, url,
                     params=httpize(params), headers=headers,
