@@ -2,40 +2,62 @@
 
 import asyncio
 from aiodocker.docker import Docker
-
-loop = asyncio.get_event_loop()
-docker = Docker()
+from aiodocker.exceptions import DockerError
 
 
-@asyncio.coroutine
-def handler(events):
-    queue = events.listen()
+async def demo(docker):
+    try:
+        await docker.images.get('alpine:latest')
+    except DockerError as e:
+        if e.status == 404:
+            await docker.pull('alpine:latest')
+        else:
+            print('Error retrieving alpine:latest image.')
+            return
 
-    yield from docker.pull("debian:jessie")
+    subscriber = docker.events.subscribe()
 
     config = {
-        "Cmd":["tail", "-f", "/var/log/dmesg"],
-        "Image":"debian:jessie",
-         "AttachStdin":False,
-         "AttachStdout":True,
-         "AttachStderr":True,
-         "Tty":False,
-         "OpenStdin":False,
-         "StdinOnce":False,
+        "Cmd": ["tail", "-f", "/var/log/dmesg"],
+        "Image":"alpine:latest",
+         "AttachStdin": False,
+         "AttachStdout": True,
+         "AttachStderr": True,
+         "Tty": False,
+         "OpenStdin": False,
+         "StdinOnce": False,
     }
-
-    container = yield from docker.containers.create_or_replace(config=config, name='testing')
-    yield from container.start(config)
+    container = await docker.containers.create_or_replace(
+        config=config, name='testing')
+    await container.start(config)
+    print(f"=> created and started container {container._id[:12]}")
 
     while True:
-        event = yield from queue.get()
-        if event.get('status', None) == 'start':
-            yield from event['container'].stop()
-            print("Killed {id} so hard".format(**event))
+        event = await subscriber.get()
+        print(f"event: {event!r}")
 
+        # Demonstrate simple event-driven container mgmt.
+        if event['Actor']['ID'] == container._id:
+            if event['Action'] == 'start':
+                await container.stop()
+                print(f"=> killed {container._id[:12]}")
+            elif event['Action'] == 'stop':
+                await container.delete(force=True)
+                print(f"=> deleted {container._id[:12]}")
+            elif event['Action'] == 'destroy':
+                print('=> done with this container!')
+                break
 
-events = docker.events
-tasks = [asyncio.async(events.run()),
-         asyncio.async(handler(events)),]
-
-loop.run_until_complete(asyncio.gather(*tasks))
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    docker = Docker()
+    try:
+        # start a monitoring task.
+        event_task = loop.create_task(docker.events.run())
+        # do our stuffs.
+        loop.run_until_complete(demo(docker))
+        # explicitly stop monitoring.
+        event_task.cancel()
+    finally:
+        loop.run_until_complete(docker.close())
+        loop.close()
