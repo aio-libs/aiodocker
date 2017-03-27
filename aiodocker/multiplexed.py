@@ -20,7 +20,7 @@ class MultiplexedResult:
                     continue
                 data = await self.response.content.readexactly(length)
             except (aiohttp.ClientConnectionError,
-                    aiohttp.ServerConnectionError):
+                    aiohttp.ServerDisconnectedError):
                 break
             except asyncio.IncompleteReadError:
                 break

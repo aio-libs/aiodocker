@@ -553,7 +553,7 @@ class DockerLog:
                     break
                 await self.channel.publish(msg)
         except (aiohttp.ClientConnectionError,
-                aiohttp.ServerConnectionError):
+                aiohttp.ServerDisconnectedError):
             pass
         finally:
             # signal termination to subscribers

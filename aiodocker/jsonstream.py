@@ -19,7 +19,7 @@ class JsonStreamResult:
                 if not data:
                     break
             except (aiohttp.ClientConnectionError,
-                    aiohttp.ServerConnectionError):
+                    aiohttp.ServerDisconnectedError):
                 break
             yield self.transform(json.loads(data.decode('utf8')))
 
