@@ -16,36 +16,39 @@ async def demo(docker):
             return
 
     config = {
+        #"Cmd": ["/bin/ash", "-c", "sleep 1; echo a; sleep 1; echo a; sleep 1; echo a; sleep 1; echo x"],
         "Cmd": ["/bin/ash"],
         "Image": "alpine:latest",
-         "AttachStdin": True,
-         "AttachStdout": True,
-         "AttachStderr": True,
-         "Tty": False,
-         "OpenStdin": True,
-         "StdinOnce": True,
+        "AttachStdin": True,
+        "AttachStdout": True,
+        "AttachStderr": True,
+        "Tty": False,
+        "OpenStdin": True,
+        "StdinOnce": True,
     }
     container = await docker.containers.create_or_replace(
         config=config, name='aiodocker-example')
-    await container.start(config)
     print(f"created and started container {container._id[:12]}")
 
-    ws = await container.websocket(stdin=True, stdout=True, stream=True)
-    ws.send_str('echo hello world\n')
-    resp = await ws.receive()
-    print(f"received: {resp}")
-    await ws.close()
-
-    output = await container.log(stdout=True)
-    print(f"log output: {output}")
-
     try:
-        await container.wait(timeout=1)
-    except asyncio.TimeoutError:
-        pass
+        ws = await container.websocket(stdin=True, stdout=True, stderr=True, stream=True)
+        await container.start()
 
-    print("removing container")
-    await container.delete(force=True)
+        async def _send():
+            await asyncio.sleep(0.5)
+            await ws.send_bytes(b'echo "hello world"\n')
+            print("sent a shell command")
+
+        asyncio.ensure_future(_send())
+        resp = await ws.receive()
+        print(f"received: {resp}")
+        await ws.close()
+
+        output = await container.log(stdout=True)
+        print(f"log output: {output}")
+    finally:
+        print("removing container")
+        await container.delete(force=True)
 
 
 if __name__ == '__main__':
