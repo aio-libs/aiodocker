@@ -20,7 +20,10 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'aiohttp>=1.1',
-        'async_timeout',
+        'aiohttp>=2.0',
+        'yarl>=0.10',
     ],
+    extras_require={
+        'test': ['pytest', 'pytest-asyncio'],
+    }
 )

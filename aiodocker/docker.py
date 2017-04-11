@@ -7,13 +7,13 @@ import io
 import json
 import logging
 import os
-import ssl
+from pathlib import Path
+import re
 import tarfile
-import urllib
 import warnings
 
 import aiohttp
-from async_timeout import timeout as _timeout
+from yarl import URL
 
 from .channel import Channel
 from .exceptions import DockerError
@@ -23,35 +23,54 @@ from .jsonstream import json_stream_result
 
 log = logging.getLogger(__name__)
 
+_sock_search_paths = [
+    Path('/run/docker.sock'),
+    Path('/var/run/docker.sock'),
+]
+
+_rx_version = re.compile(r'^v\d+\.\d+$')
+
 
 class Docker:
     def __init__(self,
-                 url=os.environ.get('DOCKER_HOST', "/run/docker.sock"),
+                 api_version='v1.26',
+                 docker_host=None,
                  connector=None,
                  session=None,
                  ssl_context=None):
-        self.url = url
-        self.events = DockerEvents(self)
-        self.containers = DockerContainers(self)
-        self.images = DockerImages(self)
-        self.volumes = DockerVolumes(self)
+
+        if docker_host is None:
+            docker_host = os.environ.get('DOCKER_HOST', None)
+        if docker_host is None:
+            for sockpath in _sock_search_paths:
+                if sockpath.is_socket():
+                    docker_host = 'unix://' + str(sockpath)
+                    break
+        self.docker_host = docker_host
+
+        assert _rx_version.search(api_version) is not None, 'Invalid API version format'
+        self.api_version = api_version
+
         if connector is None:
-            if url.startswith('http://'):
-                connector = aiohttp.TCPConnector()
-            elif url.startswith('https://'):
+            if docker_host.startswith('tcp://') or docker_host.startswith('http://'):
                 connector = aiohttp.TCPConnector(ssl_context=ssl_context)
-            elif url.startswith('unix://'):
-                connector = aiohttp.connector.UnixConnector(url[8:])
-                self.url = "http://docker" #aiohttp treats this as a proxy
-            elif url.startswith('/'):
-                connector = aiohttp.connector.UnixConnector(url)
-                self.url = "http://docker" #aiohttp treats this as a proxy
+            elif docker_host.startswith('unix://'):
+                connector = aiohttp.connector.UnixConnector(docker_host[7:])
+                self.docker_host = "unix://localhost"  # dummy hostname for URL composition
             else:
-                connector = aiohttp.connector.UnixConnector(url)
+                raise ValueError('Missing protocol scheme in docker_host.')
         self.connector = connector
         if session is None:
             session = aiohttp.ClientSession(connector=self.connector)
         self.session = session
+
+        self.events = DockerEvents(self)
+        self.containers = DockerContainers(self)
+        self.images = DockerImages(self)
+        self.volumes = DockerVolumes(self)
+
+    async def close(self):
+        await self.session.close()
 
     async def auth(self, **credentials):
         response = await self._query_json(
@@ -73,8 +92,10 @@ class Docker:
         )
         return (await json_stream_result(response, stream=stream))
 
-    def _endpoint(self, path):
-        return "/".join([self.url, path])
+    def canonicalize_url(self, path, query=None):
+        url = URL(f"{self.docker_host}/{self.api_version}/{path}")
+        url = url.with_query(httpize(query))
+        return url
 
     async def _query(self, path, method='GET', params=None, timeout=None,
                      data=None, headers=None, **kwargs):
@@ -82,9 +103,9 @@ class Docker:
         Get the response object by performing the HTTP request.
         The caller is responsible to finalize the response object.
         '''
-        url = self._endpoint(path)
+        url = self.canonicalize_url(path)
         try:
-            with _timeout(timeout):
+            with aiohttp.Timeout(timeout):
                 response = await self.session.request(
                     method, url,
                     params=httpize(params), headers=headers,
@@ -130,15 +151,17 @@ class Docker:
         finally:
             await response.release()
 
-    async def _websocket(self, url, **params):
+    async def _websocket(self, path, **params):
         if not params:
             params = {
                 'stdout': 1,
                 'stderr': 1,
                 'stream': 1
             }
-        url = self._endpoint(url) + "?" + urllib.parse.urlencode(params)
-        ws = await aiohttp.ws_connect(url, connector=self.connector)
+        url = self.canonicalize_url(path, query=params)
+        ws = await self.session.ws_connect(url,
+            protocols=['chat'], origin='http://localhost',
+            autoping=True, autoclose=True)
         return ws
 
     async def _query_json(self, *args, **kwargs):
@@ -260,7 +283,7 @@ class DockerContainers(object):
     async def create(self, config, name=None):
         url = "containers/create"
 
-        config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
+        config = json.dumps(config, sort_keys=True).encode('utf-8')
         kwargs = {}
         if name:
             kwargs['name'] = name
@@ -319,7 +342,7 @@ class DockerContainer:
         #TODO this is deprecated, use get_archive instead
         request = json.dumps({
             "Resource": resource,
-        }, sort_keys=True, indent=4).encode('utf-8')
+        }, sort_keys=True).encode('utf-8')
         data = await self.docker._query(
             f"containers/{self._id}/copy",
             method='POST',
@@ -358,14 +381,12 @@ class DockerContainer:
         await response.release()
         return
 
-    async def start(self, _config=None, **config):
-        config = _config or config
-        config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
+    async def start(self, **kwargs):
         response = await self.docker._query(
             f"containers/{self._id}/start",
             method='POST',
             headers={"content-type": "application/json",},
-            data=config
+            data=kwargs
         )
         await response.release()
         return
@@ -398,8 +419,8 @@ class DockerContainer:
         return
 
     async def websocket(self, **params):
-        url = f"containers/{self._id}/attach/ws"
-        ws = await self.docker._websocket(url, **params)
+        path = f"containers/{self._id}/attach/ws"
+        ws = await self.docker._websocket(path, **params)
         return ws
 
     async def port(self, private_port):
@@ -537,8 +558,8 @@ class DockerLog:
                 if not msg:
                     break
                 await self.channel.publish(msg)
-        except (aiohttp.errors.ClientDisconnectedError,
-                aiohttp.errors.ServerDisconnectedError):
+        except (aiohttp.ClientConnectionError,
+                aiohttp.ServerDisconnectedError):
             pass
         finally:
             # signal termination to subscribers
@@ -563,7 +584,7 @@ class DockerVolumes:
         return data
 
     async def create(self, config):
-        config = json.dumps(config, sort_keys=True, indent=4).encode('utf-8')
+        config = json.dumps(config, sort_keys=True).encode('utf-8')
         data = await self.docker._query_json(
             "volumes/create",
             method="POST",
