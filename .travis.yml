@@ -6,7 +6,7 @@ services:
   - docker
 
 env:
-  DOCKER_COMPOSE_VERSION: 1.7.1
+  DOCKER_COMPOSE_VERSION: 1.12.0
 
 install:
   - sudo apt-get update
@@ -18,4 +18,4 @@ install:
   - docker-compose build
 
 script:
-  - docker-compose run aiodocker py.test
+  - docker-compose run aiodocker

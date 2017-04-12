@@ -13,14 +13,54 @@ from aiodocker.exceptions import DockerError
 
 
 @pytest.mark.asyncio
-async def test_closed_unix_socket():
-    docker = Docker('unix:///var/run/does-not-exist-docker.sock')
-    try:
-        info = await docker.containers.list()
-    except aiohttp.ClientOSError as error:
-        assert "No such file or directory" in str(error)
+async def test_autodetect_host(monkeypatch):
+    docker = Docker()
+    if 'DOCKER_HOST' in os.environ:
+        if (os.environ['DOCKER_HOST'].startswith('http://') or
+                os.environ['DOCKER_HOST'].startswith('https://') or
+                os.environ['DOCKER_HOST'].startswith('tcp://')):
+            assert docker.docker_host == os.environ['DOCKER_HOST']
+        else:
+            assert docker.docker_host == 'unix://localhost'
     else:
-        assert False, "docker commands should not work with invalid hosts"
+        # assuming that docker daemon is installed locally.
+        assert docker.docker_host is not None
+    await docker.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_invalid_unix_socket():
+    docker = Docker('unix:///var/run/does-not-exist-docker.sock')
+    assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
+    with pytest.raises(aiohttp.ClientOSError):
+        info = await docker.containers.list()
+    await docker.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_envvar(monkeypatch):
+    monkeypatch.setenv('DOCKER_HOST', 'unix:///var/run/does-not-exist-docker.sock')
+    docker = Docker()
+    assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
+    assert docker.docker_host == 'unix://localhost'
+    with pytest.raises(aiohttp.ClientOSError):
+        info = await docker.containers.list()
+    await docker.close()
+
+    monkeypatch.setenv('DOCKER_HOST', 'http://localhost:9999')
+    docker = Docker()
+    assert isinstance(docker.connector, aiohttp.TCPConnector)
+    assert docker.docker_host == 'http://localhost:9999'
+    with pytest.raises(aiohttp.ClientOSError):
+        info = await docker.containers.list()
+    await docker.close()
+
+
+@pytest.mark.asyncio
+async def test_connect_with_connector(monkeypatch):
+    connector = aiohttp.BaseConnector()
+    docker = Docker(connector=connector)
+    assert docker.connector == connector
     await docker.close()
 
 
@@ -60,6 +100,7 @@ async def test_container_lifecycles(docker, testing_images):
 
 
 @pytest.mark.asyncio
+@pytest.mark.xfail  # FIXME: docker websocket seems not working as expected
 async def test_stdio_stdin(docker, testing_images, shell_container):
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
     await ws.send_str('echo "hello world"\n')

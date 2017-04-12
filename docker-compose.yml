@@ -10,7 +10,7 @@ services:
     environment:
       DOCKER_HOST: "http://docker:2375"
       DOCKER_REGISTRY: "registry:5000"
-    command: py.test
+    command: python3 -m pytest
   docker:
     image: docker
     command: "--insecure-registry registry:5000"

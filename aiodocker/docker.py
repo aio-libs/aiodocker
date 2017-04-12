@@ -33,12 +33,13 @@ _rx_version = re.compile(r'^v\d+\.\d+$')
 
 class Docker:
     def __init__(self,
-                 api_version='v1.26',
-                 docker_host=None,
+                 url=None,
                  connector=None,
                  session=None,
-                 ssl_context=None):
+                 ssl_context=None,
+                 api_version='v1.26'):
 
+        docker_host = url  # rename
         if docker_host is None:
             docker_host = os.environ.get('DOCKER_HOST', None)
         if docker_host is None:
