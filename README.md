@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/zbyte64/aiodocker.svg?branch=master)](https://travis-ci.org/zbyte64/aiodocker)
+[![Build Status](https://travis-ci.org/aio-libs/aiodocker.svg?branch=master)](https://travis-ci.org/aio-libs/aiodocker)
 
 # AsyncIO bindings for docker.io
 
@@ -14,7 +14,7 @@ pip install aiodocker
 For development version:
 
 ```sh
-pip install 'git+https://github.com/paultag/aiodocker#egg=aiodocker'
+pip install 'git+https://github.com/aio-libs/aiodocker#egg=aiodocker'
 ```
 
 
