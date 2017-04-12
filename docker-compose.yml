@@ -2,17 +2,20 @@ version: '2'
 services:
   aiodocker:
     build: .
-    links:
+    depends_on:
       - docker
       - registry
     volumes:
-      - "./:/usr/src/aiodocker"
+      - ".:/usr/src/aiodocker"
     environment:
       DOCKER_HOST: "http://docker:2375"
       DOCKER_REGISTRY: "registry:5000"
-    command: python3 -m pytest
+    command: ./run-tests-in-docker.sh
   docker:
-    image: docker
+    image: docker:dind
+    privileged: true
     command: "--insecure-registry registry:5000"
+    depends_on:
+      - registry
   registry:
     image: registry
