@@ -2,8 +2,8 @@
 
 from setuptools import setup
 
-version = "0.6"
-long_description = "AsyncIO Docker bindings"
+version = "0.7b1"
+long_description = "Docker API client for asyncio"
 
 setup(
     name="aiodocker",

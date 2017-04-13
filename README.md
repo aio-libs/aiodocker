@@ -1,6 +1,7 @@
-[![Build Status](https://travis-ci.org/aio-libs/aiodocker.svg?branch=master)](https://travis-ci.org/aio-libs/aiodocker)
-
 # AsyncIO bindings for docker.io
+
+[![Build Status](https://travis-ci.org/aio-libs/aiodocker.svg?branch=master)](https://travis-ci.org/aio-libs/aiodocker)
+[![PyPI version](https://badge.fury.io/py/aiodocker.svg)](https://badge.fury.io/py/aiodocker)
 
 A simple Docker HTTP API wrapper written with asyncio and aiohttp.
 
