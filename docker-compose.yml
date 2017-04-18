@@ -1,16 +1,17 @@
 version: '2'
 services:
   aiodocker:
-    build: .
+    image: python:3.6
     depends_on:
       - docker
       - registry
     volumes:
       - ".:/usr/src/aiodocker"
+    working_dir: "/usr/src/aiodocker"
     environment:
       DOCKER_HOST: "http://docker:2375"
       DOCKER_REGISTRY: "registry:5000"
-    command: ./run-tests-in-docker.sh
+    command: ./run-ci-tests.sh
   docker:
     image: docker:dind
     privileged: true
