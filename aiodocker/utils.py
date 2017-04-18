@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 def identical(d1, d2):
     if type(d1) != type(d2):
         return False
@@ -19,10 +22,10 @@ def identical(d1, d2):
     return d1 == d2
 
 
-_true_strs = frozenset(['true', 'yes', '1'])
-_false_strs = frozenset(['false', 'no', '0'])
+_true_strs = frozenset(['true', 'yes', 'y', '1'])
+_false_strs = frozenset(['false', 'no', 'n', '0'])
 
-def human_bool(s):
+def human_bool(s) -> bool:
     if isinstance(s, str):
         if s.lower() in _true_strs:
             return True
@@ -33,7 +36,7 @@ def human_bool(s):
         return bool(s)
 
 
-def httpize(d: dict):
+def httpize(d: Optional[dict]) -> Optional[dict]:
     if d is None:
         return None
     converted = {}

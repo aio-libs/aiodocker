@@ -2,8 +2,8 @@
 
 from setuptools import setup
 
-version = "0.6"
-long_description = "AsyncIO Docker bindings"
+version = "0.7b1"
+long_description = "Docker API client for asyncio"
 
 setup(
     name="aiodocker",
@@ -20,7 +20,10 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'aiohttp>=1.1',
-        'async_timeout',
+        'aiohttp>=2.0',
+        'yarl>=0.10',
     ],
+    extras_require={
+        'test': ['pytest', 'pytest-asyncio'],
+    }
 )
