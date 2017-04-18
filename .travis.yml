@@ -2,6 +2,9 @@ sudo: required
 
 language: python
 
+python:
+  - "3.6"
+
 services:
   - docker
 
@@ -9,6 +12,7 @@ env:
   DOCKER_COMPOSE_VERSION: 1.12.0
 
 install:
+  - pip install codecov
   - sudo apt-get update
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-engine
   - sudo rm /usr/local/bin/docker-compose
@@ -19,3 +23,6 @@ install:
 
 script:
   - docker-compose run aiodocker
+
+after_success:
+  - codecov
