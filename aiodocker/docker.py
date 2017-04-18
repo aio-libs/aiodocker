@@ -9,6 +9,7 @@ import logging
 import os
 from pathlib import Path
 import re
+import ssl
 import tarfile
 import warnings
 
@@ -29,6 +30,7 @@ _sock_search_paths = [
 ]
 
 _rx_version = re.compile(r'^v\d+\.\d+$')
+_rx_tcp_schemes = re.compile(r'^(tcp|http)://')
 
 
 class Docker:
@@ -53,8 +55,14 @@ class Docker:
         self.api_version = api_version
 
         if connector is None:
-            if docker_host.startswith('tcp://') or docker_host.startswith('http://'):
+            if _rx_tcp_schemes.search(docker_host):
+                if os.environ.get('DOCKER_TLS_VERIFY', '0') == '1':
+                    ssl_context = self._docker_machine_ssl_context()
+                    docker_host = _rx_tcp_schemes.sub('https://', docker_host)
+                else:
+                    ssl_context = None
                 connector = aiohttp.TCPConnector(ssl_context=ssl_context)
+                self.docker_host = docker_host
             elif docker_host.startswith('unix://'):
                 connector = aiohttp.connector.UnixConnector(docker_host[7:])
                 self.docker_host = "unix://localhost"  # dummy hostname for URL composition
@@ -172,6 +180,21 @@ class Docker:
         response = await self._query(*args, **kwargs)
         data = await Docker._result(response, 'json')
         return data
+
+    @staticmethod
+    def _docker_machine_ssl_context():
+        '''
+        Create a SSLContext object using DOCKER_* env vars.
+        '''
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
+        certs_path = os.environ.get('DOCKER_CERT_PATH', None)
+        if certs_path is None:
+            raise ValueError('Cannot create ssl context, DOCKER_CERT_PATH is not set!')
+        certs_path = Path(certs_path)
+        context.load_verify_locations(cafile=certs_path / 'ca.pem')
+        context.load_cert_chain(certfile=certs_path / 'cert.pem', keyfile=certs_path / 'key.pem')
+        return context
 
 
 class DockerImages(object):
