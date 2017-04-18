@@ -340,7 +340,7 @@ class DockerContainers(object):
             else:
                 raise e
 
-        await container.start('')
+        await container.start()
 
         return container
 

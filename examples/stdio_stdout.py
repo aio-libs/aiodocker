@@ -35,7 +35,7 @@ async def demo(docker):
         await container.start()
 
     container = yield from docker.containers.create_or_replace(config=config, name='testing')
-    yield from container.start('')
+    yield from container.start()
 
         asyncio.ensure_future(_send())
         resp = await ws.receive()
