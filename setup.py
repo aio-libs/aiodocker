@@ -2,8 +2,14 @@
 
 from setuptools import setup
 
-version = "0.7b1"
-long_description = "Docker API client for asyncio"
+version = "0.7"
+
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except (IOError, ImportError):
+    long_description = ""
+
 
 setup(
     name="aiodocker",
@@ -11,16 +17,26 @@ setup(
     author="Paul Tagliamonte",
     author_email="paultag@debian.org",
     long_description=long_description,
-    description="Provides coroutine-based API wrapper for Docker daemons",
+    description="Docker API client for asyncio",
     license="Expat",
-    url="",
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'License :: OSI Approved :: MIT License',
+        'Intended Audience :: Developers',
+        'Framework :: AsyncIO',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Topic :: Software Development',
+    ],
+    url="https://github.com/aio-libs/aiodocker",
     platforms=['any'],
     packages=[
         'aiodocker',
     ],
     python_requires='>=3.6',
     install_requires=[
-        'aiohttp>=2.0',
+        'aiohttp~=2.0.7',
         'yarl>=0.10',
     ],
     extras_require={
