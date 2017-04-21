@@ -32,9 +32,6 @@ async def demo(docker):
     await container.start(config)
     print(f"=> created and started container {container._id[:12]}")
 
-    container = yield from docker.containers.create_or_replace(config=config, name='testing')
-    yield from container.start()
-
     while True:
         event = await subscriber.get()
         print(f"event: {event!r}")
