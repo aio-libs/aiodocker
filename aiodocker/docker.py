@@ -64,7 +64,7 @@ class Docker:
                 connector = aiohttp.TCPConnector(ssl_context=ssl_context)
                 self.docker_host = docker_host
             elif docker_host.startswith('unix://'):
-                connector = aiohttp.connector.UnixConnector(docker_host[7:])
+                connector = aiohttp.UnixConnector(docker_host[7:])
                 self.docker_host = "unix://localhost"  # dummy hostname for URL composition
             else:
                 raise ValueError('Missing protocol scheme in docker_host.')
@@ -328,7 +328,7 @@ class DockerContainers(object):
 
             # image not find, try pull it
 
-            if e.status == 404 and e.message.startswith("No such image:"):
+            if e.status == 404:
 
                 if 'Image' in config:
                     try:

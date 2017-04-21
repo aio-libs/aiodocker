@@ -1,13 +1,6 @@
-import asyncio
 import json
 import logging
-
-# aiohttp has no errors.py
-try:
-    import aiohttp.errors as errors
-except:
-    import aiohttp.client_exceptions as errors
-
+import aiohttp
 
 log = logging.getLogger(__name__)
 
@@ -23,9 +16,8 @@ class JsonStreamResult:
                 data = await self.response.content.readline()
                 if not data:
                     break
-            #except (errors.ClientDisconnectedError,
-            #        errors.ServerDisconnectedError):
-            except errors.ServerDisconnectedError:
+            except (aiohttp.ClientConnectionError,
+                   aiohttp.ServerDisconnectedError):
                 break
             yield self.transform(json.loads(data.decode('utf8')))
 

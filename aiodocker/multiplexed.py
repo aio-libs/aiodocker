@@ -1,14 +1,9 @@
 import asyncio
 import struct
 import aiohttp
+import codecs
 
 from . import constants
-
-# aiohttp has no errors.py
-try:
-    import aiohttp.errors as errors
-except:
-    import aiohttp.client_exceptions as errors
 
 
 class MultiplexedResult:
@@ -25,9 +20,8 @@ class MultiplexedResult:
                     if not length:
                         continue
                     data = await self.response.content.readexactly(length)
-                #except (aiohttp.errors.ClientDisconnectedError,
-                #        aiohttp.errors.ServerDisconnectedError):
-                except errors.ServerDisconnectedError:
+                except (aiohttp.ClientConnectionError,
+                       aiohttp.ServerDisconnectedError):
                     break
                 except asyncio.IncompleteReadError:
                     break
@@ -39,7 +33,7 @@ class MultiplexedResult:
     async def fetch_raw(self):
         try:
             async for data in self.response.content.iter_chunked(1024):
-                yield data.decode('utf8')
+                yield data
         finally:
 
             await self.close()
@@ -53,24 +47,27 @@ class MultiplexedResult:
 async def multiplexed_result(response, follow=False, isTty=False):
     log_stream = MultiplexedResult(response)
 
+    decoder = codecs.getincrementaldecoder('utf-8')()
     if isTty:
         if follow:
             return log_stream.fetch_raw()
         else:
-            d = ''
+            d = []
             async for l in log_stream.fetch_raw():
-                d = d + l
+                s = decoder.decode(l)
+                d.append(s)
 
-            return d
+            return ''.join(d)
     else:
         if follow:
             return log_stream.fetch()
         else:
-            d = ''
+            d = []
             async for l in log_stream.fetch():
-                d = d + l
+                s = decoder.decode(l)
+                d.append(s)
 
-            return d
+            return ''.join(d)
 
 #    data = []
 #    async for record in log_stream.fetch():
