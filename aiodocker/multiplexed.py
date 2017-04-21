@@ -39,9 +39,7 @@ class MultiplexedResult:
             await self.close()
 
     async def close(self):
-
-        if self.response.release():
-            await self.response.release()
+        await self.response.release()
 
 
 async def multiplexed_result(response, follow=False, isTty=False):
