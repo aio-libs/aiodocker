@@ -113,7 +113,8 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     # TODO: ensure container stopped on its own because stdin was closed
 
     # Cross-check container logs.
-    output = ''.join(await shell_container.log(stdout=True)).strip()
+    output = await shell_container.log(stdout=True)
+    output.strip()
     assert output == "hello world"
 
 
@@ -160,7 +161,8 @@ async def test_put_archive(docker, testing_images):
     await container.start()
     await container.wait(timeout=1)
 
-    output = ''.join(await container.log(stdout=True, stderr=True)).strip()
+    output = await container.log(stdout=True, stderr=True)
+    output.strip()
     assert output == "hello world"
 
     await container.delete(force=True)
