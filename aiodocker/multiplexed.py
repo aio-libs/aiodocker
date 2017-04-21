@@ -47,12 +47,12 @@ class MultiplexedResult:
 async def multiplexed_result(response, follow=False, isTty=False):
     log_stream = MultiplexedResult(response)
 
-    decoder = codecs.getincrementaldecoder('utf-8')()
     if isTty:
         if follow:
             return log_stream.fetch_raw()
         else:
             d = []
+            decoder = codecs.getincrementaldecoder('utf-8')()
             async for l in log_stream.fetch_raw():
                 s = decoder.decode(l)
                 d.append(s)
@@ -64,8 +64,7 @@ async def multiplexed_result(response, follow=False, isTty=False):
         else:
             d = []
             async for l in log_stream.fetch():
-                s = decoder.decode(l)
-                d.append(s)
+                d.append(l)
 
             return ''.join(d)
 
