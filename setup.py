@@ -28,6 +28,7 @@ setup(
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.6',
         'Topic :: Software Development',
+        'Framework :: AsyncIO',
     ],
     url="https://github.com/aio-libs/aiodocker",
     platforms=['any'],
