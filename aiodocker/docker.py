@@ -339,9 +339,7 @@ class DockerContainers(object):
                     container = await self.create(config, name)
             else:
                 raise e
-
         await container.start()
-
         return container
 
     async def get(self, container, **kwargs):
@@ -380,15 +378,14 @@ class DockerContainer:
         params.update(kwargs)
 
         inspect_info = await self.show()
-
-        isTty = inspect_info['Config']['Tty']
+        is_tty = inspect_info['Config']['Tty']
 
         response = await self.docker._query(
             f"containers/{self._id}/logs",
             method='GET',
             params=params,
         )
-        return (await multiplexed_result(response, follow, isTty=isTty))
+        return (await multiplexed_result(response, follow, is_tty=is_tty))
 
     async def copy(self, resource, **kwargs):
         #TODO this is deprecated, use get_archive instead

@@ -27,7 +27,6 @@ class MultiplexedResult:
                     break
                 yield data.decode('utf8')
         finally:
-
             await self.close()
 
     async def fetch_raw(self):
@@ -35,17 +34,16 @@ class MultiplexedResult:
             async for data in self.response.content.iter_chunked(1024):
                 yield data
         finally:
-
             await self.close()
 
     async def close(self):
         await self.response.release()
 
 
-async def multiplexed_result(response, follow=False, isTty=False):
+async def multiplexed_result(response, follow=False, is_tty=False):
     log_stream = MultiplexedResult(response)
 
-    if isTty:
+    if is_tty:
         if follow:
             return log_stream.fetch_raw()
         else:
@@ -65,8 +63,3 @@ async def multiplexed_result(response, follow=False, isTty=False):
                 d.append(l)
 
             return ''.join(d)
-
-#    data = []
-#    async for record in log_stream.fetch():
-#        data.append(record)
-#    return data
