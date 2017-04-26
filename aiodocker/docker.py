@@ -64,7 +64,7 @@ class Docker:
                 connector = aiohttp.TCPConnector(ssl_context=ssl_context)
                 self.docker_host = docker_host
             elif docker_host.startswith('unix://'):
-                connector = aiohttp.connector.UnixConnector(docker_host[7:])
+                connector = aiohttp.UnixConnector(docker_host[7:])
                 self.docker_host = "unix://localhost"  # dummy hostname for URL composition
             else:
                 raise ValueError('Missing protocol scheme in docker_host.')
@@ -320,6 +320,28 @@ class DockerContainers(object):
         )
         return DockerContainer(self.docker, id=data['Id'])
 
+    async def run(self, config, name=None):
+
+        try:
+            container = await self.create(config, name)
+        except DockerError as e:
+
+            # image not find, try pull it
+
+            if e.status == 404:
+
+                if 'Image' in config:
+                    try:
+                        await self.docker.pull(config['Image'])
+                    except DockerError as e:
+                        raise e
+
+                    container = await self.create(config, name)
+            else:
+                raise e
+        await container.start()
+        return container
+
     async def get(self, container, **kwargs):
         data = await self.docker._query_json(
             f"containers/{container}/json",
@@ -355,12 +377,15 @@ class DockerContainer:
         }
         params.update(kwargs)
 
+        inspect_info = await self.show()
+        is_tty = inspect_info['Config']['Tty']
+
         response = await self.docker._query(
             f"containers/{self._id}/logs",
             method='GET',
             params=params,
         )
-        return (await multiplexed_result(response, follow))
+        return (await multiplexed_result(response, follow, is_tty=is_tty))
 
     async def copy(self, resource, **kwargs):
         #TODO this is deprecated, use get_archive instead

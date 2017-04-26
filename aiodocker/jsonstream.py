@@ -1,7 +1,5 @@
-import asyncio
 import json
 import logging
-
 import aiohttp
 
 log = logging.getLogger(__name__)
@@ -27,7 +25,9 @@ class JsonStreamResult:
         # response.release() indefinitely hangs because the server is sending
         # an infinite stream of messages.
         # (see https://github.com/KeepSafe/aiohttp/issues/739)
-        await self.response.close()
+
+        # response error , it has been closed
+        self.response.close()
 
 
 async def json_stream_result(response, transform=None, stream=True):
