@@ -5,4 +5,4 @@ pip install pytest pytest-asyncio codecov pytest-cov
 pip install -r requirements.txt
 pip install -e .
 
-python -B -m pytest --cov=aiodocker tests
+python -B -m pytest --cov=aiodocker --cov-report=xml tests
