@@ -7,3 +7,5 @@ __pycache__
 .cache
 venv
 .env
+.coverage
+coverage.xml
