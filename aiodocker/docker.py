@@ -146,8 +146,12 @@ class Docker:
 
         if (response.status // 100) in [4, 5]:
             what = await response.read()
+            content_type = response.headers.get('content-type','')
             response.close()
-            raise DockerError(response.status, json.loads(what.decode('utf8')))
+            if content_type == 'application/json':
+                raise DockerError(response.status, json.loads(what.decode('utf8')))
+            else:
+                raise DockerError(response.status, what.decode('utf8'))
 
         return response
 
