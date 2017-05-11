@@ -151,7 +151,7 @@ class Docker:
             if content_type == 'application/json':
                 raise DockerError(response.status, json.loads(what.decode('utf8')))
             else:
-                raise DockerError(response.status, what.decode('utf8'))
+                raise DockerError(response.status, {"message": what.decode('utf8')})
 
         return response
 
