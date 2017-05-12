@@ -45,14 +45,26 @@ async def multiplexed_result(response, follow=False, is_tty=False):
 
     if is_tty:
         if follow:
-            return log_stream.fetch_raw()
+            async def decode_wrapper(g):
+                decoder = codecs.getincrementaldecoder('utf-8')(errors='ignore')
+                async for d in g:
+                    yield decoder.decode(d)
+
+                d = decoder.decode(b'', final=True)
+                if d:
+                    yield d
+
+            return decode_wrapper(log_stream.fetch_raw())
         else:
             d = []
-            decoder = codecs.getincrementaldecoder('utf-8')()
+            decoder = codecs.getincrementaldecoder('utf-8')(errors='ignore')
             async for l in log_stream.fetch_raw():
                 s = decoder.decode(l)
                 d.append(s)
 
+            s = decoder.decode(b'', final=True)
+            if s:
+                d.append(s)
             return ''.join(d)
     else:
         if follow:

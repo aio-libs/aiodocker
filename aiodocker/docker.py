@@ -93,11 +93,33 @@ class Docker:
         data = await self._query_json("version")
         return data
 
-    async def pull(self, image, stream=False):
+    async def pull(self, image, auth=None,stream=False):
+
+        headers = {"content-type": "application/json",}
+        if auth:
+            if isinstance(auth, dict) and 'auth' in auth:
+                s = base64.b64decode(auth['auth'])
+                username, pwd = s.split(b':', 1)
+                username = username.decode('utf-8')
+                pwd = pwd.decode('utf-8')
+
+                registry, p, _ = image.partition('/')
+                if not p:
+                    raise ValueError(" image should have registry host")
+
+                auth_config = {"username":username, "password":pwd,
+                               "email":None, "serveraddress":registry}
+                auth_config_json = json.dumps(auth_config).encode('ascii')
+                auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
+                headers.update({"X-Registry-Auth": auth_config_b64.decode('ascii')})
+
+            else:
+                raise ValueError(" auth format error " + str(auth) )
+
         response = await self._query(
             "images/create", "POST",
             params={"fromImage": image},
-            headers={"content-type": "application/json",},
+            headers=headers
         )
         return (await json_stream_result(response, stream=stream))
 
@@ -124,8 +146,12 @@ class Docker:
 
         if (response.status // 100) in [4, 5]:
             what = await response.read()
+            content_type = response.headers.get('content-type','')
             response.close()
-            raise DockerError(response.status, json.loads(what.decode('utf8')))
+            if content_type == 'application/json':
+                raise DockerError(response.status, json.loads(what.decode('utf8')))
+            else:
+                raise DockerError(response.status, {"message": what.decode('utf8')})
 
         return response
 
