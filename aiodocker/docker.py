@@ -92,11 +92,29 @@ class Docker:
         data = await self._query_json("version")
         return data
 
-    async def pull(self, image, stream=False):
+    async def pull(self, image, registry=None, auth=None, stream=False):
+
+        headers = {"content-type": "application/json",}
+        if auth and registry:
+            if isinstance(auth, dict) and 'auth' in auth:
+                s = base64.b64decode(auth['auth'])
+                username, pwd = s.split(b':', 1)
+                username = username.decode('utf-8')
+                pwd = pwd.decode('utf-8')
+
+                auth_config = {"username":username, "password":pwd,
+                               "email":None, "serveraddress":registry}
+                auth_config_json = json.dumps(auth_config).encode('ascii')
+                auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
+                headers.update({"X-Registry-Auth": auth_config_b64.decode('ascii')})
+
+            else:
+                raise ValueError(" auth format error " + str(auth) )
+
         response = await self._query(
             "images/create", "POST",
             params={"fromImage": image},
-            headers={"content-type": "application/json",},
+            headers=headers
         )
         return (await json_stream_result(response, stream=stream))
 
