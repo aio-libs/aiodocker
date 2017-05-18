@@ -1,5 +1,6 @@
 from typing import Optional
 
+import codecs
 
 def identical(d1, d2):
     if type(d1) != type(d2):
@@ -47,3 +48,12 @@ def httpize(d: Optional[dict]) -> Optional[dict]:
             v = str(v)
         converted[k] = v
     return converted
+
+async def decoded(generator, encoding='utf-8'):
+    decoder = codecs.getincrementaldecoder(encoding)(errors='ignore')
+    async for d in generator:
+        yield decoder.decode(d)
+
+    d = decoder.decode(b'', final=True)
+    if d:
+        yield d
