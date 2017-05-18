@@ -1,9 +1,9 @@
 import asyncio
 import struct
 import aiohttp
-import codecs
 
 from . import constants
+from aiodocker.utils import decoded
 
 
 class MultiplexedResult:
@@ -25,7 +25,7 @@ class MultiplexedResult:
                     break
                 except asyncio.IncompleteReadError:
                     break
-                yield data.decode('utf8')
+                yield data
         finally:
             await self.close()
 
@@ -40,38 +40,18 @@ class MultiplexedResult:
         await self.response.release()
 
 
-async def multiplexed_result(response, follow=False, is_tty=False):
+async def multiplexed_result(response, follow=False, is_tty=False, encoding='utf-8'):
     log_stream = MultiplexedResult(response)
 
     if is_tty:
         if follow:
-            async def decode_wrapper(g):
-                decoder = codecs.getincrementaldecoder('utf-8')(errors='ignore')
-                async for d in g:
-                    yield decoder.decode(d)
-
-                d = decoder.decode(b'', final=True)
-                if d:
-                    yield d
-
-            return decode_wrapper(log_stream.fetch_raw())
+            return decoded(log_stream.fetch_raw(), encoding=encoding)
         else:
-            d = []
-            decoder = codecs.getincrementaldecoder('utf-8')(errors='ignore')
-            async for l in log_stream.fetch_raw():
-                s = decoder.decode(l)
-                d.append(s)
-
-            s = decoder.decode(b'', final=True)
-            if s:
-                d.append(s)
+            d = [piece async for piece in decoded(log_stream.fetch_raw(), encoding=encoding)]
             return ''.join(d)
     else:
         if follow:
-            return log_stream.fetch()
+            return decoded(log_stream.fetch(), encoding=encoding)
         else:
-            d = []
-            async for l in log_stream.fetch():
-                d.append(l)
-
+            d = [piece async for piece in decoded(log_stream.fetch(), encoding=encoding)]
             return ''.join(d)
