@@ -19,6 +19,9 @@ from .exceptions import DockerError
 from .utils import identical, human_bool, httpize
 from .multiplexed import multiplexed_result
 from .jsonstream import json_stream_result
+from .swarm import DockerSwarm
+from .services import DockerServices
+from .tasks import DockerTasks
 
 from .images import DockerImages
 
@@ -77,6 +80,9 @@ class Docker:
 
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)
+        self.swarm = DockerSwarm(self)
+        self.services = DockerServices(self)
+        self.tasks = DockerTasks(self)
         self.images = DockerImages(self)
         self.volumes = DockerVolumes(self)
 
