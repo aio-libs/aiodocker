@@ -20,8 +20,10 @@ install:
   - chmod +x docker-compose
   - sudo mv docker-compose /usr/local/bin
   - docker-compose build
+  - pip install flake8
 
 script:
+  - pyflakes aiodocker tests
   - docker-compose run aiodocker
 
 after_success:

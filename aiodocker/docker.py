@@ -2,7 +2,6 @@ import asyncio
 import base64
 from collections import ChainMap
 import datetime as dt
-import hashlib
 import io
 import json
 import logging

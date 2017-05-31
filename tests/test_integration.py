@@ -1,7 +1,6 @@
 import asyncio
 import io
 import os
-import sys
 import tarfile
 import time
 
@@ -9,7 +8,6 @@ import aiohttp
 import pytest
 
 from aiodocker.docker import Docker
-from aiodocker.exceptions import DockerError
 
 
 @pytest.mark.asyncio
@@ -33,7 +31,7 @@ async def test_connect_invalid_unix_socket():
     docker = Docker('unix:///var/run/does-not-exist-docker.sock')
     assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
     with pytest.raises(aiohttp.ClientOSError):
-        info = await docker.containers.list()
+        await docker.containers.list()
     await docker.close()
 
 
@@ -44,7 +42,7 @@ async def test_connect_envvar(monkeypatch):
     assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
     assert docker.docker_host == 'unix://localhost'
     with pytest.raises(aiohttp.ClientOSError):
-        info = await docker.containers.list()
+        await docker.containers.list()
     await docker.close()
 
     monkeypatch.setenv('DOCKER_HOST', 'http://localhost:9999')
@@ -52,7 +50,7 @@ async def test_connect_envvar(monkeypatch):
     assert isinstance(docker.connector, aiohttp.TCPConnector)
     assert docker.docker_host == 'http://localhost:9999'
     with pytest.raises(aiohttp.ClientOSError):
-        info = await docker.containers.list()
+        await docker.containers.list()
     await docker.close()
 
 
@@ -90,7 +88,7 @@ async def test_container_lifecycles(docker, testing_images):
 
     f_container = containers[0]
     await f_container.start()
-    info = await f_container.show()
+    await f_container.show()
 
     for container in my_containers:
         await container.delete(force=True)
@@ -155,7 +153,7 @@ async def test_put_archive(docker, testing_images):
     container = await docker.containers.create_or_replace(
         config=config,
         name='aiodocker-testing-archive')
-    result = await container.put_archive(
+    await container.put_archive(
         path='/tmp',
         data=file_like_object.getvalue())
     await container.start()
