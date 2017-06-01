@@ -109,8 +109,22 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     await ws.close()
 
     # Cross-check container logs.
-    await asyncio.sleep(1)
-    output = await shell_container.log(stdout=True)
+    ## logs is not real-time, should a while time
+
+    # await asyncio.sleep(1)
+    # output = await shell_container.log(stdout=True)
+    # output.strip()
+
+    ## else do it with stream
+    stream_output = await shell_container.log(stdout=True, follow=True)
+    log = []
+
+    async for d in stream_output:
+        log.append(d)
+        if "hello world\r\n" == d:
+            break
+
+    output = ''.join(log)
     output.strip()
 
     # use tty , input will echo, so log mybe one more lines
