@@ -1,15 +1,12 @@
 import asyncio
 import io
 import os
-import sys
 import tarfile
 import time
-
 import aiohttp
 import pytest
 
 from aiodocker.docker import Docker
-from aiodocker.exceptions import DockerError
 
 
 @pytest.mark.asyncio
@@ -119,10 +116,14 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     stream_output = await shell_container.log(stdout=True, follow=True)
     log = []
 
-    async for d in stream_output:
-        log.append(d)
-        if "hello world\r\n" == d:
-            break
+    try:
+        with aiohttp.Timeout(2):
+            async for d in stream_output:
+                log.append(d)
+                if "hello world\r\n" == d:
+                    break
+    except asyncio.TimeoutError:
+        pass
 
     output = ''.join(log)
     output.strip()
