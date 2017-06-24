@@ -21,6 +21,8 @@ from .utils import identical, human_bool, httpize
 from .multiplexed import multiplexed_result
 from .jsonstream import json_stream_result
 
+from .images import DockerImages
+
 log = logging.getLogger(__name__)
 
 _sock_search_paths = [
@@ -211,6 +213,7 @@ class Docker:
         return context
 
 
+<<<<<<< HEAD
 class DockerImages(object):
     def __init__(self, docker):
         self.docker = docker
@@ -287,6 +290,8 @@ class DockerImages(object):
         return response
 
 
+=======
+>>>>>>> add images.py and clean docker.py
 class DockerContainers(object):
     def __init__(self, docker):
         self.docker = docker
