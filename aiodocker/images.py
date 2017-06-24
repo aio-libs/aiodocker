@@ -1,6 +1,6 @@
 import json
 import base64
-from typing import Optional, List, Dict, BinaryIO
+from typing import Optional, Union, List, Dict, BinaryIO
 from .utils import clean_config
 from .jsonstream import json_stream_result
 
@@ -9,7 +9,7 @@ class DockerImages(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, **params):
+    async def list(self, **params) -> Dict:
         """
         List of images
         """
@@ -20,31 +20,27 @@ class DockerImages(object):
         )
         return response
 
-    async def get(self, name):
+    async def get(self, name: str) -> Dict:
         """
         Return low-level information about an image
         Args:
             name: name of the image
         """
         response = await self.docker._query_json(
-            f"images/{name}/json",
+            "images/{name}/json".format(name=name),
             headers={"content-type": "application/json", },
         )
         return response
 
-    async def history(self, name):
+    async def history(self, name: str) -> Dict:
         response = await self.docker._query_json(
-            f"images/{name}/history",
+            "images/{name}/history".format(name=name),
             headers={"content-type": "application/json", },
         )
         return response
 
-    async def pull(self,
-                   from_image: str,
-                   repo: Optional[str]=None,
-                   tag: Optional[str]=None,
-                   stream: bool=False
-                   ):
+    async def pull(self, from_image: str, *, repo: Optional[str]=None,
+                   tag: Optional[str]=None, stream: bool=False) -> Dict:
         """
         Similar to `docker pull`, pull an image locally
         Args:
@@ -66,14 +62,16 @@ class DockerImages(object):
             params['tag'] = tag
 
         response = await self.docker._query(
-            f"images/create",
+            "images/create",
             "POST",
             params=params,
             headers={"content-type": "application/json", },
         )
         return (await json_stream_result(response, stream=stream))
 
-    async def push(self, name, tag=None, auth=None, stream=False):
+    async def push(self, name: str, *, tag: Optional[str]=None,
+                   auth: Union[Dict, str, bytes]=None,
+                   stream: bool=False) -> Dict:
         headers = {
             "content-type": "application/json",
             "X-Registry-Auth": "FOO",
@@ -92,14 +90,15 @@ class DockerImages(object):
         if tag:
             params['tag'] = tag
         response = await self.docker._query(
-            f"images/{name}/push",
+            "images/{name}/push".format(name=name),
             "POST",
             params=params,
             headers=headers,
         )
         return (await json_stream_result(response, stream=stream))
 
-    async def tag(self, name: str, repo: str, tag: Optional[str]=None) -> bool:
+    async def tag(self, name: str, repo: str, *,
+                  tag: Optional[str]=None) -> bool:
         """
         Tag the given image so that it becomes part of a repository.
         Args:
@@ -112,14 +111,14 @@ class DockerImages(object):
             params["tag"] = tag
 
         await self.docker._query(
-            f"images/{name}/tag",
+            "images/{name}/tag".format(name=name),
             "POST",
             params=params,
             headers={"content-type": "application/json"},
         )
         return True
 
-    async def delete(self, name: str, force: bool=False,
+    async def delete(self, name: str, *, force: bool=False,
                      noprune: bool=False) -> List:
         """
         Remove an image along with any untagged parent
@@ -140,24 +139,24 @@ class DockerImages(object):
         )
         return response
 
-    async def build(self,
-                    path_dockerfile: Optional[str]=None,
+    async def build(self, *,
                     remote: Optional[str]=None,
                     fileobj: Optional[BinaryIO]=None,
+                    path_dockerfile: Optional[str]=None,
                     tag: Optional[str]=None,
                     quiet: bool=False,
                     nocache: bool=False,
                     buildargs: Optional[Dict]=None,
                     pull: bool=False,
-                    rm: bool=False,
+                    rm: bool=True,
                     forcerm: bool=False,
                     labels: Optional[Dict]=None,
                     stream: bool=False,
-                    encoding: Optional[str]=None,
-                    ) -> str:
+                    encoding: Optional[str]=None) -> Dict:
         """
         Build an image given a remote Dockerfile
         or a file object with a Dockerfile inside
+
         Args:
             path_dockerfile: path within the build context to the Dockerfile
             remote: a Git repository URI or HTTP/HTTPS context URI
@@ -186,6 +185,9 @@ class DockerImages(object):
             'dockerfile': path_dockerfile,
         }
 
+        if remote is None and fileobj is None:
+            raise ValueError("You need to specify either remote or fileobj")
+
         if fileobj and remote:
             raise ValueError("You cannot specify both fileobj and remote")
 
@@ -209,7 +211,8 @@ class DockerImages(object):
             params.update({'labels': json.dumps(labels)})
 
         response = await self.docker._query(
-            "build", "POST",
+            "build",
+            "POST",
             params=clean_config(params),
             headers=headers,
             data=local_context

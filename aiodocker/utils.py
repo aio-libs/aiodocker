@@ -1,10 +1,9 @@
-from typing import Optional, Dict, Any, BinaryIO, IO
+from typing import Optional, Dict, List, Union, Any, BinaryIO, IO
 from io import BytesIO
 import tempfile
 import tarfile
 import codecs
 import json
-
 
 
 def identical(d1, d2):
@@ -68,10 +67,10 @@ async def decoded(generator, encoding='utf-8'):
 
 def clean_config(config: Optional[dict]) -> dict:
     """
-    Check the values inside `config`
-    Return a new dictionary with only NOT `None` values
-    """
+    Checks the values inside `config`
 
+    Returns a new dictionary with only NOT `None` values
+    """
     data = {}
     if isinstance(config, dict):
         for k, v in config.items():
@@ -81,21 +80,22 @@ def clean_config(config: Optional[dict]) -> dict:
     return data
 
 
-def format_env(key, value):
+def format_env(key, value: Union[None, bytes, str]) -> str:
     """
-    Format envs from {key:value} to ['key=value']
+    Formats envs from {key:value} to ['key=value']
     """
     if value is None:
         return key
     if isinstance(value, bytes):
         value = value.decode('utf-8')
 
-    return f"{key}={value}"
+    return "{key}={value}".format(key=key, value=value)
 
 
-def clean_networks(networks: Optional[list]=None) -> list:
+def clean_networks(networks: Optional[List]=None) -> List:
     """
-    Clean the values inside `networks`
+    Cleans the values inside `networks`
+
     Returns a new list
     """
     if not networks:
@@ -113,12 +113,13 @@ def clean_networks(networks: Optional[list]=None) -> list:
 
 def clean_filters(filters: Optional[dict]=None) -> str:
     """
-    Check the values inside `filters`
+    Checks the values inside `filters`
+
     https://docs.docker.com/engine/api/v1.29/#operation/ServiceList
     Returns a new dictionary in the format `map[string][]string` jsonized
     """
 
-    if filters:
+    if filters and isinstance(filters, dict):
         for k, v in filters.items():
             if not isinstance(v, list):
                 v = [v, ]
@@ -131,11 +132,14 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
     """
     Create a zipped tar archive from a Dockerfile
     **Remember to close the file object**
+
     Args:
         fileobj: a Dockerfile
+
     Returns:
         a NamedTemporaryFile() object
     """
+
     f = tempfile.NamedTemporaryFile()
     t = tarfile.open(mode='w:gz', fileobj=f)
 

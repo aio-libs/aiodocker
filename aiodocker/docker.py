@@ -1,5 +1,4 @@
 import asyncio
-import base64
 from collections import ChainMap
 import datetime as dt
 import io
@@ -213,85 +212,6 @@ class Docker:
         return context
 
 
-<<<<<<< HEAD
-class DockerImages(object):
-    def __init__(self, docker):
-        self.docker = docker
-
-    async def list(self, **params):
-        response = await self.docker._query_json(
-            "images/json", "GET",
-            params=params,
-            headers={"content-type": "application/json"},
-        )
-        return response
-
-    async def get(self, name):
-        response = await self.docker._query_json(
-            "images/{name}/json".format(name=name),
-            headers={"content-type": "application/json"},
-        )
-        return response
-
-    async def history(self, name):
-        response = await self.docker._query_json(
-            "images/{name}/history".format(name=name),
-            headers={"content-type": "application/json"},
-        )
-        return response
-
-    async def push(self, name, tag=None, auth=None, stream=False):
-        headers = {
-            "content-type": "application/json",
-            "X-Registry-Auth": "FOO",
-        }
-        params = {}
-        if auth:
-            if isinstance(auth, dict):
-                auth = json.dumps(auth).encode('ascii')
-                auth = base64.b64encode(auth)
-            if not isinstance(auth, (bytes, str)):
-                raise TypeError("auth must be base64 encoded string/bytes "
-                                "or a dictionary")
-            if isinstance(auth, bytes):
-                auth = auth.decode('ascii')
-            headers['X-Registry-Auth'] = auth
-        if tag:
-            params['tag'] = tag
-        response = await self.docker._query(
-            "images/{name}/push".format(name=name),
-            "POST",
-            params=params,
-            headers=headers,
-        )
-        return (await json_stream_result(response, stream=stream))
-
-    async def tag(self, name, tag=None, repo=None):
-        params = {}
-        if tag:
-            params['tag'] = tag
-        if repo:
-            params['repo'] = repo
-        response = await self.docker._query_json(
-            "images/{name}/tag".format(name=name),
-            "POST",
-            params=params,
-            headers={"content-type": "application/json"},
-        )
-        return response
-
-    async def delete(self, name, **params):
-        response = await self.docker._query_json(
-            "images/{name}/tag".format(name=name),
-            "DELETE",
-            params=params,
-            headers={"content-type": "application/json"},
-        )
-        return response
-
-
-=======
->>>>>>> add images.py and clean docker.py
 class DockerContainers(object):
     def __init__(self, docker):
         self.docker = docker
