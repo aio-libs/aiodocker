@@ -3,7 +3,6 @@ import io
 import os
 import tarfile
 import time
-
 import aiohttp
 import pytest
 
@@ -98,22 +97,39 @@ async def test_container_lifecycles(docker, testing_images):
 
 
 @pytest.mark.asyncio
-@pytest.mark.xfail  # FIXME: docker websocket seems not working as expected
 async def test_stdio_stdin(docker, testing_images, shell_container):
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
-    await ws.send_str('echo "hello world"\n')
-    with aiohttp.Timeout(2):
-        # TODO: fix timeout
-        resp = await ws.receive()
-    print(resp)
-    assert resp.data == b"hello world\n"
+    await ws.send_str('echo hello world\n')
+
+    resp = await ws.receive()
+    assert resp.data == "echo hello world\r\n"
     await ws.close()
-    # TODO: ensure container stopped on its own because stdin was closed
 
     # Cross-check container logs.
-    output = await shell_container.log(stdout=True)
+    ## logs is not real-time, should a while time
+
+    # await asyncio.sleep(1)
+    # output = await shell_container.log(stdout=True)
+    # output.strip()
+
+    ## else do it with stream
+    stream_output = await shell_container.log(stdout=True, follow=True)
+    log = []
+
+    try:
+        with aiohttp.Timeout(2):
+            async for d in stream_output:
+                log.append(d)
+                if "hello world\r\n" == d:
+                    break
+    except asyncio.TimeoutError:
+        pass
+
+    output = ''.join(log)
     output.strip()
-    assert output == "hello world"
+
+    # use tty , input will echo, so log mybe one more lines
+    assert "hello world" in output.split('\r\n')
 
 
 @pytest.mark.asyncio
