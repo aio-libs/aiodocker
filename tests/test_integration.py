@@ -1,6 +1,5 @@
 import asyncio
 import io
-import logging, logging.config
 import os
 import sys
 import tarfile
@@ -10,24 +9,6 @@ import aiohttp
 import pytest
 
 from aiodocker.docker import Docker
-
-logging.config.dictConfig({
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
-            'stream': 'ext://sys.stderr',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-    },
-})
 
 
 @pytest.mark.asyncio
@@ -121,31 +102,47 @@ async def test_container_lifecycles(docker, testing_images):
 @pytest.mark.skipif(sys.platform == 'darwin',
                     reason="Docker for Mac has a bug with websocket")
 async def test_stdio_stdin(docker, testing_images, shell_container):
+    # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
     await ws.send_str('echo hello world\n')
-
-    # echo of the input.
-    resp = await ws.receive()
-    assert resp.data == "echo hello world\r\n"
+    output = ''
+    found = False
+    try:
+        # collect the websocket outputs for at most 2 secs until we see the
+        # output.
+        with aiohttp.Timeout(2):
+            while True:
+                resp = await ws.receive()
+                output += resp.data
+                if "echo hello world\r\n" in output:
+                    found = True
+                    break
+    except asyncio.TimeoutError:
+        pass
     await ws.close()
+    if not found:
+        found = "echo hello world\r\n" in output
+    assert found
 
     # cross-check with container logs.
     stream_output = await shell_container.log(stdout=True, follow=True)
     log = []
+    found = False
     try:
-        # collect the logs for at most 2 seconds until we see the output.
+        # collect the logs for at most 2 secs until we see the output.
         with aiohttp.Timeout(2):
             async for d in stream_output:
                 log.append(d)
                 if "hello world\r\n" == d:
+                    found = True
                     break
     except asyncio.TimeoutError:
         pass
-    output = ''.join(log)
-    output.strip()
-
-    # the input may be echoed.
-    assert "hello world" in output.split('\r\n')
+    if not found:
+        output = ''.join(log)
+        output.strip()
+        found = "hello world" in output.split('\r\n')
+    assert found
 
 
 @pytest.mark.asyncio
