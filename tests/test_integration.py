@@ -1,12 +1,33 @@
 import asyncio
 import io
+import logging, logging.config
 import os
+import sys
 import tarfile
 import time
+
 import aiohttp
 import pytest
 
 from aiodocker.docker import Docker
+
+logging.config.dictConfig({
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'DEBUG',
+            'stream': 'ext://sys.stderr',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+})
 
 
 @pytest.mark.asyncio
@@ -97,26 +118,22 @@ async def test_container_lifecycles(docker, testing_images):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(sys.platform == 'darwin',
+                    reason="Docker for Mac has a bug with websocket")
 async def test_stdio_stdin(docker, testing_images, shell_container):
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
     await ws.send_str('echo hello world\n')
 
+    # echo of the input.
     resp = await ws.receive()
     assert resp.data == "echo hello world\r\n"
     await ws.close()
 
-    # Cross-check container logs.
-    ## logs is not real-time, should a while time
-
-    # await asyncio.sleep(1)
-    # output = await shell_container.log(stdout=True)
-    # output.strip()
-
-    ## else do it with stream
+    # cross-check with container logs.
     stream_output = await shell_container.log(stdout=True, follow=True)
     log = []
-
     try:
+        # collect the logs for at most 2 seconds until we see the output.
         with aiohttp.Timeout(2):
             async for d in stream_output:
                 log.append(d)
@@ -124,11 +141,10 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
                     break
     except asyncio.TimeoutError:
         pass
-
     output = ''.join(log)
     output.strip()
 
-    # use tty , input will echo, so log mybe one more lines
+    # the input may be echoed.
     assert "hello world" in output.split('\r\n')
 
 
