@@ -166,9 +166,10 @@ class Docker:
     async def _websocket(self, path, **params):
         if not params:
             params = {
-                'stdout': 1,
-                'stderr': 1,
-                'stream': 1
+                'stdin': True,
+                'stdout': True,
+                'stderr': True,
+                'stream': True
             }
         url = self.canonicalize_url(path, query=params)
         ws = await self.session.ws_connect(url,
