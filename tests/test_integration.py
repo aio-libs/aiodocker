@@ -112,8 +112,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
         # output.
         with aiohttp.Timeout(2):
             while True:
-                resp = await ws.receive()
-                output += resp.data
+                output += await ws.receive_str()
                 if "echo hello world\r\n" in output:
                     found = True
                     break
