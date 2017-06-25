@@ -37,7 +37,7 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        'aiohttp~=2.0.7',
+        'aiohttp~=2.2.0',
         'yarl>=0.10',
     ],
     extras_require={

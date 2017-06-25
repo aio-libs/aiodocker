@@ -78,7 +78,7 @@ class Docker:
         self.volumes = DockerVolumes(self)
 
     async def close(self):
-        await self.session.close()
+        self.session.close()  # no longer coroutine since aiohttp 2.x
 
     async def auth(self, **credentials):
         response = await self._query_json(
