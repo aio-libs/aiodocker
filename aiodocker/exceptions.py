@@ -6,7 +6,7 @@ class DockerError(Exception):
         self.message = data['message']
 
     def __repr__(self):
-        return f'DockerError({self.status}, {self.message!r})'
+        return 'DockerError({self.status}, {self.message!r})'.format(self=self)
 
     def __str__(self):
-        return f'DockerError({self.status}, {self.message!r})'
+        return 'DockerError({self.status}, {self.message!r})'.format(self=self)

@@ -2,6 +2,7 @@ from typing import Optional
 
 import codecs
 
+
 def identical(d1, d2):
     if type(d1) != type(d2):
         return False
@@ -26,13 +27,14 @@ def identical(d1, d2):
 _true_strs = frozenset(['true', 'yes', 'y', '1'])
 _false_strs = frozenset(['false', 'no', 'n', '0'])
 
+
 def human_bool(s) -> bool:
     if isinstance(s, str):
         if s.lower() in _true_strs:
             return True
         if s.lower() in _false_strs:
             return False
-        raise ValueError(f'Cannot interpret {s!r} as boolean.')
+        raise ValueError('Cannot interpret {s!r} as boolean.'.format(s=s))
     else:
         return bool(s)
 
@@ -48,6 +50,7 @@ def httpize(d: Optional[dict]) -> Optional[dict]:
             v = str(v)
         converted[k] = v
     return converted
+
 
 async def decoded(generator, encoding='utf-8'):
     decoder = codecs.getincrementaldecoder(encoding)(errors='ignore')

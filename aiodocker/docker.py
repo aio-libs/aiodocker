@@ -50,7 +50,8 @@ class Docker:
                     break
         self.docker_host = docker_host
 
-        assert _rx_version.search(api_version) is not None, 'Invalid API version format'
+        assert _rx_version.search(api_version) is not None, \
+            'Invalid API version format'
         self.api_version = api_version
 
         if connector is None:
@@ -64,7 +65,8 @@ class Docker:
                 self.docker_host = docker_host
             elif docker_host.startswith('unix://'):
                 connector = aiohttp.UnixConnector(docker_host[7:])
-                self.docker_host = "unix://localhost"  # dummy hostname for URL composition
+                # dummy hostname for URL composition
+                self.docker_host = "unix://localhost"
             else:
                 raise ValueError('Missing protocol scheme in docker_host.')
         self.connector = connector
@@ -84,7 +86,7 @@ class Docker:
         response = await self._query_json(
             "auth", "POST",
             data=credentials,
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
         )
         return response
 
@@ -96,12 +98,13 @@ class Docker:
         response = await self._query(
             "images/create", "POST",
             params={"fromImage": image},
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
         )
         return (await json_stream_result(response, stream=stream))
 
     def canonicalize_url(self, path, query=None):
-        url = URL(f"{self.docker_host}/{self.api_version}/{path}")
+        url = URL("{self.docker_host}/{self.api_version}/{path}"
+                  .format(self=self, path=path))
         url = url.with_query(httpize(query))
         return url
 
@@ -123,12 +126,14 @@ class Docker:
 
         if (response.status // 100) in [4, 5]:
             what = await response.read()
-            content_type = response.headers.get('content-type','')
+            content_type = response.headers.get('content-type', '')
             response.close()
             if content_type == 'application/json':
-                raise DockerError(response.status, json.loads(what.decode('utf8')))
+                raise DockerError(response.status,
+                                  json.loads(what.decode('utf8')))
             else:
-                raise DockerError(response.status, {"message": what.decode('utf8')})
+                raise DockerError(response.status,
+                                  {"message": what.decode('utf8')})
 
         return response
 
@@ -149,13 +154,14 @@ class Docker:
                 elif 'text/plain' in ct:
                     response_type = 'text'
                 else:
-                    raise TypeError(f"Unrecognized response type: {ct}")
+                    raise TypeError("Unrecognized response type: {ct}"
+                                    .format(ct=ct))
             if 'tar' == response_type:
                 what = await response.read()
                 return tarfile.open(mode='r', fileobj=io.BytesIO(what))
             if 'json' == response_type:
                 data = await response.json(encoding='utf-8')
-            elif 'text' ==  response_type:
+            elif 'text' == response_type:
                 data = await response.text(encoding='utf-8')
             else:
                 data = await response.read()
@@ -173,8 +179,10 @@ class Docker:
             }
         url = self.canonicalize_url(path, query=params)
         ws = await self.session.ws_connect(url,
-            protocols=['chat'], origin='http://localhost',
-            autoping=True, autoclose=True)
+                                           protocols=['chat'],
+                                           origin='http://localhost',
+                                           autoping=True,
+                                           autoclose=True)
         return ws
 
     async def _query_json(self, *args, **kwargs):
@@ -194,10 +202,12 @@ class Docker:
         context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
         certs_path = os.environ.get('DOCKER_CERT_PATH', None)
         if certs_path is None:
-            raise ValueError('Cannot create ssl context, DOCKER_CERT_PATH is not set!')
+            raise ValueError("Cannot create ssl context, "
+                             "DOCKER_CERT_PATH is not set!")
         certs_path = Path(certs_path)
         context.load_verify_locations(cafile=certs_path / 'ca.pem')
-        context.load_cert_chain(certfile=certs_path / 'cert.pem', keyfile=certs_path / 'key.pem')
+        context.load_cert_chain(certfile=certs_path / 'cert.pem',
+                                keyfile=certs_path / 'key.pem')
         return context
 
 
@@ -209,21 +219,21 @@ class DockerImages(object):
         response = await self.docker._query_json(
             "images/json", "GET",
             params=params,
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
         )
         return response
 
     async def get(self, name):
         response = await self.docker._query_json(
-            f"images/{name}/json",
-            headers={"content-type": "application/json",},
+            "images/{name}/json".format(name=name),
+            headers={"content-type": "application/json"},
         )
         return response
 
     async def history(self, name):
         response = await self.docker._query_json(
-            f"images/{name}/history",
-            headers={"content-type": "application/json",},
+            "images/{name}/history".format(name=name),
+            headers={"content-type": "application/json"},
         )
         return response
 
@@ -238,14 +248,15 @@ class DockerImages(object):
                 auth = json.dumps(auth).encode('ascii')
                 auth = base64.b64encode(auth)
             if not isinstance(auth, (bytes, str)):
-                raise TypeError("auth must be base64 encoded string/bytes or a dictionary")
+                raise TypeError("auth must be base64 encoded string/bytes "
+                                "or a dictionary")
             if isinstance(auth, bytes):
                 auth = auth.decode('ascii')
             headers['X-Registry-Auth'] = auth
         if tag:
             params['tag'] = tag
         response = await self.docker._query(
-            f"images/{name}/push",
+            "images/{name}/push".format(name=name),
             "POST",
             params=params,
             headers=headers,
@@ -259,7 +270,7 @@ class DockerImages(object):
         if repo:
             params['repo'] = repo
         response = await self.docker._query_json(
-            f"images/{name}/tag",
+            "images/{name}/tag".format(name=name),
             "POST",
             params=params,
             headers={"content-type": "application/json"},
@@ -268,10 +279,10 @@ class DockerImages(object):
 
     async def delete(self, name, **params):
         response = await self.docker._query_json(
-            f"images/{name}/tag",
+            "images/{name}/tag".format(name=name),
             "DELETE",
             params=params,
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
         )
         return response
 
@@ -318,7 +329,7 @@ class DockerContainers(object):
         data = await self.docker._query_json(
             url,
             method='POST',
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
             data=config,
             params=kwargs
         )
@@ -348,7 +359,7 @@ class DockerContainers(object):
 
     async def get(self, container, **kwargs):
         data = await self.docker._query_json(
-            f"containers/{container}/json",
+            "containers/{container}/json".format(container=container),
             method='GET',
             params=kwargs
         )
@@ -385,32 +396,32 @@ class DockerContainer:
         is_tty = inspect_info['Config']['Tty']
 
         response = await self.docker._query(
-            f"containers/{self._id}/logs",
+            "containers/{self._id}/logs".format(self=self),
             method='GET',
             params=params,
         )
         return (await multiplexed_result(response, follow, is_tty=is_tty))
 
     async def copy(self, resource, **kwargs):
-        #TODO this is deprecated, use get_archive instead
+        # TODO: this is deprecated, use get_archive instead
         request = json.dumps({
             "Resource": resource,
         }, sort_keys=True).encode('utf-8')
         data = await self.docker._query(
-            f"containers/{self._id}/copy",
+            "containers/{self._id}/copy".format(self=self),
             method='POST',
             data=request,
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
             params=kwargs
         )
         return data
 
     async def put_archive(self, path, data):
         response = await self.docker._query(
-            f"containers/{self._id}/archive",
+            "containers/{self._id}/archive".format(self=self),
             method='PUT',
             data=data,
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
             params={'path': path}
         )
         data = await Docker._result(response)
@@ -418,7 +429,7 @@ class DockerContainer:
 
     async def show(self, **kwargs):
         data = await self.docker._query_json(
-            f"containers/{self._id}/json",
+            "containers/{self._id}/json".format(self=self),
             method='GET',
             params=kwargs
         )
@@ -427,7 +438,7 @@ class DockerContainer:
 
     async def stop(self, **kwargs):
         response = await self.docker._query(
-            f"containers/{self._id}/stop",
+            "containers/{self._id}/stop".format(self=self),
             method='POST',
             params=kwargs
         )
@@ -436,9 +447,9 @@ class DockerContainer:
 
     async def start(self, **kwargs):
         response = await self.docker._query(
-            f"containers/{self._id}/start",
+            "containers/{self._id}/start".format(self=self),
             method='POST',
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
             data=kwargs
         )
         await response.release()
@@ -446,7 +457,7 @@ class DockerContainer:
 
     async def kill(self, **kwargs):
         response = await self.docker._query(
-            f"containers/{self._id}/kill",
+            "containers/{self._id}/kill".format(self=self),
             method='POST',
             params=kwargs
         )
@@ -455,7 +466,7 @@ class DockerContainer:
 
     async def wait(self, timeout=None, **kwargs):
         data = await self.docker._query_json(
-            f"containers/{self._id}/wait",
+            "containers/{self._id}/wait".format(self=self),
             method='POST',
             params=kwargs,
             timeout=timeout,
@@ -464,7 +475,7 @@ class DockerContainer:
 
     async def delete(self, **kwargs):
         response = await self.docker._query(
-            f"containers/{self._id}",
+            "containers/{self._id}".format(self=self),
             method='DELETE',
             params=kwargs
         )
@@ -472,7 +483,7 @@ class DockerContainer:
         return
 
     async def websocket(self, **params):
-        path = f"containers/{self._id}/attach/ws"
+        path = "containers/{self._id}/attach/ws".format(self=self)
         ws = await self.docker._websocket(path, **params)
         return ws
 
@@ -501,13 +512,13 @@ class DockerContainer:
     async def stats(self, stream=True):
         if stream:
             response = await self.docker._query(
-                f"containers/{self._id}/stats",
+                "containers/{self._id}/stats".format(self=self),
                 params={'stream': '1'},
             )
             return (await json_stream_result(response))
         else:
             data = await self.docker._query_json(
-                f"containers/{self._id}/stats",
+                "containers/{self._id}/stats".format(self=self),
                 params={'stream': '0'},
             )
             return data
@@ -553,7 +564,8 @@ class DockerEvents:
                 method="GET",
                 params=params,
             )
-            self.json_stream = await json_stream_result(response,
+            self.json_stream = await json_stream_result(
+                response,
                 self._transform_event,
                 human_bool(params['stream']),
             )
@@ -603,7 +615,7 @@ class DockerLog:
         params = ChainMap(forced_params, params, default_params)
         try:
             self.response = await self.docker._query(
-                f'containers/{self.container._id}/logs',
+                'containers/{self.container._id}/logs'.format(self=self),
                 params=params,
             )
             while True:
@@ -641,7 +653,7 @@ class DockerVolumes:
         data = await self.docker._query_json(
             "volumes/create",
             method="POST",
-            headers={"content-type": "application/json",},
+            headers={"content-type": "application/json"},
             data=config,
         )
         return DockerVolume(self.docker, data['Name'])
@@ -654,13 +666,13 @@ class DockerVolume:
 
     async def show(self):
         data = await self.docker._query_json(
-            f"volumes/{self.name}"
+            "volumes/{self.name}".format(self=self)
         )
         return data
 
     async def delete(self):
         response = await self.docker._query(
-            f"volumes/{self.name}",
+            "volumes/{self.name}".format(self=self),
             method="DELETE",
         )
         await response.release()

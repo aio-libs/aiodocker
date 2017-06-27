@@ -38,7 +38,8 @@ async def test_connect_invalid_unix_socket():
 
 @pytest.mark.asyncio
 async def test_connect_envvar(monkeypatch):
-    monkeypatch.setenv('DOCKER_HOST', 'unix:///var/run/does-not-exist-docker.sock')
+    monkeypatch.setenv('DOCKER_HOST',
+                       'unix:///var/run/does-not-exist-docker.sock')
     docker = Docker()
     assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
     assert docker.docker_host == 'unix://localhost'
@@ -71,11 +72,11 @@ async def test_container_lifecycles(docker, testing_images):
     config = {
         "Cmd": ["/bin/ls"],
         "Image": "alpine:latest",
-         "AttachStdin": False,
-         "AttachStdout": False,
-         "AttachStderr": False,
-         "Tty": False,
-         "OpenStdin": False,
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": False,
+        "OpenStdin": False,
     }
 
     my_containers = []
