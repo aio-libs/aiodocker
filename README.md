@@ -42,7 +42,7 @@ async def run_container():
     print('== Running a hello-world container ==')
     container = await docker.containers.create_or_replace(
         config={
-            'Cmd': ['/bin/bash', '-c', 'echo "hello world"'],
+            'Cmd': ['/bin/ash', '-c', 'echo "hello world"'],
             'Image': 'alpine:latest',
         },
         name='testing',
