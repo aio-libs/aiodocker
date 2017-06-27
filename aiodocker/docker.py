@@ -104,7 +104,7 @@ class Docker:
 
     def canonicalize_url(self, path, query=None):
         url = URL("{self.docker_host}/{self.api_version}/{path}"
-                  .format(self=self))
+                  .format(self=self, path=path))
         url = url.with_query(httpize(query))
         return url
 
