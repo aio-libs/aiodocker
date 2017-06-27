@@ -10,6 +10,7 @@ from aiodocker.exceptions import DockerError
 def testing_images():
     # Prepare a small Linux image shared by most test cases.
     event_loop = asyncio.get_event_loop()
+
     async def _pull():
         docker = Docker()
         required_images = [
@@ -20,7 +21,8 @@ def testing_images():
                 await docker.images.get(img)
             except DockerError as e:
                 assert e.status == 404
-                print(f'Pulling "{img}" for the testing session...')
+                print('Pulling "{img}" for the testing session...'
+                      .format(img=img))
                 await docker.pull(img)
         await docker.close()
     event_loop.run_until_complete(_pull())
@@ -30,6 +32,7 @@ def testing_images():
 def docker(event_loop):
     docker = Docker()
     yield docker
+
     async def _finalize():
         await docker.close()
     event_loop.run_until_complete(_finalize())
@@ -68,7 +71,7 @@ def shell_container(event_loop, docker):
 def redis_container(event_loop, docker):
     container = None
     config = {
-        "Image":"redis:latest",
+        "Image": "redis:latest",
         "PublishAllPorts": True,
     }
 

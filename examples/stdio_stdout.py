@@ -16,7 +16,7 @@ async def demo(docker):
             return
 
     config = {
-        #"Cmd": ["/bin/ash", "-c", "sleep 1; echo a; sleep 1; echo a; sleep 1; echo a; sleep 1; echo x"],
+        # "Cmd": ["/bin/ash", "-c", "sleep 1; echo a; sleep 1; echo a; sleep 1; echo a; sleep 1; echo x"],
         "Cmd": ["/bin/ash"],
         "Image": "alpine:latest",
         "AttachStdin": True,

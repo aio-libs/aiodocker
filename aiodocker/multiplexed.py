@@ -21,7 +21,7 @@ class MultiplexedResult:
                         continue
                     data = await self.response.content.readexactly(length)
                 except (aiohttp.ClientConnectionError,
-                       aiohttp.ServerDisconnectedError):
+                        aiohttp.ServerDisconnectedError):
                     break
                 except asyncio.IncompleteReadError:
                     break
@@ -40,18 +40,25 @@ class MultiplexedResult:
         await self.response.release()
 
 
-async def multiplexed_result(response, follow=False, is_tty=False, encoding='utf-8'):
+async def multiplexed_result(response, follow=False, is_tty=False,
+                             encoding='utf-8'):
     log_stream = MultiplexedResult(response)
 
     if is_tty:
         if follow:
             return decoded(log_stream.fetch_raw(), encoding=encoding)
         else:
-            d = [piece async for piece in decoded(log_stream.fetch_raw(), encoding=encoding)]
+            d = []
+            async for piece in decoded(log_stream.fetch_raw(),
+                                       encoding=encoding):
+                d.append(piece)
             return ''.join(d)
     else:
         if follow:
             return decoded(log_stream.fetch(), encoding=encoding)
         else:
-            d = [piece async for piece in decoded(log_stream.fetch(), encoding=encoding)]
+            d = []
+            async for piece in decoded(log_stream.fetch(),
+                                       encoding=encoding):
+                d.append(piece)
             return ''.join(d)
