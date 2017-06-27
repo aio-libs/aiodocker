@@ -25,7 +25,7 @@ install:
   - pip install flake8
 
 script:
-  - pyflakes aiodocker tests
+  - flake8 aiodocker tests
   - docker-compose run aiodocker
 
 after_success:
