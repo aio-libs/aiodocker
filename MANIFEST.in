@@ -1,0 +1,6 @@
+include LICENSE
+include README.md
+graft aiodocker
+graft examples
+graft tests
+global-exclude *.pyc
