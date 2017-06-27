@@ -3,6 +3,8 @@ sudo: required
 language: python
 
 python:
+  - "3.5.2"
+  - "3.5"
   - "3.6"
 
 services:
@@ -23,7 +25,7 @@ install:
   - pip install flake8
 
 script:
-  - pyflakes aiodocker tests
+  - flake8 aiodocker tests
   - docker-compose run aiodocker
 
 after_success:
