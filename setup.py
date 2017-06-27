@@ -41,6 +41,6 @@ setup(
         'yarl>=0.10',
     ],
     extras_require={
-        'test': ['pytest', 'pytest-asyncio'],
+        'test': ['pytest', 'pytest-asyncio', 'flake8'],
     }
 )

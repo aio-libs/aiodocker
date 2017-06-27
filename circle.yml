@@ -8,4 +8,5 @@ dependencies:
         - pip install -e '.[test]'
 test:
     override:
-        - python -m pytest tests
+        - flake8 aiodocker tests
+        - pytest tests
