@@ -1,11 +1,19 @@
 #!/usr/bin/env python
 
+import re
+from pathlib import Path
+
 from setuptools import setup
 
-version = "0.7.1"
+with (Path(__file__).parent / 'aiodocker' / '__init__.py').open() as fp:
+    try:
+        version = re.findall(r"^__version__ = '([^']+)'\r?$",
+                             fp.read(), re.M)[0]
+    except IndexError:
+        raise RuntimeError('Unable to determine version.')
 
 
-long_description = open('README.rst').read()
+long_description = open('README.rst').read() + open('CHANGES.rst').read()
 
 
 setup(
