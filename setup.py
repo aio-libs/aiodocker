@@ -4,11 +4,8 @@ from setuptools import setup
 
 version = "0.7.1"
 
-try:
-    import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
-except (IOError, ImportError):
-    long_description = ""
+
+long_description = open('README.rst').read()
 
 
 setup(
