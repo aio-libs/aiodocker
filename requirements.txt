@@ -1,2 +1,3 @@
 aiohttp~=2.2.0
 yarl>=0.10
+towncrier
