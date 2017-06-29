@@ -6,11 +6,19 @@ from aiodocker.exceptions import DockerError
 
 @pytest.mark.asyncio
 async def test_build_from_remote_file(docker):
-    remote = ("https://raw.githubusercontent.com/"
-              "komljen/dockerfile-examples/master/redis/Dockerfile")
-    name = "image:1.0"
-    await docker.images.build(tag=name, remote=remote)
-    image = await docker.images.get(name)
+    remote = ("https://gist.githubusercontent.com/barrachri/"
+              "16a735971379352635a92d65036145f1/raw"
+              "/2b814ad3bf24af94a5623df03678816e37f2b6b7/Dockerfile")
+
+    tag = "image:1.0"
+    params = {'tag': tag, 'remote': remote, 'stream': True}
+    stream = await docker.images.build(**params)
+
+    async for output in stream.fetch():
+        if "Successfully tagged image:1.0\n" in output:
+            break
+
+    image = await docker.images.get(tag)
     assert image
 
 
@@ -50,7 +58,6 @@ async def test_delete_image(docker):
     image = await docker.images.get("image:1.0")
     tags = image['RepoTags']
     for tag in tags:
-        print(tag)
         await docker.images.delete(name=tag)
     images = await docker.images.list()
     assert len(images) == origin_count - 1

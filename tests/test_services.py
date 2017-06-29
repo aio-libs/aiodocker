@@ -1,4 +1,5 @@
 import pytest
+from aiodocker.exceptions import DockerError
 
 
 @pytest.mark.asyncio
@@ -75,6 +76,8 @@ async def test_delete_services(docker):
         await docker.services.delete(service_id=service['ID'])
 
 
+# temporary fix https://github.com/aio-libs/aiodocker/issues/53
+@pytest.mark.xfail(raises=DockerError, reason="bug inside Docker")
 @pytest.mark.asyncio
 async def test_swarm_remove(docker):
     services = await docker.services.list()
