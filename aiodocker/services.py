@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Dict, List, Any
+from typing import Optional, Dict, List, Any, Union, AsyncGenerator
 from .multiplexed import multiplexed_result
 from .utils import clean_config, clean_networks, clean_filters, format_env
 
@@ -135,7 +135,7 @@ class DockerServices(object):
                    timestamps: bool=False,
                    is_tty: bool=False,
                    tail: str="all"
-                   ):
+                   ) -> Union[str, AsyncGenerator[str, None]]:
         """
         Retrieve logs of the given service
 

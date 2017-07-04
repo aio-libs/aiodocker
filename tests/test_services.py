@@ -84,7 +84,7 @@ async def test_delete_services(docker):
 async def test_logs_services(docker, testing_images):
     TaskTemplate = {
         "ContainerSpec": {
-            "Image": "python:3.6.1",
+            "Image": "python:3.6.1-alpine",
             "Args": ["python", "-c", "while True: print('Hello Python')"]
         }
     }
@@ -99,9 +99,9 @@ async def test_logs_services(docker, testing_images):
     found = False
     try:
         # collect the logs for at most
-        # 5 secs until we see the output
+        # 10 secs until we see the output
         # services are `slower`
-        with aiohttp.Timeout(5):
+        with aiohttp.Timeout(10):
             async for log in response:
                 if "Hello Python\n" == log:
                     found = True
