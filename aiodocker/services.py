@@ -1,5 +1,6 @@
 import json
 from typing import Optional, Dict, List, Any
+from .multiplexed import multiplexed_result
 from .utils import clean_config, clean_networks, clean_filters, format_env
 
 
@@ -124,3 +125,50 @@ class DockerServices(object):
             method="GET",
         )
         return response
+
+    async def logs(self, service_id: str, *,
+                   details: bool=False,
+                   follow: bool=False,
+                   stdout: bool=False,
+                   stderr: bool=False,
+                   since: int=0,
+                   timestamps: bool=False,
+                   is_tty: bool=False,
+                   tail: str="all"
+                   ):
+        """
+        Retrieve logs of the given service
+
+        Args:
+            details: show service context and extra details provided to logs
+            follow: return the logs as a stream.
+            stdout: return logs from stdout
+            stderr: return logs from stderr
+            since: return logs since this time, as a UNIX timestamp
+            timestamps: add timestamps to every log line
+            is_tty: the service has a pseudo-TTY allocated
+            tail: only return this number of log lines
+                  from the end of the logs, specify as an integer
+                  or `all` to output all log lines.
+
+
+        """
+        if stdout is False and stderr is False:
+            raise TypeError("Need one of stdout or stderr")
+
+        params = {
+            "details": details,
+            "follow": follow,
+            "stdout": stdout,
+            "stderr": stderr,
+            "since": since,
+            "timestamps": timestamps,
+            "tail": tail
+        }
+
+        response = await self.docker._query(
+            "services/{service_id}/logs".format(service_id=service_id),
+            method="GET",
+            params=params
+        )
+        return await multiplexed_result(response, follow, is_tty=is_tty)

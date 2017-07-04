@@ -1,5 +1,7 @@
+import asyncio
 import pytest
 from aiodocker.exceptions import DockerError
+import aiohttp
 
 
 @pytest.mark.asyncio
@@ -78,6 +80,36 @@ async def test_delete_services(docker):
 
 # temporary fix https://github.com/aio-libs/aiodocker/issues/53
 @pytest.mark.xfail(raises=DockerError, reason="bug inside Docker")
+@pytest.mark.asyncio
+async def test_logs_services(docker, testing_images):
+    TaskTemplate = {
+        "ContainerSpec": {
+            "Image": "python:3.6.1",
+            "Args": ["python", "-c", "while True: print('Hello Python')"]
+        }
+    }
+    service = await docker.services.create(
+        task_template=TaskTemplate,
+    )
+    service_id = service['ID']
+
+    response = await docker.services.logs(
+                            service_id, stdout=True, stderr=True, follow=True
+                            )
+    found = False
+    try:
+        # collect the logs for at most
+        # 5 secs until we see the output
+        # services are `slower`
+        with aiohttp.Timeout(5):
+            async for log in response:
+                if "Hello Python\n" == log:
+                    found = True
+    except asyncio.TimeoutError:
+        pass
+    assert found
+
+
 @pytest.mark.asyncio
 async def test_swarm_remove(docker):
     services = await docker.services.list()
