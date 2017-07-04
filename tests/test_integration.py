@@ -127,13 +127,13 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     # cross-check with container logs.
     log = []
     found = False
+
     try:
         # collect the logs for at most 2 secs until we see the output.
         stream = await shell_container.log(stdout=True, follow=True)
         with aiohttp.Timeout(2):
             async for s in stream:
-                if isinstance(s, str):
-                    log.append(s)
+                log.append(s)
                 if "hello world\r\n" in s:
                     found = True
                     break
@@ -190,8 +190,7 @@ async def test_put_archive(docker, testing_images):
     await container.wait(timeout=5)
 
     output = await container.log(stdout=True, stderr=True)
-    output.strip()
-    assert output == "hello world"
+    assert output[0] == "hello world"
 
     await container.delete(force=True)
 
