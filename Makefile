@@ -13,4 +13,4 @@ install:
 	@pip install -Ur requirements.txt
 
 create-tar:
-	@tar -cvf tests/docker/tar/docker_context.tar tests/docker/tar/Dockerfile tests/docker/tar/app.py
+	@tar -cvf tests/docker/docker_context.tar -C tests/docker/tar/ .
