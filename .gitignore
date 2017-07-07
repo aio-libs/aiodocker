@@ -8,5 +8,7 @@ __pycache__
 venv
 .env
 .coverage
+coverage.xmldocs/_build
+.DS_Store
 coverage.xml
 docs/_build

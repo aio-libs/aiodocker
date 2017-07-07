@@ -125,15 +125,16 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     assert found
 
     # cross-check with container logs.
-    stream_output = await shell_container.log(stdout=True, follow=True)
     log = []
     found = False
     try:
         # collect the logs for at most 2 secs until we see the output.
+        stream = await shell_container.log(stdout=True, follow=True)
         with aiohttp.Timeout(2):
-            async for d in stream_output:
-                log.append(d)
-                if "hello world\r\n" == d:
+            async for s in stream:
+                if isinstance(s, str):
+                    log.append(s)
+                if "hello world\r\n" in s:
                     found = True
                     break
     except asyncio.TimeoutError:

@@ -6,16 +6,32 @@ from aiodocker.exceptions import DockerError
 
 @pytest.mark.asyncio
 async def test_build_from_remote_file(docker):
-    remote = ("https://gist.githubusercontent.com/barrachri/"
-              "16a735971379352635a92d65036145f1/raw"
-              "/2b814ad3bf24af94a5623df03678816e37f2b6b7/Dockerfile")
+    remote = ("https://raw.githubusercontent.com/aio-libs/"
+              "aiodocker/master/tests/docker/Dockerfile")
 
     tag = "image:1.0"
     params = {'tag': tag, 'remote': remote, 'stream': True}
     stream = await docker.images.build(**params)
 
-    async for output in stream.fetch():
+    async for output in stream:
         if "Successfully tagged image:1.0\n" in output:
+            break
+
+    image = await docker.images.get(tag)
+    assert image
+
+
+@pytest.mark.asyncio
+async def test_build_from_remote_tar(docker):
+    remote = ("https://github.com/aio-libs/aiodocker/"
+              "raw/master/tests/docker/docker_context.tar")
+
+    tag = "image_from_tar:1.0"
+    params = {'tag': tag, 'remote': remote, 'stream': True}
+    stream = await docker.images.build(**params)
+
+    async for output in stream:
+        if "Successfully tagged image_from_tar:1.0\n" in output:
             break
 
     image = await docker.images.get(tag)

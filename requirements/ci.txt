@@ -1,2 +1,3 @@
+setuptools==36.2.0
 aiohttp==2.2.3
 yarl>=0.10

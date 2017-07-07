@@ -87,7 +87,7 @@ class Docker:
         self.volumes = DockerVolumes(self)
 
     async def close(self):
-        self.session.close()  # no longer coroutine since aiohttp 2.x
+        await self.session.close()
 
     async def auth(self, **credentials):
         response = await self._query_json(
@@ -331,7 +331,7 @@ class DockerContainer:
             method='GET',
             params=params,
         )
-        return (await multiplexed_result(response, follow, is_tty=is_tty))
+        return await multiplexed_result(response, follow, is_tty=is_tty)
 
     async def copy(self, resource, **kwargs):
         # TODO: this is deprecated, use get_archive instead
@@ -500,7 +500,7 @@ class DockerEvents:
                 self._transform_event,
                 human_bool(params['stream']),
             )
-            async for data in self.json_stream.fetch():
+            async for data in self.json_stream:
                 await self.channel.publish(data)
         finally:
             # signal termination to subscribers
