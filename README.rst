@@ -18,6 +18,9 @@ AsyncIO bindings for docker.io
    :target: https://codecov.io/gh/aio-libs/aiodocker
    :alt: Code Coverage
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+    :target: https://gitter.im/aio-libs/Lobby
+    :alt: Chat on Gitter
 
 A simple Docker HTTP API wrapper written with asyncio and aiohttp.
 
