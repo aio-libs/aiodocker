@@ -1,0 +1,211 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>aiodocker: AsyncIO bindings for docker.io &#8212; aiodocker 0.8.0-a0 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.8.0-a0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="aiodocker-asyncio-bindings-for-docker-io">
+<h1>aiodocker: AsyncIO bindings for docker.io<a class="headerlink" href="#aiodocker-asyncio-bindings-for-docker-io" title="Permalink to this headline">¶</a></h1>
+<a class="reference external image-reference" href="https://badge.fury.io/py/aiodocker"><img alt="PyPI version" src="https://badge.fury.io/py/aiodocker.svg" /></a>
+<a class="reference external image-reference" href="https://pypi.org/project/aiodocker/"><img alt="Python Versions" src="https://img.shields.io/pypi/pyversions/aiodocker.svg" /></a>
+<a class="reference external image-reference" href="https://travis-ci.org/aio-libs/aiodocker"><img alt="Build Status" src="https://travis-ci.org/aio-libs/aiodocker.svg?branch=master" /></a>
+<a class="reference external image-reference" href="https://codecov.io/gh/aio-libs/aiodocker"><img alt="Code Coverage" src="https://codecov.io/gh/aio-libs/aiodocker/branch/master/graph/badge.svg" /></a>
+<a class="reference external image-reference" href="https://gitter.im/aio-libs/Lobby"><img alt="Chat on Gitter" src="https://badges.gitter.im/Join%20Chat.svg" /></a>
+<p>A simple Docker HTTP API wrapper written with asyncio and aiohttp.</p>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-sh"><div class="highlight"><pre><span></span>pip install aiodocker
+</pre></div>
+</div>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">aiodocker</span>
+
+<span class="n">async</span> <span class="k">def</span> <span class="nf">list_things</span><span class="p">():</span>
+    <span class="n">docker</span> <span class="o">=</span> <span class="n">aiodocker</span><span class="o">.</span><span class="n">Docker</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;== Images ==&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="p">(</span><span class="n">await</span> <span class="n">docker</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">list</span><span class="p">()):</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="s1">&#39;RepoTags&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">image</span><span class="p">[</span><span class="s1">&#39;RepoTags&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">image</span><span class="p">[</span><span class="s1">&#39;Id&#39;</span><span class="p">],</span> <span class="n">tags</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;== Containers ==&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">container</span> <span class="ow">in</span> <span class="p">(</span><span class="n">await</span> <span class="n">docker</span><span class="o">.</span><span class="n">containers</span><span class="o">.</span><span class="n">list</span><span class="p">()):</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">f</span><span class="s2">&quot; {container._id}&quot;</span><span class="p">)</span>
+    <span class="n">await</span> <span class="n">docker</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="n">async</span> <span class="k">def</span> <span class="nf">run_container</span><span class="p">():</span>
+    <span class="n">docker</span> <span class="o">=</span> <span class="n">aiodocker</span><span class="o">.</span><span class="n">Docker</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;== Running a hello-world container ==&#39;</span><span class="p">)</span>
+    <span class="n">container</span> <span class="o">=</span> <span class="n">await</span> <span class="n">docker</span><span class="o">.</span><span class="n">containers</span><span class="o">.</span><span class="n">create_or_replace</span><span class="p">(</span>
+        <span class="n">config</span><span class="o">=</span><span class="p">{</span>
+            <span class="s1">&#39;Cmd&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;/bin/ash&#39;</span><span class="p">,</span> <span class="s1">&#39;-c&#39;</span><span class="p">,</span> <span class="s1">&#39;echo &quot;hello world&quot;&#39;</span><span class="p">],</span>
+            <span class="s1">&#39;Image&#39;</span><span class="p">:</span> <span class="s1">&#39;alpine:latest&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;testing&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">await</span> <span class="n">container</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">logs</span> <span class="o">=</span> <span class="n">await</span> <span class="n">container</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">stdout</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logs</span><span class="p">))</span>
+    <span class="n">await</span> <span class="n">container</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">await</span> <span class="n">docker</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+    <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">list_things</span><span class="p">())</span>
+    <span class="n">loop</span><span class="o">.</span><span class="n">run_until_complete</span><span class="p">(</span><span class="n">run_container</span><span class="p">())</span>
+    <span class="n">loop</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="section" id="source-code">
+<h3>Source code<a class="headerlink" href="#source-code" title="Permalink to this headline">¶</a></h3>
+<p>The project is hosted on GitHub: <a class="reference external" href="https://github.com/aio-libs/aiodocker">https://github.com/aio-libs/aiodocker</a></p>
+<p>Please feel free to file an issue on the bug tracker if you have found
+a bug or have some suggestion in order to improve the library.</p>
+</div>
+<div class="section" id="communication-channels">
+<h3>Communication channels<a class="headerlink" href="#communication-channels" title="Permalink to this headline">¶</a></h3>
+<p><em>aio-libs</em> google group: <a class="reference external" href="https://groups.google.com/forum/#!forum/aio-libs">https://groups.google.com/forum/#!forum/aio-libs</a></p>
+<p>Feel free to post your questions and ideas here.</p>
+<p><em>Gitter Chat</em> <a class="reference external" href="https://gitter.im/aio-libs/Lobby">https://gitter.im/aio-libs/Lobby</a></p>
+<p>We support <a class="reference external" href="https://stackoverflow.com">Stack Overflow</a>.
+Please add <em>python-asyncio</em> tag to your question there.</p>
+</div>
+<div class="section" id="author-and-license">
+<h3>Author and License<a class="headerlink" href="#author-and-license" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal"><span class="pre">aiodocker</span></code> package is written by Andrew Svetlov.</p>
+<p>It’s <em>Apache 2</em> licensed and freely available.</p>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">aiodocker</a></h1>
+
+
+
+<p class="blurb">Python Docker API client based on asyncio and aiohttp</p>
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=aio-libs&repo=aiodocker&type=star&count=true&size=large&v=2"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/aio-libs/aiodocker">
+    <img
+        alt="https://secure.travis-ci.org/aio-libs/aiodocker.svg?branch=master"
+        src="https://secure.travis-ci.org/aio-libs/aiodocker.svg?branch=master"
+    />
+</a>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://codecov.io/github/aio-libs/aiodocker">
+    <img
+    alt="https://codecov.io/github/aio-libs/aiodocker/coverage.svg?branch=master"
+    src="https://codecov.io/github/aio-libs/aiodocker/coverage.svg?branch=master"
+    />
+</a>
+</p>
+<h3>Navigation</h3>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2017, Paul Tagliamonte, Joongi Kim.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.6.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/aio-libs/aiodocker" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
