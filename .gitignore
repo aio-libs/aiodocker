@@ -9,3 +9,4 @@ venv
 .env
 .coverage
 coverage.xml
+docs/_build
