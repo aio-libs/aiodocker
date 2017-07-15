@@ -1,3 +1,3 @@
--e ci.txt
--e doc.txt
+-r ci.txt
+-r doc.txt
 towncrier
