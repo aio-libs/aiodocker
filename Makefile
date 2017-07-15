@@ -10,7 +10,7 @@ develop:
 
 install:
 	@pip install -U pip
-	@pip install -Ur requirements.txt
+	@pip install -Ur requirements/dev.txt
 
 create-tar:
 	@tar -cvf tests/docker/docker_context.tar -C tests/docker/tar/ .
