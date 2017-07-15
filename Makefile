@@ -14,3 +14,8 @@ install:
 
 create-tar:
 	@tar -cvf tests/docker/docker_context.tar -C tests/docker/tar/ .
+
+
+doc:
+	@make -C docs html SPHINXOPTS="-W -E"
+	@echo "open file://`pwd`/docs/_build/html/index.html"
