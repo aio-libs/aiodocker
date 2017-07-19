@@ -14,7 +14,7 @@ async def test_build_from_remote_file(docker):
     params = {'tag': tag, 'remote': remote, 'stream': True}
     stream = await docker.images.build(**params)
 
-    async for output in stream.fetch():
+    async for output in stream:
         if "Successfully tagged image:1.0\n" in output:
             break
 

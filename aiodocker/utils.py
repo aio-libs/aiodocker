@@ -1,3 +1,5 @@
+import asyncio
+import sys
 from typing import Optional, Dict, List, Union, Any, BinaryIO, IO
 from io import BytesIO
 import tempfile
@@ -55,20 +57,45 @@ def httpize(d: Optional[Dict]) -> Dict[str, Any]:
     return converted
 
 
-async def decoded(generator, encoding='utf-8'):
-    decoder = codecs.getincrementaldecoder(encoding)(errors='ignore')
-    async for d in generator:
-        yield decoder.decode(d)
+class _DecodeHelper:
+    """
+    Decode logs from the Docker Engine
+    """
 
-    d = decoder.decode(b'', final=True)
-    if d:
-        yield d
+    def __init__(self, generator, encoding):
+        self._gen = generator.__aiter__()
+        self._decoder = codecs.getincrementaldecoder(encoding)(errors='ignore')
+        self._flag = False
+
+    def __aiter__(self):
+        return self
+
+    # to make it compatible with Python 3.5.0 and 3.5.2
+    # https://www.python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
+    if sys.version_info <= (3, 5, 2):
+        __aiter__ = asyncio.coroutine(__aiter__)
+
+    async def __anext__(self):
+        if self._flag:
+            raise StopAsyncIteration
+
+        # we catch StopAsyncIteration from self._gen
+        # because we need to close the decoder
+        # then we raise StopAsyncIteration checking self._flag
+        try:
+            stream = await self._gen.__anext__()
+        except StopAsyncIteration:
+            self._flag = True
+            stream_decoded = self._decoder.decode(b'', final=True)
+            if stream_decoded:
+                return stream_decoded
+        else:
+            return self._decoder.decode(stream)
 
 
 def clean_config(config: Optional[dict]) -> dict:
     """
     Checks the values inside `config`
-
     Returns a new dictionary with only NOT `None` values
     """
     data = {}
@@ -95,7 +122,6 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
 def clean_networks(networks: Optional[List]=None) -> List:
     """
     Cleans the values inside `networks`
-
     Returns a new list
     """
     if not networks:
@@ -114,7 +140,6 @@ def clean_networks(networks: Optional[List]=None) -> List:
 def clean_filters(filters: Optional[dict]=None) -> str:
     """
     Checks the values inside `filters`
-
     https://docs.docker.com/engine/api/v1.29/#operation/ServiceList
     Returns a new dictionary in the format `map[string][]string` jsonized
     """
@@ -132,10 +157,8 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
     """
     Create a zipped tar archive from a Dockerfile
     **Remember to close the file object**
-
     Args:
         fileobj: a Dockerfile
-
     Returns:
         a NamedTemporaryFile() object
     """
