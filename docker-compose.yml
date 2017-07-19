@@ -1,7 +1,7 @@
 version: '2'
 services:
   aiodocker:
-    image: python:3.6.1-alpine
+    image: python:${TRAVIS_PYTHON_VERSION}-alpine
     depends_on:
       - docker
       - registry
