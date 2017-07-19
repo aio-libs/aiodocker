@@ -186,7 +186,7 @@ async def test_put_archive(docker, testing_images):
         path='/tmp',
         data=file_like_object.getvalue())
     await container.start()
-    await container.wait(timeout=1)
+    await container.wait(timeout=5)
 
     output = await container.log(stdout=True, stderr=True)
     output.strip()
