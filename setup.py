@@ -41,7 +41,7 @@ setup(
     packages=[
         'aiodocker',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.5',
     install_requires=[
         'aiohttp~=2.2.0',
         'yarl>=0.10',
