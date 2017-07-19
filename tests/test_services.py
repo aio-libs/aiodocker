@@ -1,5 +1,8 @@
+import asyncio
+from contextlib import suppress
 import pytest
 from aiodocker.exceptions import DockerError
+import aiohttp
 
 
 @pytest.mark.asyncio
@@ -74,6 +77,35 @@ async def test_delete_services(docker):
 
     for service in services:
         await docker.services.delete(service_id=service['ID'])
+
+
+@pytest.mark.asyncio
+async def test_logs_services(docker, testing_images):
+    TaskTemplate = {
+        "ContainerSpec": {
+            "Image": "python:3.6.1-alpine",
+            "Args": ["python", "-c", "while True: print('Hello Python')"]
+        }
+    }
+    service = await docker.services.create(
+        task_template=TaskTemplate,
+    )
+    service_id = service['ID']
+
+    response = await docker.services.logs(
+                            service_id, stdout=True, stderr=True, follow=True
+                            )
+    found = False
+
+    with suppress(asyncio.TimeoutError):
+        with aiohttp.Timeout(5):
+            # collect the logs for at most
+            # 5 secs until we see the output
+            # services are `slower`
+            async for log in response:
+                if "Hello Python\n" in log:
+                    found = True
+    assert found
 
 
 # temporary fix https://github.com/aio-libs/aiodocker/issues/53
