@@ -43,7 +43,7 @@ setup(
     ],
     python_requires='>=3.5',
     install_requires=[
-        'setuptools==36.2.0'
+        'setuptools==36.2.0',
         'aiohttp==2.2.3',
         'yarl>=0.10',
     ],
