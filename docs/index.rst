@@ -111,13 +111,12 @@ The ``aiodocker`` package is written by Andrew Svetlov.
 It's *Apache 2* licensed and freely available.
 
 
-
-
 .. toctree::
+   :hidden:
    :maxdepth: 2
-   :caption: Contents:
 
-
+   containers
+   services
 
 Indices and tables
 ==================
@@ -125,3 +124,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
