@@ -32,6 +32,11 @@ Installation
 
    pip install aiodocker
 
+Documentation
+=============
+
+http://aiodocker.readthedocs.io
+
 
 Examples
 ========
