@@ -98,6 +98,8 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# The default language to highlight source code in.
+highlight_language = 'python3'
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -119,8 +121,6 @@ html_theme_options = {
     'github_button': True,
     'github_type': 'star',
     'github_banner': True,
-    'travis_button': True,
-    'codecov_button': True,
     'pre_bg': '#FFF6E5',
     'note_bg': '#E5ECD1',
     'note_border': '#BFCF8C',
@@ -141,11 +141,11 @@ html_static_path = ['_static']
 # refs: http://alabaster.readthedocs.io/en/latest/installation.html#sidebars
 
 
-# html_sidebars = {
-#     '**': [
-#         'about.html', 'navigation.html', 'searchbox.html',
-#     ]
-# }
+html_sidebars = {
+    '**': [
+        'about.html', 'navigation.html', 'searchbox.html',
+    ]
+}
 
 # html_sidebars = {
 #    '**': [
