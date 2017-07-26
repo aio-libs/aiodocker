@@ -203,7 +203,6 @@ async def test_port(docker, testing_images, redis_container):
 
 @pytest.mark.asyncio
 async def test_events(docker, testing_images, event_loop):
-    monitor_task = event_loop.create_task(docker.events.run())
     subscriber = docker.events.subscribe()
 
     # Do some stuffs to generate events.
@@ -231,4 +230,3 @@ async def test_events(docker, testing_images, event_loop):
             break
 
     assert events_occurred == ['create', 'start', 'kill', 'die', 'destroy']
-    monitor_task.cancel()
