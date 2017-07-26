@@ -39,7 +39,7 @@ class _JsonStreamResult:
         # (see https://github.com/KeepSafe/aiohttp/issues/739)
 
         # response error , it has been closed
-        await self._response.close()
+        self._response.close()
 
 
 async def json_stream_result(response, transform=None, stream=True):

@@ -503,16 +503,15 @@ class DockerEvents:
                 self._transform_event,
                 human_bool(params['stream']),
             )
-            async for data in self.json_stream:
-                await self.channel.publish(data)
+            try:
+                async for data in self.json_stream:
+                    await self.channel.publish(data)
+            finally:
+                await self.json_stream._close()
+                self.json_stream = None
         finally:
             # signal termination to subscribers
             await self.channel.publish(None)
-            try:
-                await self.json_stream._close()
-            except:
-                pass
-            self.json_stream = None
 
     async def stop(self):
         if self.json_stream is not None:

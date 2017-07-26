@@ -230,3 +230,5 @@ async def test_events(docker, testing_images, event_loop):
             break
 
     assert events_occurred == ['create', 'start', 'kill', 'die', 'destroy']
+
+    await docker.events.stop()
