@@ -16,7 +16,7 @@ with (Path(__file__).parent / 'aiodocker' / '__init__.py').open() as fp:
 long_description = open('README.rst').read() + open('CHANGES.rst').read()
 
 
-with open('./requirements.txt') as test_reqs_txt:
+with open('./requirements/base.txt') as test_reqs_txt:
     requirements = list(iter(test_reqs_txt))
 
 
