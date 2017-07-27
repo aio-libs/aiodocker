@@ -15,7 +15,7 @@ async def test_build_from_remote_file(docker):
     remote = ("https://raw.githubusercontent.com/aio-libs/"
               "aiodocker/master/tests/docker/Dockerfile")
 
-    tag = "%s:1.0" % _random_name()
+    tag = "{}:1.0".format(_random_name())
     params = {'tag': tag, 'remote': remote, 'stream': True}
     stream = await docker.images.build(**params)
 
@@ -31,7 +31,7 @@ async def test_build_from_remote_tar(docker):
     remote = ("https://github.com/aio-libs/aiodocker/"
               "raw/master/tests/docker/docker_context.tar")
 
-    tag = "%s:1.0" % _random_name()
+    tag = "{}:1.0".format(_random_name())
     params = {'tag': tag, 'remote': remote, 'stream': True}
     stream = await docker.images.build(**params)
 
@@ -94,7 +94,7 @@ async def test_delete_image(docker):
 
 @pytest.mark.asyncio
 async def test_not_existing_image(docker):
-    name = "%s:latest" % _random_name()
+    name = "{}:latest".format(_random_name())
     with pytest.raises(DockerError) as excinfo:
         await docker.images.get(name=name)
     assert excinfo.value.status == 404
@@ -110,7 +110,7 @@ async def test_pull_image(docker):
 
 @pytest.mark.asyncio
 async def test_build_from_tar(docker):
-    name = "%s:latest" % _random_name()
+    name = "{}:latest".format(_random_name())
     dockerfile = '''
     # Shared Volume
     FROM busybox:buildroot-2014.02
