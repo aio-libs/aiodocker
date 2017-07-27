@@ -1,6 +1,7 @@
-import pytest
 import uuid
 from io import BytesIO
+
+import pytest
 from aiodocker import utils
 from aiodocker.exceptions import DockerError
 
