@@ -16,11 +16,8 @@ async def test_build_from_remote_file(docker):
               "aiodocker/master/tests/docker/Dockerfile")
 
     tag = "{}:1.0".format(_random_name())
-    params = {'tag': tag, 'remote': remote, 'stream': True}
+    params = {'tag': tag, 'remote': remote}
     stream = await docker.images.build(**params)
-
-    async for _ in stream:  # noqa: F841
-        pass
 
     image = await docker.images.get(tag)
     assert image
@@ -32,11 +29,8 @@ async def test_build_from_remote_tar(docker):
               "raw/master/tests/docker/docker_context.tar")
 
     tag = "{}:1.0".format(_random_name())
-    params = {'tag': tag, 'remote': remote, 'stream': True}
+    params = {'tag': tag, 'remote': remote}
     stream = await docker.images.build(**params)
-
-    async for _ in stream:  # noqa: F841
-        pass
 
     image = await docker.images.get(tag)
     assert image
