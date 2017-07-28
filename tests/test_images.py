@@ -17,7 +17,7 @@ async def test_build_from_remote_file(docker):
 
     tag = "{}:1.0".format(_random_name())
     params = {'tag': tag, 'remote': remote}
-    stream = await docker.images.build(**params)
+    await docker.images.build(**params)
 
     image = await docker.images.get(tag)
     assert image
@@ -30,7 +30,7 @@ async def test_build_from_remote_tar(docker):
 
     tag = "{}:1.0".format(_random_name())
     params = {'tag': tag, 'remote': remote}
-    stream = await docker.images.build(**params)
+    await docker.images.build(**params)
 
     image = await docker.images.get(tag)
     assert image
