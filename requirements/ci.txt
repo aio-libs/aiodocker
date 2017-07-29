@@ -1,5 +1,5 @@
 codecov
 docutils
 tox
-tox-travis
+tox-travis==0.8
 pygments
