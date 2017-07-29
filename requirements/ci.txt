@@ -2,4 +2,4 @@ codecov
 docutils
 tox
 tox-travis
-pygments
+pygments==2.2.0
