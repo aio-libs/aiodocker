@@ -1,4 +1,4 @@
-codecov
+codecov==2.0.9
 docutils
 tox
 tox-travis
