@@ -1,7 +1,13 @@
-import pytest
+import uuid
 from io import BytesIO
+
+import pytest
 from aiodocker import utils
 from aiodocker.exceptions import DockerError
+
+
+def _random_name():
+    return "aiodocker-" + uuid.uuid4().hex[:7]
 
 
 @pytest.mark.asyncio
@@ -9,13 +15,9 @@ async def test_build_from_remote_file(docker):
     remote = ("https://raw.githubusercontent.com/aio-libs/"
               "aiodocker/master/tests/docker/Dockerfile")
 
-    tag = "image:1.0"
-    params = {'tag': tag, 'remote': remote, 'stream': True}
-    stream = await docker.images.build(**params)
-
-    async for output in stream:
-        if "Successfully tagged image:1.0\n" in output:
-            break
+    tag = "{}:1.0".format(_random_name())
+    params = {'tag': tag, 'remote': remote}
+    await docker.images.build(**params)
 
     image = await docker.images.get(tag)
     assert image
@@ -26,13 +28,9 @@ async def test_build_from_remote_tar(docker):
     remote = ("https://github.com/aio-libs/aiodocker/"
               "raw/master/tests/docker/docker_context.tar")
 
-    tag = "image_from_tar:1.0"
-    params = {'tag': tag, 'remote': remote, 'stream': True}
-    stream = await docker.images.build(**params)
-
-    async for output in stream:
-        if "Successfully tagged image_from_tar:1.0\n" in output:
-            break
+    tag = "{}:1.0".format(_random_name())
+    params = {'tag': tag, 'remote': remote}
+    await docker.images.build(**params)
 
     image = await docker.images.get(tag)
     assert image
@@ -40,38 +38,47 @@ async def test_build_from_remote_tar(docker):
 
 @pytest.mark.asyncio
 async def test_history(docker):
-    name = "image:1.0"
+    name = "busybox:latest"
+    await docker.images.pull(from_image=name)
     history = await docker.images.history(name=name)
     assert history
 
 
 @pytest.mark.asyncio
 async def test_list_images(docker):
-    images = await docker.images.list()
-    assert images
+    name = "busybox:latest"
+    await docker.images.pull(from_image=name)
+    images = await docker.images.list(filter=name)
+    assert len(images) == 1
 
 
 @pytest.mark.asyncio
 async def test_tag_image(docker):
-    repository = "registry:5000/image"
-    name = "image:1.0"
+    name = "busybox:latest"
+    repository = _random_name()
+    await docker.images.pull(from_image=name)
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
     image = await docker.images.get(name)
-    assert len(image['RepoTags']) == 3
+    assert len([x for x in image['RepoTags'] if x.startswith(repository)]) == 2
 
 
 @pytest.mark.asyncio
 async def test_push_image(docker):
-    name = "registry:5000/image"
-    await docker.images.push(name=name)
+    name = "busybox:latest"
+    await docker.images.pull(from_image=name)
+    repository = "localhost:5000/image"
+    await docker.images.tag(name=name, repo=repository)
+    await docker.images.push(name=repository)
 
 
 @pytest.mark.asyncio
 async def test_delete_image(docker):
+    name = "busybox:latest"
+    await docker.images.pull(from_image=name)
     images = await docker.images.list()
     origin_count = len(images)
-    image = await docker.images.get("image:1.0")
+    image = await docker.images.get(name)
     tags = image['RepoTags']
     for tag in tags:
         await docker.images.delete(name=tag)
@@ -80,24 +87,24 @@ async def test_delete_image(docker):
 
 
 @pytest.mark.asyncio
-async def test_deleted_image(docker):
-    name = "registry:5000/image:1.0"
+async def test_not_existing_image(docker):
+    name = "{}:latest".format(_random_name())
     with pytest.raises(DockerError) as excinfo:
         await docker.images.get(name=name)
-    assert 'no such image:' in str(excinfo.value)
+    assert excinfo.value.status == 404
 
 
 @pytest.mark.asyncio
 async def test_pull_image(docker):
-    name = "registry:5000/image"
+    name = "busybox:latest"
     await docker.images.pull(from_image=name)
-    name = "registry:5000/image:1.0"
     image = await docker.images.get(name=name)
     assert image
 
 
 @pytest.mark.asyncio
 async def test_build_from_tar(docker):
+    name = "{}:latest".format(_random_name())
     dockerfile = '''
     # Shared Volume
     FROM busybox:buildroot-2014.02
@@ -106,8 +113,7 @@ async def test_build_from_tar(docker):
     '''
     f = BytesIO(dockerfile.encode('utf-8'))
     tar_obj = utils.mktar_from_dockerfile(f)
-    await docker.images.build(fileobj=tar_obj, encoding="gzip",
-                              tag="fromtar/image:1.0")
+    await docker.images.build(fileobj=tar_obj, encoding="gzip", tag=name)
     tar_obj.close()
-    image = await docker.images.get(name="fromtar/image:1.0")
+    image = await docker.images.get(name=name)
     assert image

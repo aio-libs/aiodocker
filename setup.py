@@ -16,6 +16,14 @@ with (Path(__file__).parent / 'aiodocker' / '__init__.py').open() as fp:
 long_description = open('README.rst').read() + open('CHANGES.rst').read()
 
 
+with open('./requirements/base.txt') as test_reqs_txt:
+    requirements = list(iter(test_reqs_txt))
+
+
+with open('./requirements/test.txt') as test_reqs_txt:
+    test_requirements = list(iter(test_reqs_txt))
+
+
 setup(
     name="aiodocker",
     version=version,
@@ -42,12 +50,7 @@ setup(
         'aiodocker',
     ],
     python_requires='>=3.5',
-    install_requires=[
-        'setuptools==36.2.0',
-        'aiohttp==2.2.3',
-        'yarl>=0.10',
-    ],
-    extras_require={
-        'test': ['pytest', 'pytest-asyncio', 'flake8'],
-    }
+    install_requires=requirements,
+    tests_require=test_requirements,
+    test_suite="tests",
 )

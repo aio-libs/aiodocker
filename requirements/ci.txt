@@ -1,3 +1,5 @@
-setuptools==36.2.3
-aiohttp==2.2.3
-yarl>=0.10
+codecov
+docutils
+tox
+tox-travis
+pygments
