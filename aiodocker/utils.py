@@ -89,6 +89,7 @@ class _DecodeHelper:
             stream_decoded = self._decoder.decode(b'', final=True)
             if stream_decoded:
                 return stream_decoded
+            raise StopAsyncIteration
         else:
             return self._decoder.decode(stream)
 

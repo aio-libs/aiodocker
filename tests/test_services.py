@@ -1,5 +1,7 @@
+import asyncio
 import pytest
 from aiodocker.exceptions import DockerError
+import aiohttp
 
 
 @pytest.mark.asyncio
@@ -69,9 +71,96 @@ async def test_service_tasks(docker):
 
 
 @pytest.mark.asyncio
-async def test_delete_services(docker):
-    services = await docker.services.list()
+async def test_logs_services(docker, testing_images):
+    TaskTemplate = {
+        "ContainerSpec": {
+            "Image": "python:3.6.1-alpine",
+            "Args": [
+                "python", "-c",
+                "for _ in range(10): print('Hello Python')"
+                ]
+        },
+        "RestartPolicy": {
+            "Condition": "none"
+            }
+    }
+    service = await docker.services.create(
+        task_template=TaskTemplate,
+    )
+    service_id = service['ID']
 
+    filters = {"service": service_id}
+
+    # wait till task status is `complete`
+    with aiohttp.Timeout(60):
+        while True:
+            await asyncio.sleep(2)
+            task = await docker.tasks.list(filters=filters)
+            if task:
+                status = task[0]['Status']['State']
+                if status == 'complete':
+                    break
+
+    logs = await docker.services.logs(
+                            service_id, stdout=True)
+
+    assert len(logs) == 10
+    assert logs[0] == "Hello Python"
+
+
+@pytest.mark.asyncio
+async def test_logs_services_stream(docker, testing_images):
+    TaskTemplate = {
+        "ContainerSpec": {
+            "Image": "python:3.6.1-alpine",
+            "Args": [
+                "python", "-c",
+                "for _ in range(10): print('Hello Python')"
+                ]
+        },
+        "RestartPolicy": {
+            "Condition": "none"
+            }
+    }
+    service = await docker.services.create(
+        task_template=TaskTemplate,
+    )
+    service_id = service['ID']
+
+    filters = {"service": service_id}
+
+    # wait till task status is `complete`
+    with aiohttp.Timeout(60):
+        while True:
+            await asyncio.sleep(2)
+            task = await docker.tasks.list(filters=filters)
+            if task:
+                status = task[0]['Status']['State']
+                if status == 'complete':
+                    break
+
+    stream = await docker.services.logs(
+                            service_id, stdout=True, follow=True
+                            )
+
+    # the service printed 10 `Hello Python`
+    # let's check for them
+    count = 0
+    try:
+        with aiohttp.Timeout(2):
+            while True:
+                async for log in stream:
+                    if "Hello Python\n" in log:
+                        count += 1
+    except asyncio.TimeoutError:
+        pass
+
+    assert count == 10
+
+
+@pytest.mark.asyncio
+async def test_service_delete(docker):
+    services = await docker.services.list()
     for service in services:
         await docker.services.delete(service_id=service['ID'])
 
@@ -80,7 +169,4 @@ async def test_delete_services(docker):
 @pytest.mark.xfail(raises=DockerError, reason="bug inside Docker")
 @pytest.mark.asyncio
 async def test_swarm_remove(docker):
-    services = await docker.services.list()
-    for service in services:
-        await docker.services.delete(service_id=service['ID'])
     await docker.swarm.leave(force=True)
