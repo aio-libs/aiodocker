@@ -1,5 +1,8 @@
 include LICENSE
 include README.rst
+include CHANGES.rst
+include requirements/base.txt
+include requirements/test.txt
 graft aiodocker
 graft examples
 graft tests
