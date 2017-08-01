@@ -466,13 +466,16 @@ class DockerEvents:
         self.docker = docker
         self.channel = Channel()
         self.json_stream = None
+        self.task = None
 
     def listen(self):
         warnings.warn("use subscribe() method instead",
                       DeprecationWarning, stacklevel=2)
         return self.channel.subscribe()
 
-    def subscribe(self):
+    def subscribe(self, create_task=True):
+        if create_task:
+            self.task = asyncio.ensure_future(self.run())
         return self.channel.subscribe()
 
     def _transform_event(self, data):
@@ -500,20 +503,25 @@ class DockerEvents:
                 self._transform_event,
                 human_bool(params['stream']),
             )
-            async for data in self.json_stream:
-                await self.channel.publish(data)
+            try:
+                async for data in self.json_stream:
+                    await self.channel.publish(data)
+            finally:
+                await self.json_stream._close()
+                self.json_stream = None
         finally:
             # signal termination to subscribers
             await self.channel.publish(None)
-            try:
-                await self.json_stream.close()
-            except:
-                pass
-            self.json_stream = None
 
     async def stop(self):
-        if self.json_stream:
-            await self.json_stream.close()
+        if self.json_stream is not None:
+            await self.json_stream._close()
+        if self.task:
+            self.task.cancel()
+            try:
+                await self.task
+            except asyncio.CancelledError:
+                pass
 
 
 class DockerLog:
