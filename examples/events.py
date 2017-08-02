@@ -29,7 +29,7 @@ async def demo(docker):
     }
     container = await docker.containers.create_or_replace(
         config=config, name='testing')
-    await container.start(config)
+    await container.start()
     print(f"=> created and started container {container._id[:12]}")
 
     while True:
