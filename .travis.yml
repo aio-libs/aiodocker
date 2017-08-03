@@ -6,21 +6,23 @@ python:
   - "3.5"
   - "3.6"
 
+env:
+  - DOCKER_VERSION=17.03
+  - DOCKER_VERSION=17.04
+  - DOCKER_VERSION=17.05
+  - DOCKER_VERSION=17.06
+
 services:
   - docker
 
 install:
-  # NOTE: upgrade Docker to the latest because version 17.03 has a problem
-  #       with the test tests/test_images.py::test_build_from_remote_file:
-  #       500: 'Unknown instruction: \x00\x00\x00\x00\x00\x00\x00...'
-  - sudo apt-get update
-  - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+  - docker run -d --privileged --net host --name ci-docker docker:$DOCKER_VERSION-dind dockerd -H tcp://localhost:27015
   - docker run -d --name registry -p 5000:5000 registry
   - pip install -r requirements/ci.txt
 
 script:
   - python setup.py check -rms
-  - tox
+  - DOCKER_HOST=tcp://localhost:27015 tox
 
 after_success:
   - codecov

@@ -1,9 +1,18 @@
 import asyncio
+from os import environ as ENV
 
 import pytest
 
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+
+
+_api_versions = {
+    "17.06": "v1.30",
+    "17.05": "v1.29",
+    "17.04": "v1.28",
+    "17.03": "v1.27",
+}
 
 
 @pytest.fixture(scope='session')
@@ -31,7 +40,10 @@ def testing_images():
 
 @pytest.fixture
 def docker(event_loop, testing_images):
-    docker = Docker()
+    kwargs = {}
+    if "DOCKER_VERSION" in ENV:
+        kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
+    docker = Docker(**kwargs)
     yield docker
 
     async def _finalize():
