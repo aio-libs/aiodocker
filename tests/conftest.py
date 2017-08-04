@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+from distutils.version import StrictVersion
 from os import environ as ENV
 
 import pytest
@@ -59,6 +60,25 @@ def docker(event_loop, testing_images):
     async def _finalize():
         await docker.close()
     event_loop.run_until_complete(_finalize())
+
+
+@pytest.fixture
+def swarm(event_loop, docker):
+    if StrictVersion(docker.api_version[1:]) < StrictVersion("1.28"):
+        pytest.skip("The feature is experimental before API version 1.28")
+    assert event_loop.run_until_complete(docker.swarm.init())
+    yield docker
+    try:
+        assert event_loop.run_until_complete(docker.swarm.leave(force=True))
+    except DockerError as exc:
+        if StrictVersion(docker.api_version[1:]) >= StrictVersion("1.30"):
+            raise
+        else:
+            # NOTE: in Docker version 1.28 and 1.29, it is possible that Docker
+            #       refuses to leave the Swarm cleanly. Reducing the number
+            #       of service ran seems to solve the issue. More at #53
+            assert event_loop.run_until_complete(
+                docker.swarm.leave(force=True))
 
 
 @pytest.fixture
