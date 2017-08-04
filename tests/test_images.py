@@ -39,7 +39,6 @@ async def test_build_from_remote_tar(docker):
 @pytest.mark.asyncio
 async def test_history(docker):
     name = "busybox:latest"
-    await docker.images.pull(from_image=name)
     history = await docker.images.history(name=name)
     assert history
 
@@ -47,7 +46,6 @@ async def test_history(docker):
 @pytest.mark.asyncio
 async def test_list_images(docker):
     name = "busybox:latest"
-    await docker.images.pull(from_image=name)
     images = await docker.images.list(filter=name)
     assert len(images) == 1
 
@@ -56,7 +54,6 @@ async def test_list_images(docker):
 async def test_tag_image(docker):
     name = "busybox:latest"
     repository = _random_name()
-    await docker.images.pull(from_image=name)
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
     image = await docker.images.get(name)
@@ -66,7 +63,6 @@ async def test_tag_image(docker):
 @pytest.mark.asyncio
 async def test_push_image(docker):
     name = "busybox:latest"
-    await docker.images.pull(from_image=name)
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
     await docker.images.push(name=repository)
@@ -75,7 +71,6 @@ async def test_push_image(docker):
 @pytest.mark.asyncio
 async def test_delete_image(docker):
     name = "busybox:latest"
-    await docker.images.pull(from_image=name)
     images = await docker.images.list()
     origin_count = len(images)
     image = await docker.images.get(name)
@@ -97,7 +92,6 @@ async def test_not_existing_image(docker):
 @pytest.mark.asyncio
 async def test_pull_image(docker):
     name = "busybox:latest"
-    await docker.images.pull(from_image=name)
     image = await docker.images.get(name=name)
     assert image
 

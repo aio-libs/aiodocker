@@ -14,7 +14,8 @@ def testing_images():
     async def _pull():
         docker = Docker()
         required_images = [
-            'alpine:latest', 'redis:latest', 'python:3.6.1-alpine'
+            'alpine:latest', 'redis:latest', 'python:3.6.1-alpine',
+            'busybox:latest',
         ]
         for img in required_images:
             try:
@@ -29,7 +30,7 @@ def testing_images():
 
 
 @pytest.fixture
-def docker(event_loop):
+def docker(event_loop, testing_images):
     docker = Docker()
     yield docker
 
