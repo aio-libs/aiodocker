@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 from os import environ as ENV
 
 import pytest
@@ -13,6 +14,15 @@ _api_versions = {
     "17.04": "v1.28",
     "17.03": "v1.27",
 }
+
+
+def _random_name():
+    return "aiodocker-" + uuid.uuid4().hex[:7]
+
+
+@pytest.fixture
+def random_name():
+    return _random_name
 
 
 @pytest.fixture(scope='session')

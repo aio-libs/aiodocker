@@ -1,4 +1,3 @@
-import uuid
 from io import BytesIO
 
 import pytest
@@ -6,16 +5,12 @@ from aiodocker import utils
 from aiodocker.exceptions import DockerError
 
 
-def _random_name():
-    return "aiodocker-" + uuid.uuid4().hex[:7]
-
-
 @pytest.mark.asyncio
-async def test_build_from_remote_file(docker):
+async def test_build_from_remote_file(docker, random_name):
     remote = ("https://raw.githubusercontent.com/aio-libs/"
               "aiodocker/master/tests/docker/Dockerfile")
 
-    tag = "{}:1.0".format(_random_name())
+    tag = "{}:1.0".format(random_name())
     params = {'tag': tag, 'remote': remote}
     await docker.images.build(**params)
 
@@ -24,11 +19,11 @@ async def test_build_from_remote_file(docker):
 
 
 @pytest.mark.asyncio
-async def test_build_from_remote_tar(docker):
+async def test_build_from_remote_tar(docker, random_name):
     remote = ("https://github.com/aio-libs/aiodocker/"
               "raw/master/tests/docker/docker_context.tar")
 
-    tag = "{}:1.0".format(_random_name())
+    tag = "{}:1.0".format(random_name())
     params = {'tag': tag, 'remote': remote}
     await docker.images.build(**params)
 
@@ -51,9 +46,9 @@ async def test_list_images(docker):
 
 
 @pytest.mark.asyncio
-async def test_tag_image(docker):
+async def test_tag_image(docker, random_name):
     name = "busybox:latest"
-    repository = _random_name()
+    repository = random_name()
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
     image = await docker.images.get(name)
@@ -80,8 +75,8 @@ async def test_delete_image(docker):
 
 
 @pytest.mark.asyncio
-async def test_not_existing_image(docker):
-    name = "{}:latest".format(_random_name())
+async def test_not_existing_image(docker, random_name):
+    name = "{}:latest".format(random_name())
     with pytest.raises(DockerError) as excinfo:
         await docker.images.get(name=name)
     assert excinfo.value.status == 404
@@ -95,8 +90,8 @@ async def test_pull_image(docker):
 
 
 @pytest.mark.asyncio
-async def test_build_from_tar(docker):
-    name = "{}:latest".format(_random_name())
+async def test_build_from_tar(docker, random_name):
+    name = "{}:latest".format(random_name())
     dockerfile = '''
     # Shared Volume
     FROM busybox:buildroot-2014.02
