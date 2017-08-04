@@ -87,6 +87,7 @@ class Docker:
         self.volumes = DockerVolumes(self)
 
     async def close(self):
+        await self.events.stop()
         await self.session.close()
 
     async def auth(self, **credentials):

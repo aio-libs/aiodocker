@@ -29,7 +29,7 @@ async def demo(docker):
     }
     container = await docker.containers.create_or_replace(
         config=config, name='testing')
-    await container.start(config)
+    await container.start()
     print(f"=> created and started container {container._id[:12]}")
 
     while True:
@@ -52,18 +52,10 @@ async def demo(docker):
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
+    docker = Docker()
     try:
-        docker = Docker()
-        # start a monitoring task.
-        event_task = loop.create_task(docker.events.run())
-        try:
-            # do our stuffs.
-            loop.run_until_complete(demo(docker))
-        finally:
-            # explicitly stop monitoring.
-            event_task.cancel()
-            loop.run_until_complete(docker.close())
-            if not event_task.cancelled():
-                event_task.result()  # NOTE: maybe raise an exception
+        # do our stuffs.
+        loop.run_until_complete(demo(docker))
     finally:
+        loop.run_until_complete(docker.close())
         loop.close()
