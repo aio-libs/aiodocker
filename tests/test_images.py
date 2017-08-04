@@ -71,14 +71,12 @@ async def test_push_image(docker):
 @pytest.mark.asyncio
 async def test_delete_image(docker):
     name = "busybox:latest"
-    images = await docker.images.list()
-    origin_count = len(images)
-    image = await docker.images.get(name)
-    tags = image['RepoTags']
-    for tag in tags:
-        await docker.images.delete(name=tag)
-    images = await docker.images.list()
-    assert len(images) == origin_count - 1
+    repository = "localhost:5000/image"
+    await docker.images.tag(name=name, repo=repository)
+    assert await docker.images.get(repository)
+    await docker.images.delete(name=repository)
+    images = await docker.images.list(filter=repository)
+    assert len(images) == 0
 
 
 @pytest.mark.asyncio
