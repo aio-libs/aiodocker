@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import io
 import os
 import sys
@@ -152,8 +153,12 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
 @pytest.mark.asyncio
 async def test_wait_timeout(docker, testing_images, shell_container):
+    t1 = datetime.datetime.now()
     with pytest.raises(asyncio.TimeoutError):
         await shell_container.wait(timeout=0.5)
+    t2 = datetime.datetime.now()
+    delta = t2 - t1
+    assert delta.total_seconds() < 5
 
 
 @pytest.mark.asyncio
