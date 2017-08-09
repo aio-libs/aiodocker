@@ -114,6 +114,7 @@ class Docker:
         data = await self._query_json("version")
         return data
 
+    # maybe discard future
     async def pull(self, image, auth=None,stream=False):
 
         headers = {"content-type": "application/json",}

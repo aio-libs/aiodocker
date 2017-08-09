@@ -42,7 +42,7 @@ class DockerImages(object):
         return response
 
     async def pull(self, from_image: str, *, repo: Optional[str]=None,
-                   tag: Optional[str]=None, stream: bool=False) -> Dict:
+                   tag: Optional[str]=None, auth: Optional[dict]=None, stream: bool=False) -> Dict:
         """
         Similar to `docker pull`, pull an image locally
 
@@ -51,6 +51,7 @@ class DockerImages(object):
             repo: repository name given to an image when it is imported
             tag: if empty when pulling an image all tags
                  for the given image to be pulled
+            auth: special {'auth': base64} pull private repo
         """
 
         params = {}
@@ -64,11 +65,26 @@ class DockerImages(object):
         if tag:
             params['tag'] = tag
 
+        headers = {"content-type": "application/json"}
+
+        if auth and 'auth' in auth:
+            s = base64.b64decode(auth['auth'])
+            username, pwd = s.split(b':', 1)
+            username = username.decode('utf-8')
+            pwd = pwd.decode('utf-8')
+
+            auth_config = {"username": username, "password": pwd,
+                           "email": None, "serveraddress": repo}
+
+            auth_config_json = json.dumps(auth_config).encode('ascii')
+            auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
+            headers.update({"X-Registry-Auth": auth_config_b64.decode('ascii')})
+
         response = await self.docker._query(
             "images/create",
             "POST",
             params=params,
-            headers={"content-type": "application/json", },
+            headers=headers,
         )
         return (await json_stream_result(response, stream=stream))
 
