@@ -42,7 +42,8 @@ class DockerImages(object):
         return response
 
     async def pull(self, from_image: str, *, repo: Optional[str]=None,
-                   tag: Optional[str]=None, auth: Optional[dict]=None, stream: bool=False) -> Dict:
+                   tag: Optional[str]=None, auth: Optional[dict]=None,
+                   stream: bool=False) -> Dict:
         """
         Similar to `docker pull`, pull an image locally
 
@@ -78,7 +79,8 @@ class DockerImages(object):
 
             auth_config_json = json.dumps(auth_config).encode('ascii')
             auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
-            headers.update({"X-Registry-Auth": auth_config_b64.decode('ascii')})
+            headers.update({"X-Registry-Auth":
+                            auth_config_b64.decode('ascii')})
 
         response = await self.docker._query(
             "images/create",

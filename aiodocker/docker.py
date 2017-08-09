@@ -115,9 +115,9 @@ class Docker:
         return data
 
     # maybe discard future
-    async def pull(self, image, auth=None,stream=False):
+    async def pull(self, image, auth=None, stream=False):
 
-        headers = {"content-type": "application/json",}
+        headers = {"content-type": "application/json"}
         if auth:
             if isinstance(auth, dict) and 'auth' in auth:
                 s = base64.b64decode(auth['auth'])
@@ -129,14 +129,15 @@ class Docker:
                 if not p:
                     raise ValueError(" image should have registry host")
 
-                auth_config = {"username":username, "password":pwd,
-                               "email":None, "serveraddress":registry}
+                auth_config = {"username": username, "password": pwd,
+                               "email": None, "serveraddress": registry}
                 auth_config_json = json.dumps(auth_config).encode('ascii')
                 auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
-                headers.update({"X-Registry-Auth": auth_config_b64.decode('ascii')})
+                headers.update({"X-Registry-Auth": auth_config_b64.
+                               decode('ascii')})
 
             else:
-                raise ValueError(" auth format error " + str(auth) )
+                raise ValueError(" auth format error " + str(auth))
 
         response = await self._query(
             "images/create", "POST",
