@@ -63,6 +63,16 @@ def docker(event_loop, testing_images):
 
 
 @pytest.fixture
+def requires_api_version(docker):
+
+    def check(version, reason):
+        if StrictVersion(docker.api_version[1:]) < StrictVersion(version[1:]):
+            pytest.skip(reason)
+
+    yield check
+
+
+@pytest.fixture
 def swarm(event_loop, docker):
     if StrictVersion(docker.api_version[1:]) < StrictVersion("1.28"):
         pytest.skip("The feature is experimental before API version 1.28")
