@@ -1,77 +1,57 @@
+import aiohttp
 import asyncio
 import pytest
-from aiodocker.exceptions import DockerError
-import aiohttp
+from distutils.version import StrictVersion
+
+
+TaskTemplate = {
+    "ContainerSpec": {
+        "Image": "redis",
+        },
+    }
+
+
+async def _wait_service(swarm, service_id):
+    for i in range(5):
+        tasks = await swarm.tasks.list(filters={'service': service_id})
+        if tasks:
+            return
+        await asyncio.sleep(0.2)
+    raise RuntimeError("Waited service %s for too long" % service_id)
+
+
+@pytest.fixture
+def tmp_service(event_loop, swarm, random_name):
+    service = event_loop.run_until_complete(
+        swarm.services.create(task_template=TaskTemplate, name=random_name()))
+    event_loop.run_until_complete(_wait_service(swarm, service['ID']))
+    yield service['ID']
+    event_loop.run_until_complete(swarm.services.delete(service['ID']))
 
 
 @pytest.mark.asyncio
-async def test_swarm_init(docker):
-    swarm = await docker.swarm.init()
-    assert swarm
+async def test_service_list_with_filter(swarm, tmp_service):
+    docker_service = await swarm.services.inspect(service_id=tmp_service)
+    name = docker_service['Spec']['Name']
+    filters = {"name": name}
+    filtered_list = await swarm.services.list(filters=filters)
+    assert len(filtered_list) == 1
 
 
 @pytest.mark.asyncio
-async def test_service_create(docker):
-    services = await docker.services.list()
-    orig_count = len(services)
-
-    assert orig_count == 0
-
-    TaskTemplate = {
-        "ContainerSpec": {
-            "Image": "redis",
-            },
-        }
-
-    for n in range(3):
-        name = "service-{n}".format(n=n)
-        service = await docker.services.create(
-                            task_template=TaskTemplate,
-                            name=name
-                            )
-        assert service
-
-    services = await docker.services.list()
-    assert len(services) == orig_count + 3
+async def test_service_tasks(swarm, tmp_service):
+    assert await swarm.tasks.list()
+    tasks = await swarm.tasks.list(filters={'service': tmp_service})
+    assert len(tasks) == 1
+    assert tasks[0]['ServiceID'] == tmp_service
+    assert await swarm.tasks.inspect(tasks[0]['ID'])
 
 
 @pytest.mark.asyncio
-async def test_service_inspect(docker):
-    services = await docker.services.list()
+async def test_logs_services(swarm):
+    if StrictVersion(swarm.api_version[1:]) < StrictVersion("1.29"):
+        pytest.skip("The feature is experimental before API version 1.29")
 
-    for service in services:
-        await docker.services.inspect(service_id=service['ID'])
-
-
-@pytest.mark.asyncio
-async def test_service_list_with_filter(docker):
-    services = await docker.services.list()
-
-    for service in services:
-        _id = service['ID']
-        docker_service = await docker.services.inspect(service_id=_id)
-        name = docker_service['Spec']['Name']
-        filters = {"name": name}
-        filtered_list = await docker.services.list(filters=filters)
-        assert len(filtered_list) == 1
-
-
-@pytest.mark.asyncio
-async def test_service_tasks(docker):
-    tasks = await docker.tasks.list()
-
-    for task in tasks:
-        inspected_task = await docker.tasks.inspect(task['ID'])
-        assert inspected_task['ID'] == task['ID']
-
-        filters = {"id": task['ID']}
-
-        this_task = await docker.tasks.list(filters=filters)
-        assert len(this_task) == 1
-
-
-@pytest.mark.asyncio
-async def test_logs_services(docker, testing_images):
     TaskTemplate = {
         "ContainerSpec": {
             "Image": "python:3.6.1-alpine",
@@ -84,7 +64,7 @@ async def test_logs_services(docker, testing_images):
             "Condition": "none"
             }
     }
-    service = await docker.services.create(
+    service = await swarm.services.create(
         task_template=TaskTemplate,
     )
     service_id = service['ID']
@@ -95,13 +75,13 @@ async def test_logs_services(docker, testing_images):
     with aiohttp.Timeout(60):
         while True:
             await asyncio.sleep(2)
-            task = await docker.tasks.list(filters=filters)
+            task = await swarm.tasks.list(filters=filters)
             if task:
                 status = task[0]['Status']['State']
                 if status == 'complete':
                     break
 
-    logs = await docker.services.logs(
+    logs = await swarm.services.logs(
                             service_id, stdout=True)
 
     assert len(logs) == 10
@@ -109,7 +89,10 @@ async def test_logs_services(docker, testing_images):
 
 
 @pytest.mark.asyncio
-async def test_logs_services_stream(docker, testing_images):
+async def test_logs_services_stream(swarm):
+    if StrictVersion(swarm.api_version[1:]) < StrictVersion("1.29"):
+        pytest.skip("The feature is experimental before API version 1.29")
+
     TaskTemplate = {
         "ContainerSpec": {
             "Image": "python:3.6.1-alpine",
@@ -122,7 +105,7 @@ async def test_logs_services_stream(docker, testing_images):
             "Condition": "none"
             }
     }
-    service = await docker.services.create(
+    service = await swarm.services.create(
         task_template=TaskTemplate,
     )
     service_id = service['ID']
@@ -133,13 +116,13 @@ async def test_logs_services_stream(docker, testing_images):
     with aiohttp.Timeout(60):
         while True:
             await asyncio.sleep(2)
-            task = await docker.tasks.list(filters=filters)
+            task = await swarm.tasks.list(filters=filters)
             if task:
                 status = task[0]['Status']['State']
                 if status == 'complete':
                     break
 
-    stream = await docker.services.logs(
+    stream = await swarm.services.logs(
                             service_id, stdout=True, follow=True
                             )
 
@@ -156,17 +139,3 @@ async def test_logs_services_stream(docker, testing_images):
         pass
 
     assert count == 10
-
-
-@pytest.mark.asyncio
-async def test_service_delete(docker):
-    services = await docker.services.list()
-    for service in services:
-        await docker.services.delete(service_id=service['ID'])
-
-
-# temporary fix https://github.com/aio-libs/aiodocker/issues/53
-@pytest.mark.xfail(raises=DockerError, reason="bug inside Docker")
-@pytest.mark.asyncio
-async def test_swarm_remove(docker):
-    await docker.swarm.leave(force=True)

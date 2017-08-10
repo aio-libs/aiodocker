@@ -1,9 +1,11 @@
 import asyncio
+import datetime
 import io
 import os
 import sys
 import tarfile
 import time
+from distutils.version import StrictVersion
 
 import aiohttp
 import pytest
@@ -103,25 +105,28 @@ async def test_container_lifecycles(docker, testing_images):
 @pytest.mark.skipif(sys.platform == 'darwin',
                     reason="Docker for Mac has a bug with websocket")
 async def test_stdio_stdin(docker, testing_images, shell_container):
+    if StrictVersion(docker.api_version[1:]) < StrictVersion("1.28"):
+        pytest.skip("The WebSocket return text before API version 1.28")
+
     # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
     await ws.send_str('echo hello world\n')
-    output = ''
+    output = b''
     found = False
     try:
         # collect the websocket outputs for at most 2 secs until we see the
         # output.
         with aiohttp.Timeout(2):
             while True:
-                output += await ws.receive_str()
-                if "echo hello world\r\n" in output:
+                output += await ws.receive_bytes()
+                if b"echo hello world\r\n" in output:
                     found = True
                     break
     except asyncio.TimeoutError:
         pass
     await ws.close()
     if not found:
-        found = "echo hello world\r\n" in output
+        found = b"echo hello world\r\n" in output
     assert found
 
     # cross-check with container logs.
@@ -148,8 +153,12 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
 @pytest.mark.asyncio
 async def test_wait_timeout(docker, testing_images, shell_container):
+    t1 = datetime.datetime.now()
     with pytest.raises(asyncio.TimeoutError):
         await shell_container.wait(timeout=0.5)
+    t2 = datetime.datetime.now()
+    delta = t2 - t1
+    assert delta.total_seconds() < 5
 
 
 @pytest.mark.asyncio

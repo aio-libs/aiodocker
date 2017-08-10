@@ -123,12 +123,13 @@ class Docker:
         The caller is responsible to finalize the response object.
         '''
         url = self.canonicalize_url(path)
+        if timeout is not None:
+            kwargs['timeout'] = timeout
         try:
-            with aiohttp.Timeout(timeout):
-                response = await self.session.request(
-                    method, url,
-                    params=httpize(params), headers=headers,
-                    data=data, **kwargs)
+            response = await self.session.request(
+                method, url,
+                params=httpize(params), headers=headers,
+                data=data, **kwargs)
         except asyncio.TimeoutError:
             raise
 

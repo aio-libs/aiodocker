@@ -1,9 +1,29 @@
 import asyncio
+import uuid
+from distutils.version import StrictVersion
+from os import environ as ENV
 
 import pytest
 
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+
+
+_api_versions = {
+    "17.06": "v1.30",
+    "17.05": "v1.29",
+    "17.04": "v1.28",
+    "17.03": "v1.27",
+}
+
+
+def _random_name():
+    return "aiodocker-" + uuid.uuid4().hex[:7]
+
+
+@pytest.fixture
+def random_name():
+    return _random_name
 
 
 @pytest.fixture(scope='session')
@@ -14,7 +34,7 @@ def testing_images():
     async def _pull():
         docker = Docker()
         required_images = [
-            'alpine:latest', 'redis:latest', 'python:3.6.1-alpine'
+            'alpine:latest', 'redis:latest', 'python:3.6.1-alpine',
         ]
         for img in required_images:
             try:
@@ -29,13 +49,45 @@ def testing_images():
 
 
 @pytest.fixture
-def docker(event_loop):
-    docker = Docker()
+def docker(event_loop, testing_images):
+    kwargs = {}
+    if "DOCKER_VERSION" in ENV:
+        kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
+    docker = Docker(**kwargs)
     yield docker
 
     async def _finalize():
         await docker.close()
     event_loop.run_until_complete(_finalize())
+
+
+@pytest.fixture
+def requires_api_version(docker):
+
+    def check(version, reason):
+        if StrictVersion(docker.api_version[1:]) < StrictVersion(version[1:]):
+            pytest.skip(reason)
+
+    yield check
+
+
+@pytest.fixture
+def swarm(event_loop, docker):
+    if StrictVersion(docker.api_version[1:]) < StrictVersion("1.28"):
+        pytest.skip("The feature is experimental before API version 1.28")
+    assert event_loop.run_until_complete(docker.swarm.init())
+    yield docker
+    try:
+        assert event_loop.run_until_complete(docker.swarm.leave(force=True))
+    except DockerError as exc:
+        if StrictVersion(docker.api_version[1:]) >= StrictVersion("1.30"):
+            raise
+        else:
+            # NOTE: in Docker version 1.28 and 1.29, it is possible that Docker
+            #       refuses to leave the Swarm cleanly. Reducing the number
+            #       of service ran seems to solve the issue. More at #53
+            assert event_loop.run_until_complete(
+                docker.swarm.leave(force=True))
 
 
 @pytest.fixture
