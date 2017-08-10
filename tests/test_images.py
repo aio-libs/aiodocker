@@ -110,3 +110,36 @@ async def test_build_from_tar(docker, random_name):
     tar_obj.close()
     image = await docker.images.get(name=name)
     assert image
+
+
+@pytest.mark.asyncio
+async def test_pups_image_auth(docker):
+    name = "busybox:latest"
+    await docker.images.pull(from_image=name)
+    repository = "localhost:5001/image:latest"
+    image, _, tag = repository.rpartition(':')
+    await docker.images.tag(name=name, repo=image, tag=tag)
+
+    auth_config = {'username': "testuser",
+                   'password': "testpassword",
+                   'email': None,
+                   'serveraddress': repository}
+
+    await docker.images.push(name=repository, tag=tag, auth=auth_config)
+
+    image = await docker.images.get(repository)
+    tags = image['RepoTags']
+    for tag in tags:
+        await docker.images.delete(name=tag)
+
+    await docker.images.pull(repository,
+                             auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
+
+    image = await docker.images.get(repository)
+    tags = image['RepoTags']
+    for tag in tags:
+        await docker.images.delete(name=tag)
+
+    await docker.pull(repository,
+                      auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
+    await docker.images.get(repository)
