@@ -35,7 +35,6 @@ def testing_images():
         docker = Docker()
         required_images = [
             'alpine:latest', 'redis:latest', 'python:3.6.1-alpine',
-            'busybox:latest',
         ]
         for img in required_images:
             try:

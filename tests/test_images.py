@@ -39,21 +39,21 @@ async def test_build_from_remote_tar(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_history(docker):
-    name = "busybox:latest"
+    name = "alpine:latest"
     history = await docker.images.history(name=name)
     assert history
 
 
 @pytest.mark.asyncio
 async def test_list_images(docker):
-    name = "busybox:latest"
+    name = "alpine:latest"
     images = await docker.images.list(filter=name)
     assert len(images) == 1
 
 
 @pytest.mark.asyncio
 async def test_tag_image(docker, random_name):
-    name = "busybox:latest"
+    name = "alpine:latest"
     repository = random_name()
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
@@ -63,7 +63,7 @@ async def test_tag_image(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_push_image(docker):
-    name = "busybox:latest"
+    name = "alpine:latest"
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
     await docker.images.push(name=repository)
@@ -71,7 +71,7 @@ async def test_push_image(docker):
 
 @pytest.mark.asyncio
 async def test_delete_image(docker):
-    name = "busybox:latest"
+    name = "alpine:latest"
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
     assert await docker.images.get(repository)
@@ -90,7 +90,7 @@ async def test_not_existing_image(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_pull_image(docker):
-    name = "busybox:latest"
+    name = "alpine:latest"
     image = await docker.images.get(name=name)
     assert image
 
@@ -100,7 +100,7 @@ async def test_build_from_tar(docker, random_name):
     name = "{}:latest".format(random_name())
     dockerfile = '''
     # Shared Volume
-    FROM busybox:buildroot-2014.02
+    FROM alpine:latest
     VOLUME /data
     CMD ["/bin/sh"]
     '''
