@@ -26,3 +26,13 @@ script:
 
 after_success:
   - codecov
+
+deploy:
+  provider: pypi
+  user: barrachri
+  password:
+    secure: "a901yEw9KJvjwnZMbKfJKUP5TYWHJG68Cjx9au0DQrrVk6ENV2aAZfzLgs/gqYEB1wn7IM8V9BflmSLnHlXcAIhyx36g/rV6XFaLActthjJz6j9KAupUL9+KSQdOTJxntisjtB3uXYGHVrwQq+TJgcrcGtTs6lF7n7HeHt6Y4ru62czSAb0gC30BviNWGFD1c5RS4Lo7O8qplAQozfQub/fkAzpGaL5XZu9n5D7Uz8aDcTEV7VPWXdRS7ZrfNGq3OsoFzlbS7mqlrF/Wi0R2qIyV4xbmzpAPazkPHKMxZIER7B6yY6Kb4WajQ0eTgPGZpjR2gpzZgUZYlSRQ/eTsxUtGqH3OpmVbWsHMXIESIG4QFpePOu5OhKEm/23cZzXHobXkBdhd4kzr+FSDD29o+x5MJpUWgWGkVrTb44CCMRig3xwTXpyRayYepvpok3207nJd9nKHYdS/QMGa9/uVXd+/ItHiFwgIb9O4leWKa5UENy2wgs2HCN4QfWgpeFj93tIJJBpBa/d9RZiXVDHzxMU7vI9MzBr9rsqocLcMybszzCR+378AV621NvVOn5yvKeuoud16PvvSTQF1BkMpywKXUh9EZhi8+YRmZVfV5INZfZCv6jwhCIm/VbDVLK4CwHv4VwEI80jrxiSd1JRuVY/lYV2ddYCQoViKnNmehW4="
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
+    all_branches: true
