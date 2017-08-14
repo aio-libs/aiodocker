@@ -1,8 +1,7 @@
 import json
 import base64
 from typing import Optional, Union, List, Dict, BinaryIO
-
-from .utils import clean_config
+from .utils import clean_config, parse_base64_auth
 from .jsonstream import json_stream_result
 
 
@@ -69,18 +68,8 @@ class DockerImages(object):
         headers = {"content-type": "application/json"}
 
         if auth and 'auth' in auth:
-            s = base64.b64decode(auth['auth'])
-            username, pwd = s.split(b':', 1)
-            username = username.decode('utf-8')
-            pwd = pwd.decode('utf-8')
-
-            auth_config = {"username": username, "password": pwd,
-                           "email": None, "serveraddress": repo}
-
-            auth_config_json = json.dumps(auth_config).encode('ascii')
-            auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
-            headers.update({"X-Registry-Auth":
-                            auth_config_b64.decode('ascii')})
+            auth_header = parse_base64_auth(auth['auth'], repo)
+            headers.update({"X-Registry-Auth": auth_header})
 
         response = await self.docker._query(
             "images/create",
