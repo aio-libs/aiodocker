@@ -8,6 +8,38 @@ import codecs
 import json
 
 
+async def parse_result(response, response_type=None):
+    '''
+    Convert the response to native objects by the given response type
+    or the auto-detected HTTP content-type.
+    It also ensures release of the response object.
+    '''
+    try:
+        if not response_type:
+            ct = response.headers.get("Content-Type", "")
+            if 'json' in ct:
+                response_type = 'json'
+            elif 'x-tar' in ct:
+                response_type = 'tar'
+            elif 'text/plain' in ct:
+                response_type = 'text'
+            else:
+                raise TypeError("Unrecognized response type: {ct}"
+                                .format(ct=ct))
+        if 'tar' == response_type:
+            what = await response.read()
+            return tarfile.open(mode='r', fileobj=io.BytesIO(what))
+        if 'json' == response_type:
+            data = await response.json(encoding='utf-8')
+        elif 'text' == response_type:
+            data = await response.text(encoding='utf-8')
+        else:
+            data = await response.read()
+        return data
+    finally:
+        await response.release()
+
+
 def identical(d1, d2):
     if type(d1) != type(d2):
         return False
