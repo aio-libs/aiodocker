@@ -2,7 +2,6 @@
 
 import asyncio
 from aiodocker.docker import Docker
-from aiodocker.exceptions import DockerError
 
 
 async def demo(docker):
