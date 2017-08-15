@@ -1,6 +1,7 @@
 import json
 import base64
 from typing import Optional, Union, List, Dict, BinaryIO
+
 from .utils import clean_config
 from .jsonstream import json_stream_result
 
