@@ -39,7 +39,6 @@ async def demo(docker):
 
         for key, value in event.items():
             print(key,':', value)
-        #print("event: {}".format(event!r))
 
         # Demonstrate simple event-driven container mgmt.
         if event['Actor']['ID'] == container._id:
@@ -61,4 +60,4 @@ if __name__ == '__main__':
         loop.run_until_complete(demo(docker))
     finally:
         loop.run_until_complete(docker.close())
-loop.close()
+        loop.close()

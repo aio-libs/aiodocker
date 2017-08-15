@@ -10,7 +10,7 @@ async def demo(docker):
     print('- Check Docker Version Information')
     data_version = await docker.version()
     for key, value in data_version.items():
-        print(key,':', value)
+        print(key, ':', value)
 
     print('--------------------------------')
     print('- Check Docker Image List')
@@ -18,7 +18,7 @@ async def demo(docker):
     for image in images:
         for key, value in image.items():
             if key == 'RepoTags':
-                print(key,':', value)
+                print(key, ':', value)
 
     print('--------------------------------')
     print('- Check Docker Container List')
@@ -27,7 +27,7 @@ async def demo(docker):
         container_show = await container.show()
         for key, value in container_show.items():
             if key == 'Id':
-                print('Id',':', value[:12])
+                print('Id', ':', value[:12])
     print('--------------------------------')
 
 
