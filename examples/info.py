@@ -20,13 +20,15 @@ async def demo(docker):
             if key == 'RepoTags':
                 print(key,':', value)
 
-    #print('--------------------------------')
-    #print('- Check Docker Container List')
-    #containers = await docker.containers.list()
-    #for container in containers:
-    #    container_id = container.get_id()
-    #    print('container.id :', container_id[:12])
-    #print('--------------------------------')
+    print('--------------------------------')
+    print('- Check Docker Container List')
+    containers = await docker.containers.list()
+    for container in containers:
+        container_show = await container.show()
+        for key, value in container_show.items():
+            if key == 'Id':
+                print('Id',':', value[:12])
+    print('--------------------------------')
 
 
 if __name__ == '__main__':
