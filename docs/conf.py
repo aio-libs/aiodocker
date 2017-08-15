@@ -22,6 +22,7 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os
+import sys
 import codecs
 import re
 
@@ -39,6 +40,9 @@ with codecs.open(_version_path, 'r', 'latin1') as fp:
     except IndexError:
         raise RuntimeError('Unable to determine version.')
 
+_root_path = os.path.abspath(os.path.join(_docs_path, '..'))
+sys.path.insert(0, _root_path)
+
 
 # -- General configuration ------------------------------------------------
 
@@ -52,7 +56,10 @@ with codecs.open(_version_path, 'r', 'latin1') as fp:
 extensions = ['sphinx.ext.intersphinx',
               'sphinx.ext.viewcode',
               'alabaster',
-              'sphinxcontrib.asyncio']
+              'sphinxcontrib.asyncio',
+              'sphinx.ext.autodoc',
+              'sphinx.ext.napoleon',
+              'sphinx_autodoc_typehints']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

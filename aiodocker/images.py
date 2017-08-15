@@ -24,6 +24,7 @@ class DockerImages(object):
     async def get(self, name: str) -> Dict:
         """
         Return low-level information about an image
+
         Args:
             name: name of the image
         """
@@ -44,6 +45,7 @@ class DockerImages(object):
                    tag: Optional[str]=None, stream: bool=False) -> Dict:
         """
         Similar to `docker pull`, pull an image locally
+
         Args:
             fromImage: name of the image to pull
             repo: repository name given to an image when it is imported
@@ -102,6 +104,7 @@ class DockerImages(object):
                   tag: Optional[str]=None) -> bool:
         """
         Tag the given image so that it becomes part of a repository.
+
         Args:
             repo: the repository to tag in
             tag: the name for the new tag
@@ -124,11 +127,13 @@ class DockerImages(object):
         """
         Remove an image along with any untagged parent
         images that were referenced by that image
+
         Args:
             name: name/id of the image to delete
             force: remove the image even if it is being used
                    by stopped containers or has other tags
             noprune: don't delete untagged parent images
+
         Returns:
             List of deleted images
         """

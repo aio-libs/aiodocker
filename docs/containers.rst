@@ -1,7 +1,6 @@
-============
-Containers
-============
-
+===============
+Containers 
+===============
 
 Create a container
 ========================
@@ -33,4 +32,20 @@ Create a container
        loop = asyncio.get_event_loop()
        loop.run_until_complete(create_container())
        loop.close()
+
+------------
+Reference
+------------
+
+DockerContainers
+==================
+.. autoclass:: aiodocker.docker.DockerContainers
+        :members:
+        :undoc-members:
+
+DockerContainer
+==================
+.. autoclass:: aiodocker.docker.DockerContainer
+        :members:
+        :undoc-members:
 

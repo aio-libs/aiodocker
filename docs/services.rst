@@ -32,3 +32,13 @@ Create a service
        loop.run_until_complete(create_service())
        loop.close()
 
+------------
+Reference
+------------
+
+DockerServices
+===============
+
+.. autoclass:: aiodocker.services.DockerServices
+        :members:
+        :undoc-members:
