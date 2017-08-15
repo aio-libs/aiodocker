@@ -1,4 +1,7 @@
+from collections import ChainMap
 import warnings
+
+import aiohttp
 
 from .channel import Channel
 

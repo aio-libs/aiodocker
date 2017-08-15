@@ -1,20 +1,16 @@
 import asyncio
-import io
 import json
 import logging
 import os
 from pathlib import Path
 import re
 import ssl
-import tarfile
-import warnings
 
 import aiohttp
 from yarl import URL
 
-from .channel import Channel
 from .jsonstream import json_stream_result
-from .utils import identical, human_bool, httpize, parse_result
+from .utils import httpize, parse_result
 
 # Sub-API classes
 from .containers import DockerContainers, DockerContainer
@@ -33,6 +29,7 @@ __all__ = (
     'DockerEvents',
     'DockerError',
     'DockerImages',
+    'DockerLog',
     'DockerSwarm',
     'DockerServices',
     'DockerTasks',

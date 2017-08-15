@@ -28,7 +28,7 @@ async def parse_result(response, response_type=None):
                                 .format(ct=ct))
         if 'tar' == response_type:
             what = await response.read()
-            return tarfile.open(mode='r', fileobj=io.BytesIO(what))
+            return tarfile.open(mode='r', fileobj=BytesIO(what))
         if 'json' == response_type:
             data = await response.json(encoding='utf-8')
         elif 'text' == response_type:
