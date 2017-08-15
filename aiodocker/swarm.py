@@ -33,13 +33,13 @@ class DockerSwarm(object):
             'Spec': swarm_spec,
         }
 
-        data = json.dumps(data)
+        data_str = json.dumps(data)
 
         response = await self.docker._query(
             "swarm/init",
             method='POST',
             headers={"content-type": "application/json", },
-            data=data
+            data=data_str
         )
 
         return response
