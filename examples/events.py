@@ -30,22 +30,25 @@ async def demo(docker):
     container = await docker.containers.create_or_replace(
         config=config, name='testing')
     await container.start()
-    print("=> created and started container {container._id[:12]}")
+    print("=> created and started container {}".format(container._id[:12]))
 
     while True:
         event = await subscriber.get()
         if event is None:
             break
-        print("event: {event!r}")
+
+        for key, value in event.items():
+            print(key,':', value)
+        #print("event: {}".format(event!r))
 
         # Demonstrate simple event-driven container mgmt.
         if event['Actor']['ID'] == container._id:
             if event['Action'] == 'start':
                 await container.stop()
-                print("=> killed {container._id[:12]}")
+                print("=> killed {}".format(container._id[:12]))
             elif event['Action'] == 'stop':
                 await container.delete(force=True)
-                print("=> deleted {container._id[:12]}")
+                print("=> deleted {}".format(container._id[:12]))
             elif event['Action'] == 'destroy':
                 print('=> done with this container!')
                 break
@@ -58,4 +61,4 @@ if __name__ == '__main__':
         loop.run_until_complete(demo(docker))
     finally:
         loop.run_until_complete(docker.close())
-        loop.close()
+loop.close()

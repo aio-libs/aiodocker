@@ -8,9 +8,7 @@ from aiodocker.exceptions import DockerError
 async def demo(docker):
     try:
         await docker.images.get('alpine:latest')
-
     except DockerError as e:
-        print('e.status',e.status)
         if e.status == 404:
             await docker.pull('alpine:latest')
         else:
@@ -30,7 +28,7 @@ async def demo(docker):
     }
     container = await docker.containers.create_or_replace(
         config=config, name='aiodocker-example')
-    print("created and started container {container._id[:12]}")
+    print("created and started container {}".format(container._id[:12]))
 
     try:
         ws = await container.websocket(stdin=True, stdout=True, stderr=True, stream=True)
@@ -43,11 +41,11 @@ async def demo(docker):
 
         asyncio.ensure_future(_send())
         resp = await ws.receive()
-        print("received: {resp}")
+        print("received: {}".format(resp))
         await ws.close()
 
         output = await container.log(stdout=True)
-        print("log output: {output}")
+        print("log output: {}".format(output))
     finally:
         print("removing container")
         await container.delete(force=True)
@@ -60,4 +58,4 @@ if __name__ == '__main__':
         loop.run_until_complete(demo(docker))
     finally:
         loop.run_until_complete(docker.close())
-        loop.close()
+loop.close()
