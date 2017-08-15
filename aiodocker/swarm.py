@@ -60,7 +60,7 @@ class DockerSwarm(object):
 
         return response
 
-    async def leave(self, force: bool=False) -> bool:
+    async def leave(self, *, force: bool=False) -> bool:
         """
         Leave a swarm
 
