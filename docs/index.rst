@@ -115,8 +115,16 @@ It's *Apache 2* licensed and freely available.
    :hidden:
    :maxdepth: 2
 
+   client
    containers
+   images
    services
+   swarm
+   volumes
+   tasks
+   log
+   events
+   exceptions
 
 Indices and tables
 ==================

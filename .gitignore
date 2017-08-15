@@ -11,3 +11,4 @@ venv
 coverage.xml
 docs/_build
 .tox
+.mypy_cache
