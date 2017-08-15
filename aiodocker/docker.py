@@ -113,7 +113,7 @@ class Docker:
         data = await self._query_json("version")
         return data
 
-    async def pull(self, image, *, stream=False):
+    async def pull(self, image, stream=False):
         response = await self._query(
             "images/create", "POST",
             params={"fromImage": image},

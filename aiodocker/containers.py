@@ -40,7 +40,7 @@ class DockerContainers(object):
 
         return container
 
-    async def create(self, config, *, name=None):
+    async def create(self, config, name=None):
         url = "containers/create"
 
         config = json.dumps(config, sort_keys=True).encode('utf-8')
@@ -56,7 +56,7 @@ class DockerContainers(object):
         )
         return DockerContainer(self.docker, id=data['Id'])
 
-    async def run(self, config, *, name=None):
+    async def run(self, config, name=None):
 
         try:
             container = await self.create(config, name)
@@ -102,7 +102,7 @@ class DockerContainer:
             "ID", self._container.get("Id")))
         self.logs = DockerLog(docker, self)
 
-    async def log(self, *, stdout=False, stderr=False, follow=False, **kwargs):
+    async def log(self, stdout=False, stderr=False, follow=False, **kwargs):
         if stdout is False and stderr is False:
             raise TypeError("Need one of stdout or stderr")
 
@@ -185,7 +185,7 @@ class DockerContainer:
         await response.release()
         return
 
-    async def wait(self, *, timeout=None, **kwargs):
+    async def wait(self, timeout=None, **kwargs):
         data = await self.docker._query_json(
             "containers/{self._id}/wait".format(self=self),
             method='POST',
@@ -230,7 +230,7 @@ class DockerContainer:
 
         return h_ports
 
-    async def stats(self, *, stream=True):
+    async def stats(self, stream=True):
         if stream:
             response = await self.docker._query(
                 "containers/{self._id}/stats".format(self=self),
