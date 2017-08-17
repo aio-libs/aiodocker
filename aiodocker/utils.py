@@ -222,10 +222,10 @@ def parse_base64_auth(auth: str, repo: str) -> str:
     """
     s = base64.b64decode(auth)
     username, pwd = s.split(b':', 1)
-    username = username.decode('utf-8')
-    pwd = pwd.decode('utf-8')
+    u = username.decode('utf-8')
+    p = pwd.decode('utf-8')
 
-    auth_config = {"username": username, "password": pwd,
+    auth_config = {"username": u, "password": p,
                    "email": None, "serveraddress": repo}
 
     auth_config_json = json.dumps(auth_config).encode('ascii')
