@@ -119,8 +119,8 @@ class Docker:
         headers = {"content-type": "application/json"}
         if auth:
             if isinstance(auth, dict) and 'auth' in auth:
-                registry, p, _ = image.partition('/')
-                if not p:
+                registry, has_registry_host, _ = image.partition('/')
+                if not has_registry_host:
                     raise ValueError(" image should have registry host")
                 auth_header = parse_base64_auth(auth['auth'], registry)
                 headers.update({"X-Registry-Auth": auth_header})
