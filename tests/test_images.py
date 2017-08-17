@@ -133,6 +133,13 @@ async def test_pups_image_auth(docker):
 
     await docker.images.get(repository)
     await docker.images.delete(name=repository)
+    with pytest.raises(ValueError):
+        await docker.pull(repository,
+                          auth="dGVzdHVzZXI6dGVzdHBhc3N3b3Jk")
+    with pytest.raises(ValueError):
+        await docker.pull("image:latest",
+                          auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
+
     await docker.pull(repository,
                       auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.images.get(repository)

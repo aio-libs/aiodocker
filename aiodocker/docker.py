@@ -10,7 +10,7 @@ import aiohttp
 from yarl import URL
 
 from .jsonstream import json_stream_result
-from .utils import httpize, parse_result
+from .utils import httpize, parse_result, parse_base64_auth
 
 # Sub-API classes
 from .containers import DockerContainers, DockerContainer
