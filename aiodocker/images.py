@@ -1,8 +1,7 @@
 import json
 import base64
 from typing import Optional, Union, List, Dict, BinaryIO
-
-from .utils import clean_config
+from .utils import clean_config, parse_base64_auth
 from .jsonstream import json_stream_result
 
 
@@ -42,7 +41,8 @@ class DockerImages(object):
         return response
 
     async def pull(self, from_image: str, *, repo: Optional[str]=None,
-                   tag: Optional[str]=None, stream: bool=False) -> Dict:
+                   tag: Optional[str]=None, auth: Optional[dict]=None,
+                   stream: bool=False) -> Dict:
         """
         Similar to `docker pull`, pull an image locally
 
@@ -51,6 +51,7 @@ class DockerImages(object):
             repo: repository name given to an image when it is imported
             tag: if empty when pulling an image all tags
                  for the given image to be pulled
+            auth: special {'auth': base64} pull private repo
         """
 
         params = {}
@@ -64,11 +65,17 @@ class DockerImages(object):
         if tag:
             params['tag'] = tag
 
+        headers = {"content-type": "application/json"}
+
+        if auth and 'auth' in auth:
+            auth_header = parse_base64_auth(auth['auth'], repo)
+            headers.update({"X-Registry-Auth": auth_header})
+
         response = await self.docker._query(
             "images/create",
             "POST",
             params=params,
-            headers={"content-type": "application/json", },
+            headers=headers,
         )
         return (await json_stream_result(response, stream=stream))
 

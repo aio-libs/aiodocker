@@ -6,6 +6,7 @@ import tempfile
 import tarfile
 import codecs
 import json
+import base64
 
 
 async def parse_result(response, response_type=None):
@@ -210,3 +211,23 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
     t.close()
     f.seek(0)
     return f
+
+
+def parse_base64_auth(auth: str, repo: str) -> str:
+    """
+    parse base64 user password
+    :param auth: base64 auth string
+    :param repo: repo server
+    :return: base64 X-Registry-Auth header
+    """
+    s = base64.b64decode(auth)
+    username, pwd = s.split(b':', 1)
+    u = username.decode('utf-8')
+    p = pwd.decode('utf-8')
+
+    auth_config = {"username": u, "password": p,
+                   "email": None, "serveraddress": repo}
+
+    auth_config_json = json.dumps(auth_config).encode('ascii')
+    auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
+    return auth_config_b64.decode('ascii')
