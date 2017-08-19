@@ -1,4 +1,4 @@
 -r test.txt
 -r ci.txt
 -r doc.txt
-towncrier==17.4.0
+towncrier==17.8.0
