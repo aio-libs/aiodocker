@@ -36,7 +36,7 @@ jobs:
         provider: pypi
         user: barrachri
         password:
-          secure: LYE8ZYhEgFILVyCeAjopvliBJEFsHqPbxcqZfQjTGH7kP0c1xFXFbvq+4jZHYLCxUpbtkGid7oZBgS4ju4DZz8kW9xPeGeac1D82WLQKFxN9dvxm4gsCBvdh4oARUV2e5qqjFeYQEimkPiFDtjN6rUFq+orrpbHzwp2geAHsqrmgo8dNSGEvqGKtJWDqnMr9d/p/zNGb4PDICNMzmobD/kGOz+jSdEye+ImWSPHDl8uygnUm3kuaY2QoFejSba9EkLmg76mfUvOt48HotbkoggYAqVsArSPLVGycmK+OkNXkfHkOQv0PnfAb70hhzh6VLHBrarOJOkFB9+ghkjD3qWWc6Uk9ozA25yLYuc/nXXe/BQeaTi6mBViSDa/+zWp9RrCyL84ZMHQ7ovL5q1WPJ3/2kWe2E7P+VFp/k7D4i7xlo2sajvowPv/atK9hLzgwnejpF+R0vrLjpPTcsTZKy/TfCt6wANFh/rlZg+QHIROXK1tnC6eQc/gUrXWt7CXd5UiAp129l7ngBstD9B1uBmf9wm2UaFBG3t6pWuzBl6ZXSvefbzxlhnFi5hHN3LWqs5vPI8kxOPyaDmcR06wjm56+st6s5m84wVYxxDBJ6lPZ66cXe5OIAj6PWyTOeFu14bQB2OD+zUMo/kXG5ToMFecd33yyXuh/Db/9K48uBTI=
+          secure: eb2IT0ciAuoW3jltLcnNcLQHU9RmXxu49j0G51W0Ke5NgSFez9yYAlVm6qvH1ZZaTEKaON3fckHpZGqUsMPGh0FXVRR/4zLwqHz0z/00aCnsB5gzpzSG3NMxSZJ3o4AzHlcu3d+pp8pTNGbz5tu3hKZLVscr1gWAh+Apt75P/8ZWVx7G4D6oreFWlMkKq8b7brKlx8j33f9Hf4X2rhqv5AKeJiYdGU5EEz926f1/aVgk4iaoIj2ML5dd+joJyUmWLAsmlRuIqq0jZ5KE+5Wm8S4SsZNhjZ2MZJlfl38W7eMySni0Xqclb24irpsY/06gW7oDoIrF3UQb4ZJXiSvcT9hzCQFBazArgcpM0ugJlv13xQ5Ll2dEpGF3ko2/32zHu+82GrqMqttmgZmHEywU/uJiujyXsnNhFJmoB/QZgFuFqO5haMiJ7uERnLv+JQDSzt8K01t5xYiPFS7Ov8vx0eO8qLbNQISj+y/s0b0AeYKxoX9VVOtzBwUfOuDBtrdDGtzmIM6MAvZjmJHEUY3PC6SkofKxsr8AayVzgZHkqaZiH0q+FsJ9Z+dmCWw9gEd3CWy0iGDudv7yPdE+iBJlbdHWzVYZOC0ZmA3z7kdPkqJjEGqc8WUQRVafgH0HTViy4EYdXDl2wXlHN95ayhM6i2k+yg/FF2YS7AWojwc0o2w=
         distributions: sdist bdist_wheel
         on:
           tags: true
