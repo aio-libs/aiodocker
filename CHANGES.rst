@@ -12,4 +12,12 @@ Changes
 
 .. towncrier release notes start
 
+0.8.1 (2017-08-30)
+==================
+
+Misc
+----
+
+- #44, #46
+
 
