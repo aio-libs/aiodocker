@@ -34,7 +34,7 @@ jobs:
       python: 3.6
       deploy:
         provider: pypi
-        user: asvetlov
+        user: andrew.svetlov
         password:
           secure: "KEmYrBVjl3WKRRtlk7zi5kev4eGRdccbyYpd6OngonMSYurZJRG2sILpiawyO9D9H+AXVsqRScH4aI46suuLdCUMcciMdLOkGnI0mHyx80UjoxNTo7yht+76xob4XD5AGErox8hWZU2t/CSknW60mAJaO4zLdVzpE/17j/9kNHQ="
         distributions: sdist bdist_wheel
