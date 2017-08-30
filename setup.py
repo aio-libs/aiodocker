@@ -31,7 +31,7 @@ setup(
     author_email="paultag@debian.org",
     long_description=long_description,
     description="Docker API client for asyncio",
-    license="Expat",
+    license="Apache 2",
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: MIT License',
