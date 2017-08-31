@@ -21,7 +21,13 @@ class DockerEvents:
         return self.channel.subscribe()
 
     def subscribe(self, *, create_task=True):
-        if create_task:
+        """Subscribes to the Docker events channel. Use the keyword argument
+        create_task=False to prevent automatically spawning the background
+        tasks that listen to the events.
+
+        This function returns a ChannelSubscriber object.
+        """
+        if create_task and not self.task:
             self.task = asyncio.ensure_future(self.run())
         return self.channel.subscribe()
 
