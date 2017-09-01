@@ -31,6 +31,11 @@ class DockerEvents:
         return data
 
     async def run(self, **params):
+        """
+        Query the events endpoint of the Docker daemon.
+
+        Publish messages inside the asyncio queue.
+        """
         if self.json_stream:
             warnings.warn("already running",
                           RuntimeWarning, stackelevel=2)
@@ -40,10 +45,15 @@ class DockerEvents:
         }
         params = ChainMap(forced_params, params)
         try:
+            # timeout has to be set to 0, None is not passed
+            # Otherwise after 5 minutes the client
+            # will close the connection
+            # http://aiohttp.readthedocs.io/en/stable/client_reference.html#aiohttp.ClientSession.request
             response = await self.docker._query(
                 "events",
                 method="GET",
                 params=params,
+                timeout=0
             )
             self.json_stream = await json_stream_result(
                 response,
