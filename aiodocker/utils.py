@@ -1,44 +1,79 @@
 import asyncio
-import sys
-from typing import Optional, Dict, List, Union, Any, BinaryIO, IO
+import base64
+import codecs
 from io import BytesIO
+import sys
+from typing import (
+    Any, Iterable, List, Optional, Union,
+    Mapping, Tuple,
+    BinaryIO, IO,
+)
 import tempfile
 import tarfile
-import codecs
 import json
-import base64
 
 
-async def parse_result(response, response_type=None):
+async def parse_result(response, response_type=None, *,
+                       encoding='utf-8'):
     '''
     Convert the response to native objects by the given response type
     or the auto-detected HTTP content-type.
     It also ensures release of the response object.
     '''
-    try:
-        if response_type is None:
-            ct = response.headers.get("Content-Type", "")
-            if ct.endswith('json'):
-                response_type = 'json'
-            elif ct.endswith('x-tar'):
-                response_type = 'tar'
-            elif ct.startswith('text/plain'):
-                response_type = 'text'
-            else:
-                raise TypeError("Unrecognized response type: {ct}"
-                                .format(ct=ct))
-        if 'tar' == response_type:
-            what = await response.read()
-            return tarfile.open(mode='r', fileobj=BytesIO(what))
-        if 'json' == response_type:
-            data = await response.json(encoding='utf-8')
-        elif 'text' == response_type:
-            data = await response.text(encoding='utf-8')
+    if response_type is None:
+        ct = response.headers.get('content-type')
+        if ct is None:
+            raise TypeError('Cannot auto-detect respone type '
+                            'due to missing Content-Type header.')
+        main_type, sub_type, extras = parse_content_type(ct)
+        if sub_type == 'json':
+            response_type = 'json'
+        elif sub_type == 'x-tar':
+            response_type = 'tar'
+        elif (main_type, sub_type) == ('text', 'plain'):
+            response_type = 'text'
+            encoding = extras.get('charset', encoding)
         else:
-            data = await response.read()
-        return data
-    finally:
-        await response.release()
+            raise TypeError("Unrecognized response type: {ct}"
+                            .format(ct=ct))
+    if 'tar' == response_type:
+        what = await response.read()
+        return tarfile.open(mode='r', fileobj=BytesIO(what))
+    if 'json' == response_type:
+        data = await response.json(encoding=encoding)
+    elif 'text' == response_type:
+        data = await response.text(encoding=encoding)
+    else:
+        data = await response.read()
+    return data
+
+
+def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
+    '''
+    Decompose the value of HTTP "Content-Type" header into
+    the main/sub MIME types and other extra options as a dictionary.
+    All parsed values are lower-cased automatically.
+    '''
+    pieces = ct.split(';')
+    try:
+        main_type, sub_type = pieces[0].split('/')
+    except ValueError:
+        raise ValueError('Invalid mime-type component: "{0}"'.format(pieces[0]))
+    if len(pieces) > 1:
+        options = {}
+        for opt in pieces[1:]:
+            opt = opt.strip()
+            if not opt:
+                continue
+            try:
+                k, v = opt.split('=', 1)
+            except ValueError:
+                raise ValueError('Invalid option component: "{0}"'.format(opt))
+            else:
+                options[k.lower()] = v.lower()
+    else:
+        options = {}
+    return main_type.lower(), sub_type.lower(), options
 
 
 def identical(d1, d2):
@@ -77,7 +112,7 @@ def human_bool(s) -> bool:
         return bool(s)
 
 
-def httpize(d: Optional[Dict]) -> Dict[str, Any]:
+def httpize(d: Optional[Mapping]) -> Mapping[str, Any]:
     if d is None:
         return None
     converted = {}
@@ -127,18 +162,12 @@ class _DecodeHelper:
             return self._decoder.decode(stream)
 
 
-def clean_config(config: Optional[dict]) -> dict:
+def clean_map(obj: Mapping[Any, Any]) -> Mapping[Any, Any]:
     """
-    Checks the values inside `config`
-    Returns a new dictionary with only NOT `None` values
+    Return a new copied dictionary without the keys with ``None`` values from
+    the given Mapping object.
     """
-    data = {}
-    if isinstance(config, dict):
-        for k, v in config.items():
-            if v is not None:
-                data[k] = v
-
-    return data
+    return {k: v for k, v in obj.items() if v is not None}
 
 
 def format_env(key, value: Union[None, bytes, str]) -> str:
@@ -153,7 +182,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return "{key}={value}".format(key=key, value=value)
 
 
-def clean_networks(networks: Optional[List]=None) -> List:
+def clean_networks(networks: Optional[Iterable[str]]=None) -> Iterable[str]:
     """
     Cleans the values inside `networks`
     Returns a new list

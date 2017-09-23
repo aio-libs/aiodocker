@@ -1,7 +1,7 @@
 import json
 import base64
 from typing import Optional, Union, List, Dict, BinaryIO
-from .utils import clean_config, parse_base64_auth
+from .utils import clean_map, parse_base64_auth
 from .jsonstream import json_stream_result
 
 
@@ -223,7 +223,7 @@ class DockerImages(object):
         response = await self.docker._query(
             "build",
             "POST",
-            params=clean_config(params),
+            params=clean_map(params),
             headers=headers,
             data=local_context
         )
