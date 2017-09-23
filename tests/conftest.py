@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from distutils.version import StrictVersion
 from os import environ as ENV
+import traceback
 
 import pytest
 
@@ -21,9 +22,32 @@ def _random_name():
     return "aiodocker-" + uuid.uuid4().hex[:7]
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def random_name():
-    return _random_name
+    yield _random_name
+
+    # If some test cases have used randomly-named temporary images,
+    # we need to clean up them!
+    if ENV.get('CI', '') == 'true':
+        # But inside the CI server, we don't need clean up!
+        return
+    event_loop = asyncio.get_event_loop()
+
+    async def _clean():
+        docker = Docker()
+        images = await docker.images.list()
+        for img in images:
+            if img['RepoTags'] is None:
+                continue
+            try:
+                if img['RepoTags'][0].startswith('aiodocker-'):
+                    print('Deleting image id: {0}'.format(img['Id']))
+                    await docker.images.delete(img['Id'], force=True)
+            except DockerError as e:
+                traceback.print_exc()
+        await docker.close()
+
+    event_loop.run_until_complete(_clean())
 
 
 @pytest.fixture(scope='session')
@@ -45,6 +69,7 @@ def testing_images():
                       .format(img=img))
                 await docker.pull(img)
         await docker.close()
+
     event_loop.run_until_complete(_pull())
 
 
