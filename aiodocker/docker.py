@@ -105,7 +105,6 @@ class Docker:
         response = await self._query_json(
             "auth", "POST",
             data=credentials,
-            headers={"content-type": "application/json"},
         )
         return response
 
@@ -134,26 +133,25 @@ class Docker:
         )
         return (await json_stream_result(response, stream=stream))
 
-    def canonicalize_url(self, path, query=None):
-        url = URL("{self.docker_host}/{self.api_version}/{path}"
-                  .format(self=self, path=path))
-        url = url.with_query(httpize(query))
-        return url
+    def _canonicalize_url(self, path):
+        return URL("{self.docker_host}/{self.api_version}/{path}"
+                   .format(self=self, path=path))
 
-    async def _query(self, path, method='GET', params=None, timeout=None,
-                     data=None, headers=None, **kwargs):
+    async def _query(self, path, method='GET', *,
+                     params=None, data=None, headers=None,
+                     timeout=None):
         '''
         Get the response object by performing the HTTP request.
         The caller is responsible to finalize the response object.
         '''
-        url = self.canonicalize_url(path)
-        if timeout is not None:
-            kwargs['timeout'] = timeout
+        url = self._canonicalize_url(path)
         try:
             response = await self.session.request(
                 method, url,
-                params=httpize(params), headers=headers,
-                data=data, **kwargs)
+                params=httpize(params),
+                headers=headers,
+                data=data,
+                timeout=timeout)
         except asyncio.TimeoutError:
             raise
 
@@ -170,6 +168,24 @@ class Docker:
 
         return response
 
+    async def _query_json(self, path, method='GET', *,
+                          params=None, data=None, headers=None,
+                          timeout=None):
+        '''
+        A shorthand of _query() that treats the input as JSON.
+        '''
+        if headers is None:
+            headers = {}
+        headers['content-type'] = 'application/json'
+        if not isinstance(data, (str, bytes)):
+            data = json.dumps(data)
+        response = await self._query(
+            path, method,
+            params=params, data=data, headers=headers,
+            timeout=timeout)
+        data = await parse_result(response, 'json')
+        return data
+
     async def _websocket(self, path, **params):
         if not params:
             params = {
@@ -178,21 +194,16 @@ class Docker:
                 'stderr': True,
                 'stream': True
             }
-        url = self.canonicalize_url(path, query=params)
-        ws = await self.session.ws_connect(url,
-                                           protocols=['chat'],
-                                           origin='http://localhost',
-                                           autoping=True,
-                                           autoclose=True)
+        url = self._canonicalize_url(path)
+        # ws_connect() does not have params arg.
+        url = url.with_query(httpize(params))
+        ws = await self.session.ws_connect(
+            url,
+            protocols=['chat'],
+            origin='http://localhost',
+            autoping=True,
+            autoclose=True)
         return ws
-
-    async def _query_json(self, *args, **kwargs):
-        '''
-        A shorthand of _query() followed by _result() with JSON response type.
-        '''
-        response = await self._query(*args, **kwargs)
-        data = await parse_result(response, 'json')
-        return data
 
     @staticmethod
     def _docker_machine_ssl_context():
