@@ -4,7 +4,7 @@ import codecs
 from io import BytesIO
 import sys
 from typing import (
-    Any, Iterable, List, Optional, Union,
+    Any, Iterable, Optional, Union,
     Mapping, Tuple,
     BinaryIO, IO,
 )
@@ -58,7 +58,8 @@ def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
     try:
         main_type, sub_type = pieces[0].split('/')
     except ValueError:
-        raise ValueError('Invalid mime-type component: "{0}"'.format(pieces[0]))
+        msg = 'Invalid mime-type component: "{0}"'.format(pieces[0])
+        raise ValueError(msg)
     if len(pieces) > 1:
         options = {}
         for opt in pieces[1:]:
@@ -68,7 +69,8 @@ def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
             try:
                 k, v = opt.split('=', 1)
             except ValueError:
-                raise ValueError('Invalid option component: "{0}"'.format(opt))
+                msg = 'Invalid option component: "{0}"'.format(opt)
+                raise ValueError(msg)
             else:
                 options[k.lower()] = v.lower()
     else:
