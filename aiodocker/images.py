@@ -16,7 +16,6 @@ class DockerImages(object):
         response = await self.docker._query_json(
             "images/json", "GET",
             params=params,
-            headers={"content-type": "application/json", },
         )
         return response
 
@@ -29,14 +28,12 @@ class DockerImages(object):
         """
         response = await self.docker._query_json(
             "images/{name}/json".format(name=name),
-            headers={"content-type": "application/json", },
         )
         return response
 
     async def history(self, name: str) -> Dict:
         response = await self.docker._query_json(
             "images/{name}/history".format(name=name),
-            headers={"content-type": "application/json", },
         )
         return response
 

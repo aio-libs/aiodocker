@@ -55,7 +55,6 @@ class DockerSwarm(object):
         response = await self.docker._query_json(
             "swarm",
             method='GET',
-            headers={"content-type": "application/json", },
         )
 
         return response

@@ -14,7 +14,6 @@ class DockerVolumes:
         data = await self.docker._query_json(
             "volumes/create",
             method="POST",
-            headers={"content-type": "application/json"},
             data=config,
         )
         return DockerVolume(self.docker, data['Name'])
