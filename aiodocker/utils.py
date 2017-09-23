@@ -22,7 +22,7 @@ async def parse_result(response, response_type=None):
                 response_type = 'json'
             elif ct.endswith('x-tar'):
                 response_type = 'tar'
-            elif ct == 'text/plain':
+            elif ct.startswith('text/plain'):
                 response_type = 'text'
             else:
                 raise TypeError("Unrecognized response type: {ct}"
