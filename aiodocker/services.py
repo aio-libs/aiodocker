@@ -1,7 +1,7 @@
 import json
 from typing import Optional, Dict, List, Any, Union, AsyncIterator
 from .multiplexed import multiplexed_result
-from .utils import clean_config, clean_networks, clean_filters, format_env
+from .utils import clean_map, clean_networks, clean_filters, format_env
 
 
 class DockerServices(object):
@@ -82,7 +82,7 @@ class DockerServices(object):
             "EndpointSpec": endpoint_spec
         }
 
-        data = json.dumps(clean_config(config))
+        data = json.dumps(clean_map(config))
 
         response = await self.docker._query_json(
             "services/create",

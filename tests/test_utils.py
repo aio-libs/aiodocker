@@ -3,7 +3,7 @@ import pytest
 from aiodocker import utils
 
 
-def test_clean_config():
+def test_clean_mapping():
     dirty_dict = {
         "a": None,
         "b": {},
@@ -15,8 +15,32 @@ def test_clean_config():
         "c": [],
         "d": 1,
     }
-    clean_config = utils.clean_config(dirty_dict)
-    assert clean_config == clean_dict
+    result = utils.clean_map(dirty_dict)
+    assert result == clean_dict
+
+
+def test_parse_content_type():
+    ct = 'text/plain'
+    mt, st, opts = utils.parse_content_type(ct)
+    assert mt == 'text'
+    assert st == 'plain'
+    assert opts == {}
+
+    ct = 'text/plain; charset=utf-8'
+    mt, st, opts = utils.parse_content_type(ct)
+    assert mt == 'text'
+    assert st == 'plain'
+    assert opts == {'charset': 'utf-8'}
+
+    ct = 'text/plain; '
+    mt, st, opts = utils.parse_content_type(ct)
+    assert mt == 'text'
+    assert st == 'plain'
+    assert opts == {}
+
+    ct = 'text/plain; asdfasdf'
+    with pytest.raises(ValueError):
+        mt, st, opts = utils.parse_content_type(ct)
 
 
 def test_format_env():
