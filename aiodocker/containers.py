@@ -59,22 +59,15 @@ class DockerContainers(object):
     async def run(self, config, *, name=None):
 
         try:
-            container = await self.create(config, name)
+            container = await self.create(config, name=name)
         except DockerError as e:
-
             # image not find, try pull it
-
-            if e.status == 404:
-
-                if 'Image' in config:
-                    try:
-                        await self.docker.pull(config['Image'])
-                    except DockerError as e:
-                        raise e
-
-                    container = await self.create(config, name)
+            if e.status == 404 and 'Image' in config:
+                await self.docker.pull(config['Image'])
+                container = await self.create(config, name=name)
             else:
                 raise e
+
         await container.start()
         return container
 
@@ -121,7 +114,7 @@ class DockerContainer:
             method='GET',
             params=params,
         )
-        return (await multiplexed_result(response, follow, is_tty=is_tty))
+        return await multiplexed_result(response, follow, is_tty=is_tty)
 
     async def copy(self, resource, **kwargs):
         # TODO: this is deprecated, use get_archive instead
