@@ -195,7 +195,8 @@ class Docker:
                 'stream': True
             }
         url = self._canonicalize_url(path)
-        url = url.with_query(params)  # ws_connect() does not have params arg.
+        # ws_connect() does not have params arg.
+        url = url.with_query(httpize(params))
         ws = await self.session.ws_connect(
             url,
             protocols=['chat'],
