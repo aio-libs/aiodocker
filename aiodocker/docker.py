@@ -150,7 +150,8 @@ class Docker:
                 method, url,
                 params=httpize(params),
                 headers=headers,
-                data=data)
+                data=data,
+                timeout=timeout)
         except asyncio.TimeoutError:
             raise
 
@@ -179,9 +180,8 @@ class Docker:
         if not isinstance(data, (str, bytes)):
             data = json.dumps(data)
         response = await self._query(
-            path,
-            method=method, params=params,
-            data=data, headers=headers,
+            path, method,
+            params=params, data=data, headers=headers,
             timeout=timeout)
         data = await parse_result(response, 'json')
         return data
