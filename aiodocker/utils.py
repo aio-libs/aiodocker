@@ -16,13 +16,13 @@ async def parse_result(response, response_type=None):
     It also ensures release of the response object.
     '''
     try:
-        if not response_type:
+        if response_type is None:
             ct = response.headers.get("Content-Type", "")
-            if 'json' in ct:
+            if ct.endswith('json'):
                 response_type = 'json'
-            elif 'x-tar' in ct:
+            elif ct.endswith('x-tar'):
                 response_type = 'tar'
-            elif 'text/plain' in ct:
+            elif ct.startswith('text/plain'):
                 response_type = 'text'
             else:
                 raise TypeError("Unrecognized response type: {ct}"

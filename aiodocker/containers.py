@@ -50,7 +50,6 @@ class DockerContainers(object):
         data = await self.docker._query_json(
             url,
             method='POST',
-            headers={"content-type": "application/json"},
             data=config,
             params=kwargs
         )
