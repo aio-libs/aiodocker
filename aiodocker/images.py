@@ -1,5 +1,4 @@
 import json
-import base64
 from typing import Optional, Union, List, Mapping, BinaryIO
 from .utils import clean_map, compose_auth_header
 from .jsonstream import json_stream_result
@@ -75,8 +74,6 @@ class DockerImages(object):
             headers=headers,
         )
         return (await json_stream_result(response, stream=stream))
-
-    # TODO: create_from_source(...)
 
     async def push(self, name: str, *,
                    auth: Union[Mapping, str, bytes]=None,

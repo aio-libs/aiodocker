@@ -9,7 +9,6 @@ import ssl
 import aiohttp
 from yarl import URL
 
-from .jsonstream import json_stream_result
 from .utils import httpize, parse_result
 
 # Sub-API classes
