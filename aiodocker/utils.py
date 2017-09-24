@@ -244,21 +244,51 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
     return f
 
 
-def parse_base64_auth(auth: str, repo: str) -> str:
+def compose_auth_header(auth: Union[Mapping, str, bytes],
+                        registry_addr: Optional[str]=None) -> str:
     """
-    parse base64 user password
-    :param auth: base64 auth string
-    :param repo: repo server
-    :return: base64 X-Registry-Auth header
+    Validate and compose base64-encoded authentication header
+    with an optional support for parsing legacy-style "user:password"
+    strings.
+
+    Args:
+        auth: Authentication information
+        registry_addr: An address of the registry server
+
+    Returns:
+        A base64-encoded X-Registry-Auth header value
     """
-    s = base64.b64decode(auth)
-    username, pwd = s.split(b':', 1)
-    u = username.decode('utf-8')
-    p = pwd.decode('utf-8')
-
-    auth_config = {"username": u, "password": p,
-                   "email": None, "serveraddress": repo}
-
-    auth_config_json = json.dumps(auth_config).encode('ascii')
-    auth_config_b64 = base64.urlsafe_b64encode(auth_config_json)
-    return auth_config_b64.decode('ascii')
+    if isinstance(auth, Mapping):
+        # Validate the JSON format only.
+        if 'identitytoken' in auth:
+            pass
+        elif 'auth' in auth:
+            return compose_auth_header(auth['auth'], registry_addr)
+        else:
+            assert 'username' in auth
+            assert 'password' in auth
+            assert 'email' in auth
+            assert 'serveraddress' in auth
+            if registry_addr:
+                auth['serveraddress'] = registry_addr
+        auth_json = json.dumps(auth).encode('utf-8')
+        auth = base64.b64encode(auth_json).decode('ascii')
+    elif isinstance(auth, (str, bytes)):
+        # Parse simple "username:password"-formatted strings
+        # and attach the server address specified.
+        if isinstance(auth, bytes):
+            auth = auth.decode('utf-8')
+        s = base64.b64decode(auth)
+        username, passwd = s.split(b':', 1)
+        config = {
+            "username": username.decode('utf-8'),
+            "password": passwd.decode('utf-8'),
+            "email": None,
+            "serveraddress": registry_addr,
+        }
+        auth_json = json.dumps(config).encode('utf-8')
+        auth = base64.urlsafe_b64encode(auth_json).decode('ascii')
+    else:
+        raise TypeError(
+            "auth must be base64 encoded string/bytes or a dictionary")
+    return auth
