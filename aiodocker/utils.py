@@ -5,7 +5,7 @@ from io import BytesIO
 import sys
 from typing import (
     Any, Iterable, Optional, Union,
-    Mapping, Tuple,
+    MutableMapping, Mapping, Tuple,
     BinaryIO, IO,
 )
 import tempfile
@@ -244,7 +244,7 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
     return f
 
 
-def compose_auth_header(auth: Union[Mapping, str, bytes],
+def compose_auth_header(auth: Union[MutableMapping, str, bytes],
                         registry_addr: Optional[str]=None) -> str:
     """
     Validate and compose base64-encoded authentication header

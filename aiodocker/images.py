@@ -1,5 +1,9 @@
 import json
-from typing import Optional, Union, List, Mapping, BinaryIO
+from typing import (
+    Optional, Union,
+    List, MutableMapping, Mapping,
+    BinaryIO,
+)
 from .utils import clean_map, compose_auth_header
 from .jsonstream import json_stream_result
 
@@ -37,7 +41,7 @@ class DockerImages(object):
         return response
 
     async def pull(self, from_image: str, *,
-                   auth: Optional[Union[Mapping, str, bytes]]=None,
+                   auth: Optional[Union[MutableMapping, str, bytes]]=None,
                    tag: Optional[str]=None,
                    repo: Optional[str]=None,
                    stream: bool=False) -> Mapping:
@@ -76,7 +80,7 @@ class DockerImages(object):
         return (await json_stream_result(response, stream=stream))
 
     async def push(self, name: str, *,
-                   auth: Union[Mapping, str, bytes]=None,
+                   auth: Union[MutableMapping, str, bytes]=None,
                    tag: Optional[str]=None,
                    stream: bool=False) -> Mapping:
         params = {}
