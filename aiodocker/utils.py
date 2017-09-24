@@ -287,7 +287,7 @@ def compose_auth_header(auth: Union[Mapping, str, bytes],
             "serveraddress": registry_addr,
         }
         auth_json = json.dumps(config).encode('utf-8')
-        auth = base64.urlsafe_b64encode(auth_json).decode('ascii')
+        auth = base64.b64encode(auth_json).decode('ascii')
     else:
         raise TypeError(
             "auth must be base64 encoded string/bytes or a dictionary")
