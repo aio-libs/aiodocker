@@ -9,8 +9,7 @@ import ssl
 import aiohttp
 from yarl import URL
 
-from .jsonstream import json_stream_result
-from .utils import httpize, parse_result, parse_base64_auth
+from .utils import httpize, parse_result
 
 # Sub-API classes
 from .containers import DockerContainers, DockerContainer
@@ -97,6 +96,10 @@ class Docker:
         self.images = DockerImages(self)
         self.volumes = DockerVolumes(self)
 
+        # legacy aliases
+        self.pull = self.images.pull
+        self.push = self.images.push
+
     async def close(self):
         await self.events.stop()
         await self.session.close()
@@ -112,27 +115,6 @@ class Docker:
         data = await self._query_json("version")
         return data
 
-    # maybe discard future
-    async def pull(self, image, auth=None, stream=False):
-
-        headers = {"content-type": "application/json"}
-        if auth:
-            if isinstance(auth, dict) and 'auth' in auth:
-                registry, has_registry_host, _ = image.partition('/')
-                if not has_registry_host:
-                    raise ValueError(" image should have registry host")
-                auth_header = parse_base64_auth(auth['auth'], registry)
-                headers.update({"X-Registry-Auth": auth_header})
-            else:
-                raise ValueError(" auth format error " + str(auth))
-
-        response = await self._query(
-            "images/create", "POST",
-            params={"fromImage": image},
-            headers=headers
-        )
-        return (await json_stream_result(response, stream=stream))
-
     def _canonicalize_url(self, path):
         return URL("{self.docker_host}/{self.api_version}/{path}"
                    .format(self=self, path=path))
@@ -145,6 +127,8 @@ class Docker:
         The caller is responsible to finalize the response object.
         '''
         url = self._canonicalize_url(path)
+        if headers and 'content-type' not in headers:
+            headers['content-type'] = 'application/json'
         try:
             response = await self.session.request(
                 method, url,
@@ -154,7 +138,6 @@ class Docker:
                 timeout=timeout)
         except asyncio.TimeoutError:
             raise
-
         if (response.status // 100) in [4, 5]:
             what = await response.read()
             content_type = response.headers.get('content-type', '')
@@ -165,7 +148,6 @@ class Docker:
             else:
                 raise DockerError(response.status,
                                   {"message": what.decode('utf8')})
-
         return response
 
     async def _query_json(self, path, method='GET', *,

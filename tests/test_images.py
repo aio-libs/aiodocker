@@ -117,13 +117,14 @@ async def test_pups_image_auth(docker):
     name = "alpine:latest"
     await docker.images.pull(from_image=name)
     repository = "localhost:5001/image:latest"
-    image, _, tag = repository.rpartition(':')
+    image, tag = repository.rsplit(':', 1)
+    registry_addr, image_name = image.split('/', 1)
     await docker.images.tag(name=name, repo=image, tag=tag)
 
     auth_config = {'username': "testuser",
                    'password': "testpassword",
                    'email': None,
-                   'serveraddress': repository}
+                   'serveraddress': registry_addr}
 
     await docker.images.push(name=repository, tag=tag, auth=auth_config)
 
@@ -133,13 +134,15 @@ async def test_pups_image_auth(docker):
 
     await docker.images.get(repository)
     await docker.images.delete(name=repository)
+
+    # Now compose_auth_header automatically parse and rebuild
+    # the encoded value if required.
+    await docker.pull(repository,
+                      auth="dGVzdHVzZXI6dGVzdHBhc3N3b3Jk")
     with pytest.raises(ValueError):
-        await docker.pull(repository,
-                          auth="dGVzdHVzZXI6dGVzdHBhc3N3b3Jk")
-    with pytest.raises(ValueError):
+        # The repository arg must include the registry address.
         await docker.pull("image:latest",
                           auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
-
     await docker.pull(repository,
                       auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.images.get(repository)

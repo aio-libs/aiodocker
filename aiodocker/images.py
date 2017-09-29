@@ -1,7 +1,10 @@
 import json
-import base64
-from typing import Optional, Union, List, Dict, BinaryIO
-from .utils import clean_map, parse_base64_auth
+from typing import (
+    Optional, Union,
+    List, MutableMapping, Mapping,
+    BinaryIO,
+)
+from .utils import clean_map, compose_auth_header
 from .jsonstream import json_stream_result
 
 
@@ -9,7 +12,7 @@ class DockerImages(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, **params) -> Dict:
+    async def list(self, **params) -> Mapping:
         """
         List of images
         """
@@ -19,7 +22,7 @@ class DockerImages(object):
         )
         return response
 
-    async def get(self, name: str) -> Dict:
+    async def get(self, name: str) -> Mapping:
         """
         Return low-level information about an image
 
@@ -31,15 +34,17 @@ class DockerImages(object):
         )
         return response
 
-    async def history(self, name: str) -> Dict:
+    async def history(self, name: str) -> Mapping:
         response = await self.docker._query_json(
             "images/{name}/history".format(name=name),
         )
         return response
 
-    async def pull(self, from_image: str, *, repo: Optional[str]=None,
-                   tag: Optional[str]=None, auth: Optional[dict]=None,
-                   stream: bool=False) -> Dict:
+    async def pull(self, from_image: str, *,
+                   auth: Optional[Union[MutableMapping, str, bytes]]=None,
+                   tag: Optional[str]=None,
+                   repo: Optional[str]=None,
+                   stream: bool=False) -> Mapping:
         """
         Similar to `docker pull`, pull an image locally
 
@@ -50,24 +55,22 @@ class DockerImages(object):
                  for the given image to be pulled
             auth: special {'auth': base64} pull private repo
         """
-
-        params = {}
-
-        if from_image:
-            params['fromImage'] = from_image
-
+        image = from_image  # TODO: clean up
+        params = {
+            'fromImage': image,
+        }
+        headers = {}
         if repo:
             params['repo'] = repo
-
         if tag:
             params['tag'] = tag
-
-        headers = {"content-type": "application/json"}
-
-        if auth and 'auth' in auth:
-            auth_header = parse_base64_auth(auth['auth'], repo)
-            headers.update({"X-Registry-Auth": auth_header})
-
+        if auth is not None:
+            registry, has_registry_host, _ = image.partition('/')
+            if not has_registry_host:
+                raise ValueError('Image should have registry host '
+                                 'when auth information is provided')
+            # TODO: assert registry == repo?
+            headers['X-Registry-Auth'] = compose_auth_header(auth, registry)
         response = await self.docker._query(
             "images/create",
             "POST",
@@ -76,26 +79,23 @@ class DockerImages(object):
         )
         return (await json_stream_result(response, stream=stream))
 
-    async def push(self, name: str, *, tag: Optional[str]=None,
-                   auth: Union[Dict, str, bytes]=None,
-                   stream: bool=False) -> Dict:
-        headers = {
-            "content-type": "application/json",
-            "X-Registry-Auth": "FOO",
-        }
+    async def push(self, name: str, *,
+                   auth: Union[MutableMapping, str, bytes]=None,
+                   tag: Optional[str]=None,
+                   stream: bool=False) -> Mapping:
         params = {}
-        if auth:
-            if isinstance(auth, dict):
-                auth = json.dumps(auth).encode('ascii')
-                auth = base64.b64encode(auth)
-            if not isinstance(auth, (bytes, str)):
-                raise TypeError(
-                    "auth must be base64 encoded string/bytes or a dictionary")
-            if isinstance(auth, bytes):
-                auth = auth.decode('ascii')
-            headers['X-Registry-Auth'] = auth
+        headers = {
+            # Anonymous push requires a dummy auth header.
+            'X-Registry-Auth': 'placeholder',
+        }
         if tag:
             params['tag'] = tag
+        if auth is not None:
+            registry, has_registry_host, _ = name.partition('/')
+            if not has_registry_host:
+                raise ValueError('Image should have registry host '
+                                 'when auth information is provided')
+            headers['X-Registry-Auth'] = compose_auth_header(auth, registry)
         response = await self.docker._query(
             "images/{name}/push".format(name=name),
             "POST",
@@ -156,13 +156,13 @@ class DockerImages(object):
                     tag: Optional[str]=None,
                     quiet: bool=False,
                     nocache: bool=False,
-                    buildargs: Optional[Dict]=None,
+                    buildargs: Optional[Mapping]=None,
                     pull: bool=False,
                     rm: bool=True,
                     forcerm: bool=False,
-                    labels: Optional[Dict]=None,
+                    labels: Optional[Mapping]=None,
                     stream: bool=False,
-                    encoding: Optional[str]=None) -> Dict:
+                    encoding: Optional[str]=None) -> Mapping:
         """
         Build an image given a remote Dockerfile
         or a file object with a Dockerfile inside
