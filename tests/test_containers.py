@@ -1,5 +1,7 @@
 import pytest
 
+from aiodocker.exceptions import DockerError
+
 
 async def _validate_hello(container):
     try:
@@ -44,3 +46,21 @@ async def test_run_missing_container(docker):
     )
 
     await _validate_hello(container)
+
+
+@pytest.mark.asyncio
+async def test_run_failing_start_container(docker):
+    with pytest.raises(DockerError) as e_info:
+        name = "alpine:latest"
+        await docker.images.delete(name)
+
+        await docker.containers.run(
+            config={
+                # we want to raise an error
+                # `executable file not found`
+                'Cmd': ['pyton', 'echo hello'],
+                'Image': name
+            }
+        )
+
+    assert e_info.value.container_id

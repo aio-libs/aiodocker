@@ -56,18 +56,31 @@ class DockerContainers(object):
         return DockerContainer(self.docker, id=data['Id'])
 
     async def run(self, config, *, name=None):
+        """
+        Create and start a container.
 
+        If container.start() will raise an error the exception will contain
+        a `container_id` attribute with the id of the container.
+        """
         try:
             container = await self.create(config, name=name)
-        except DockerError as e:
+        except DockerError as err:
             # image not find, try pull it
-            if e.status == 404 and 'Image' in config:
+            if err.status == 404 and 'Image' in config:
                 await self.docker.pull(config['Image'])
                 container = await self.create(config, name=name)
             else:
-                raise e
+                raise err
 
-        await container.start()
+        try:
+            await container.start()
+        except DockerError as err:
+            raise DockerError(
+                err.status,
+                {"message": err.message},
+                container_id=container['id']
+                )
+
         return container
 
     async def get(self, container, **kwargs):
