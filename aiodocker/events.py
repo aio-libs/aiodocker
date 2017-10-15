@@ -70,7 +70,8 @@ class DockerEvents:
                 async for data in self.json_stream:
                     await self.channel.publish(data)
             finally:
-                await self.json_stream._close()
+                if self.json_stream is not None:
+                    await self.json_stream._close()
                 self.json_stream = None
         finally:
             # signal termination to subscribers
