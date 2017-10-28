@@ -33,10 +33,17 @@ async def test_run_existing_container(docker):
 
 
 @pytest.mark.asyncio
-async def test_run_missing_container(docker):
+async def test_run_container_with_missing_image(docker):
     name = "alpine:latest"
-    await docker.images.delete(name)
+    try:
+        await docker.images.delete(name)
+    except DockerError as e:
+        if e.status == 404:
+            pass  # already missing, pass
+        else:
+            raise
 
+    # should automatically pull the image
     container = await docker.containers.run(
         config={
             'Cmd': ['-c', 'echo hello'],
@@ -50,10 +57,16 @@ async def test_run_missing_container(docker):
 
 @pytest.mark.asyncio
 async def test_run_failing_start_container(docker):
-    with pytest.raises(DockerError) as e_info:
-        name = "alpine:latest"
+    name = "alpine:latest"
+    try:
         await docker.images.delete(name)
+    except DockerError as e:
+        if e.status == 404:
+            pass  # already missing, pass
+        else:
+            raise
 
+    with pytest.raises(DockerError) as e_info:
         await docker.containers.run(
             config={
                 # we want to raise an error
@@ -64,3 +77,8 @@ async def test_run_failing_start_container(docker):
         )
 
     assert e_info.value.container_id
+    # This container is created but not started!
+    # We should delete it afterwards.
+    cid = e_info.value.container_id
+    container = docker.containers.container(cid)
+    await container.delete()
