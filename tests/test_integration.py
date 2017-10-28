@@ -33,7 +33,7 @@ async def test_autodetect_host(monkeypatch):
 async def test_connect_invalid_unix_socket():
     docker = Docker('unix:///var/run/does-not-exist-docker.sock')
     assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
-    with pytest.raises(aiohttp.ClientOSError):
+    with pytest.raises(FileNotFoundError):
         await docker.containers.list()
     await docker.close()
 
@@ -45,7 +45,7 @@ async def test_connect_envvar(monkeypatch):
     docker = Docker()
     assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
     assert docker.docker_host == 'unix://localhost'
-    with pytest.raises(aiohttp.ClientOSError):
+    with pytest.raises(FileNotFoundError):
         await docker.containers.list()
     await docker.close()
 
