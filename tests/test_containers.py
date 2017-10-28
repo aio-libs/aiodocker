@@ -1,6 +1,6 @@
 import pytest
 
-from aiodocker.exceptions import DockerError
+from aiodocker.exceptions import DockerError, DockerContainerError
 
 
 async def _validate_hello(container):
@@ -66,7 +66,7 @@ async def test_run_failing_start_container(docker):
         else:
             raise
 
-    with pytest.raises(DockerError) as e_info:
+    with pytest.raises(DockerContainerError) as e_info:
         await docker.containers.run(
             config={
                 # we want to raise an error

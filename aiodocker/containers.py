@@ -1,6 +1,6 @@
 import json
 
-from .exceptions import DockerError
+from .exceptions import DockerError, DockerContainerError
 from .jsonstream import json_stream_result
 from .multiplexed import multiplexed_result
 from .utils import identical, parse_result
@@ -75,11 +75,10 @@ class DockerContainers(object):
         try:
             await container.start()
         except DockerError as err:
-            raise DockerError(
+            raise DockerContainerError(
                 err.status,
                 {"message": err.message},
-                container_id=container['id']
-                )
+                container['id'])
 
         return container
 
