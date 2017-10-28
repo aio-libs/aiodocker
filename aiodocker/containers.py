@@ -78,8 +78,7 @@ class DockerContainers(object):
             raise DockerContainerError(
                 err.status,
                 {"message": err.message},
-                container['id']
-                )
+                container['id'])
 
         return container
 
