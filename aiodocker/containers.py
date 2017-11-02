@@ -1,4 +1,5 @@
 import json
+import tarfile
 
 from .exceptions import DockerError, DockerContainerError
 from .jsonstream import json_stream_result
@@ -141,7 +142,7 @@ class DockerContainer:
         )
         return data
 
-    async def get_archive(self, path):
+    async def get_archive(self, path: str) -> tarfile.TarFile:
         response = await self.docker._query(
             "containers/{self._id}/archive".format(self=self),
             method='GET',
