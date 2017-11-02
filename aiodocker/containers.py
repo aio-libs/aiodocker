@@ -141,6 +141,15 @@ class DockerContainer:
         )
         return data
 
+    async def get_archive(self, path):
+        response = await self.docker._query(
+            "containers/{self._id}/archive".format(self=self),
+            method='GET',
+            params={'path': path}
+        )
+        data = await parse_result(response)
+        return data
+
     async def put_archive(self, path, data):
         response = await self.docker._query(
             "containers/{self._id}/archive".format(self=self),
