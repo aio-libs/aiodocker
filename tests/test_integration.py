@@ -223,7 +223,7 @@ async def test_get_archive(docker, testing_images):
     tar_archive = await container.get_archive('/tmp/foo.txt')
 
     assert tar_archive is not None
-    assert len(tar_archive.members)
+    assert len(tar_archive.members) == 1
     foo_file = tar_archive.extractfile('foo.txt')
     assert foo_file.read() == b'test\n'
     await container.delete(force=True)
