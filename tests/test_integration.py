@@ -205,6 +205,31 @@ async def test_put_archive(docker, testing_images):
 
 
 @pytest.mark.asyncio
+async def test_get_archive(docker, testing_images):
+    config = {
+        "Cmd": ["ash", "-c", "echo 'test' > /tmp/foo.txt"],
+        "Image": "alpine:latest",
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": True,
+        "OpenStdin": False
+    }
+
+    container = await docker.containers.create_or_replace(
+        config=config,
+        name='aiodocker-testing-get-archive')
+    await container.start()
+    tar_archive = await container.get_archive('/tmp/foo.txt')
+
+    assert tar_archive is not None
+    assert len(tar_archive.members) == 1
+    foo_file = tar_archive.extractfile('foo.txt')
+    assert foo_file.read() == b'test\n'
+    await container.delete(force=True)
+
+
+@pytest.mark.asyncio
 async def test_port(docker, testing_images, redis_container):
     port = await redis_container.port(6379)
     assert port
