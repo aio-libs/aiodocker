@@ -103,6 +103,12 @@ We support `Stack Overflow <https://stackoverflow.com>`_.
 Please add *python-asyncio* tag to your question there.
 
 
+Contribution
+------------
+
+Please follow the `Contribution Guide <https://github.com/aio-libs/aiodocker/wiki>`_.
+
+
 Author and License
 -------------------
 
