@@ -19,7 +19,11 @@ class DockerContainerError(DockerError):
         self.container_id = container_id
 
     def __repr__(self):
-        return 'DockerContainerError({self.status}, {self.message!r}, {self.container_id!r})'.format(self=self)
+        return ('DockerContainerError('
+                '{self.status}, {self.message!r}, '
+                '{self.container_id!r})').format(self=self)
 
     def __str__(self):
-        return 'DockerContainerError({self.status}, {self.message!r}, {self.container_id!r})'.format(self=self)
+        return ('DockerContainerError('
+                '{self.status}, {self.message!r}, '
+                '{self.container_id!r})').format(self=self)
