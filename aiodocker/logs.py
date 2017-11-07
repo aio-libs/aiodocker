@@ -52,7 +52,7 @@ class DockerLog:
             await self.channel.publish(None)
             try:
                 await self.response.release()
-            except:
+            except Exception:
                 pass
             self.response = None
 
