@@ -15,6 +15,7 @@ python:
 
 env:
   - DOCKER_VERSION=17.06
+  - DOCKER_VERSION=17.09
 
 # test stage
 services:
