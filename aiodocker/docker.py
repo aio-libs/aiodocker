@@ -27,7 +27,8 @@ from .system import DockerSystem
 
 __all__ = (
     'Docker',
-    'DockerContainers', 'DockerContainer',
+    'DockerContainers',
+    'DockerContainer',
     'DockerEvents',
     'DockerError',
     'DockerImages',
@@ -35,10 +36,12 @@ __all__ = (
     'DockerSwarm',
     'DockerServices',
     'DockerTasks',
-    'DockerVolumes', 'DockerVolume',
-    'DockerNetworks', 'DockerNetwork',
+    'DockerVolumes',
+    'DockerVolume',
+    'DockerNetworks',
+    'DockerNetwork',
     'DockerSwarmNodes',
-    'DockerSystem'
+    'DockerSystem',
 )
 
 log = logging.getLogger(__name__)
