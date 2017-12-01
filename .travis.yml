@@ -21,6 +21,10 @@ env:
 services:
   - docker
 
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install docker-ce
+
 install:
   - docker run -d --privileged --net host --name ci-docker docker:$DOCKER_VERSION-dind dockerd -H tcp://localhost:27015
   - docker run -d --name aiodocker-test-registry -p 5000:5000 registry:2
