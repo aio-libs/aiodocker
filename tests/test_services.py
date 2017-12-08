@@ -139,3 +139,35 @@ async def test_logs_services_stream(swarm):
         pass
 
     assert count == 10
+
+
+@pytest.mark.asyncio
+async def test_service_update(swarm):
+    name = "service-update"
+    initial_image = "redis:3.0.2"
+    image_after_update = "redis:4.0"
+    TaskTemplate = {
+        "ContainerSpec": {
+            "Image": initial_image,
+        },
+    }
+    service = await swarm.services.create(
+        name=name,
+        task_template=TaskTemplate,
+    )
+
+    service = await swarm.services.inspect(name)
+    current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
+    assert initial_image in current_image
+
+    # update the image
+    await swarm.services.update(service_id=name, image=image_after_update)
+    service = await swarm.services.inspect(name)
+    current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
+    assert image_after_update in current_image
+
+    # rollback to the previous one
+    await swarm.services.update(service_id=name, rollback=True)
+    service = await swarm.services.inspect(name)
+    current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
+    assert initial_image in current_image
