@@ -171,3 +171,22 @@ async def test_service_update(swarm):
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
     assert initial_image in current_image
+
+    await swarm.services.delete(name)
+
+@pytest.mark.asyncio
+async def test_service_update_error(swarm):
+    name = "service-update"
+    TaskTemplate = {
+        "ContainerSpec": {
+            "Image": "redis:3.0.2",
+        },
+    }
+    await swarm.services.create(
+        name=name,
+        task_template=TaskTemplate,
+    )
+    with pytest.raises(ValueError):
+        await swarm.services.update(service_id=name)
+
+    await swarm.services.delete(name)
