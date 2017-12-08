@@ -174,6 +174,7 @@ async def test_service_update(swarm):
 
     await swarm.services.delete(name)
 
+
 @pytest.mark.asyncio
 async def test_service_update_error(swarm):
     name = "service-update"
