@@ -167,8 +167,7 @@ async def test_service_update(swarm):
     assert image_after_update in current_image
 
     # rollback to the previous one
-    await swarm.services.update(
-        service_id=name, image=image_after_update, rollback=True)
+    await swarm.services.update(service_id=name, rollback=True)
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
     assert initial_image in current_image
