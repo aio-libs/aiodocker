@@ -94,7 +94,7 @@ class DockerServices(object):
     async def update(self,
                      service_id: str,
                      *,
-                     image: str=None,
+                     image: str,
                      rollback: bool=False
                      ) -> bool:
         """
@@ -108,11 +108,9 @@ class DockerServices(object):
         Returns:
             True if successful.
         """
-        if image is None and rollback is False:
-            raise ValueError("You need to specify an image.")
-
         inspect_service = await self.inspect(service_id)
         version = inspect_service.get('Version').get('Index')
+
         spec = inspect_service["Spec"]
         spec['TaskTemplate']['ContainerSpec']['Image'] = image
 
