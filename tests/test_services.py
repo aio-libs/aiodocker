@@ -152,15 +152,13 @@ async def test_service_update(swarm):
         },
     }
 
-    service = await swarm.services.create(
+    await swarm.services.create(
         name=name,
         task_template=TaskTemplate,
     )
-
-    inspect_service = await swarm.services.inspect(name)
+    service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
-    version = inspect_service.get('Version').get('Index')
-
+    version = service['Version']['Index']
     assert initial_image in current_image
 
     # update the service
@@ -172,7 +170,7 @@ async def test_service_update(swarm):
 
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
-    version = inspect_service.get('Version').get('Index')
+    version = service['Version']['Index']
     assert image_after_update in current_image
 
     # rollback to the previous one
@@ -198,7 +196,11 @@ async def test_service_update_error(swarm):
         name=name,
         task_template=TaskTemplate,
     )
+    await asyncio.sleep(1)
+    service = await swarm.services.inspect(name)
+    version = service['Version']['Index']
+
     with pytest.raises(ValueError):
-        await swarm.services.update(service_id=name)
+        await swarm.services.update(service_id=name, version=version)
 
     await swarm.services.delete(name)
