@@ -151,23 +151,34 @@ async def test_service_update(swarm):
             "Image": initial_image,
         },
     }
+
     service = await swarm.services.create(
         name=name,
         task_template=TaskTemplate,
     )
 
-    service = await swarm.services.inspect(name)
+    inspect_service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
+    version = inspect_service.get('Version').get('Index')
+
     assert initial_image in current_image
 
-    # update the image
-    await swarm.services.update(service_id=name, image=image_after_update)
+    # update the service
+    await swarm.services.update(
+        service_id=name, version=version, image=image_after_update
+        )
+    # wait a few to complete the update of the service
+    await asyncio.sleep(1)
+
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
+    version = inspect_service.get('Version').get('Index')
     assert image_after_update in current_image
 
     # rollback to the previous one
-    await swarm.services.update(service_id=name, rollback=True)
+    await swarm.services.update(
+        service_id=name, version=version, rollback=True
+        )
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
     assert initial_image in current_image

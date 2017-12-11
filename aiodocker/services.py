@@ -93,6 +93,7 @@ class DockerServices(object):
 
     async def update(self,
                      service_id: str,
+                     version: str,
                      *,
                      image: str=None,
                      rollback: bool=False
@@ -103,6 +104,7 @@ class DockerServices(object):
 
         Args:
             service_id: ID or name of the service.
+            version: Version of the service that you want to update.
             rollback: Rollback the service to the previous service spec.
 
         Returns:
@@ -112,7 +114,6 @@ class DockerServices(object):
             raise ValueError("You need to specify an image.")
 
         inspect_service = await self.inspect(service_id)
-        version = inspect_service.get('Version').get('Index')
         spec = inspect_service["Spec"]
 
         if image is not None:
