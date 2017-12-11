@@ -1,7 +1,7 @@
 from .docker import Docker
 
 
-__version__ = '0.8.5a0'
+__version__ = '0.8.6'
 
 
 __all__ = ("Docker", )
