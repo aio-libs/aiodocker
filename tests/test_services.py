@@ -7,8 +7,8 @@ from distutils.version import StrictVersion
 TaskTemplate = {
     "ContainerSpec": {
         "Image": "redis",
-        },
-    }
+    },
+}
 
 
 async def _wait_service(swarm, service_id):
@@ -58,11 +58,11 @@ async def test_logs_services(swarm):
             "Args": [
                 "python", "-c",
                 "for _ in range(10): print('Hello Python')"
-                ]
+            ]
         },
         "RestartPolicy": {
             "Condition": "none"
-            }
+        }
     }
     service = await swarm.services.create(
         task_template=TaskTemplate,
@@ -82,7 +82,7 @@ async def test_logs_services(swarm):
                     break
 
     logs = await swarm.services.logs(
-                            service_id, stdout=True)
+        service_id, stdout=True)
 
     assert len(logs) == 10
     assert logs[0] == "Hello Python"
@@ -99,11 +99,11 @@ async def test_logs_services_stream(swarm):
             "Args": [
                 "python", "-c",
                 "for _ in range(10): print('Hello Python')"
-                ]
+            ]
         },
         "RestartPolicy": {
             "Condition": "none"
-            }
+        }
     }
     service = await swarm.services.create(
         task_template=TaskTemplate,
@@ -123,8 +123,8 @@ async def test_logs_services_stream(swarm):
                     break
 
     stream = await swarm.services.logs(
-                            service_id, stdout=True, follow=True
-                            )
+        service_id, stdout=True, follow=True
+    )
 
     # the service printed 10 `Hello Python`
     # let's check for them
@@ -164,7 +164,7 @@ async def test_service_update(swarm):
     # update the service
     await swarm.services.update(
         service_id=name, version=version, image=image_after_update
-        )
+    )
     # wait a few to complete the update of the service
     await asyncio.sleep(1)
 
@@ -176,7 +176,7 @@ async def test_service_update(swarm):
     # rollback to the previous one
     await swarm.services.update(
         service_id=name, version=version, rollback=True
-        )
+    )
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
     assert initial_image in current_image
@@ -204,3 +204,17 @@ async def test_service_update_error(swarm):
         await swarm.services.update(service_id=name, version=version)
 
     await swarm.services.delete(name)
+
+
+@pytest.mark.asyncio
+async def test_service_create_error(swarm):
+    name = "service-test-error"
+    TaskTemplate = {
+        "ContainerSpec": {
+        },
+    }
+    with pytest.raises(KeyError):
+        await swarm.services.create(
+            name=name,
+            task_template=TaskTemplate,
+        )
