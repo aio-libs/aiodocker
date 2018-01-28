@@ -87,10 +87,52 @@ class DockerServices(object):
         response = await self.docker._query_json(
             "services/create",
             method="POST",
-            headers={"Content-type": "application/json", },
             data=data,
         )
         return response
+
+    async def update(self,
+                     service_id: str,
+                     *,
+                     image: str=None,
+                     rollback: bool=False
+                     ) -> bool:
+        """
+        Update a service.
+        If rollback is True image will be ignored.
+
+        Args:
+            service_id: ID or name of the service.
+            rollback: Rollback the service to the previous service spec.
+
+        Returns:
+            True if successful.
+        """
+        if image is None and rollback is False:
+            raise ValueError("You need to specify an image.")
+
+        inspect_service = await self.inspect(service_id)
+        version = inspect_service.get('Version').get('Index')
+        spec = inspect_service["Spec"]
+
+        if image is not None:
+            spec['TaskTemplate']['ContainerSpec']['Image'] = image
+
+        params = {
+            "version": version,
+        }
+        if rollback is True:
+            params["rollback"] = 'previous'
+
+        data = json.dumps(clean_map(spec))
+
+        await self.docker._query_json(
+            "services/{service_id}/update".format(service_id=service_id),
+            method="POST",
+            data=data,
+            params=params
+        )
+        return True
 
     async def delete(self, service_id: str) -> bool:
         """
