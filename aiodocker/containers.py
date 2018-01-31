@@ -190,6 +190,16 @@ class DockerContainer:
         await response.release()
         return
 
+    async def restart(self, **kwargs):
+        response = await self.docker._query(
+            "containers/{self._id}/restart".format(self=self),
+            method='POST',
+            headers={"content-type": "application/json"},
+            data=kwargs
+        )
+        await response.release()
+        return
+
     async def kill(self, **kwargs):
         response = await self.docker._query(
             "containers/{self._id}/kill".format(self=self),
