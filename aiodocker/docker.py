@@ -68,6 +68,12 @@ class Docker:
             'Invalid API version format'
         self.api_version = api_version
 
+        if docker_host is None:
+            raise ValueError(
+                "Missing valid docker_host."
+                "Either DOCKER_HOST or local sockets are not available."
+                )
+
         if connector is None:
             if _rx_tcp_schemes.search(docker_host):
                 if os.environ.get('DOCKER_TLS_VERIFY', '0') == '1':
