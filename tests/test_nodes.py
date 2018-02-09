@@ -38,7 +38,7 @@ async def test_node_update(swarm):
     swarm_nodes = await swarm.nodes.list()
     node_id, version = swarm_nodes[0]["ID"], swarm_nodes[0]["Version"]["Index"]
 
-    data = {
+    spec = {
         "Availability": "active",
         "Name": "special-node",
         "Role": "manager",
@@ -47,6 +47,6 @@ async def test_node_update(swarm):
         }
     }
 
-    await swarm.nodes.update(node_id=node_id, version=version, data=data)
+    await swarm.nodes.update(node_id=node_id, version=version, spec=spec)
     node = await swarm.nodes.inspect(node_id=node_id)
-    assert node['Spec'] == data
+    assert node['Spec'] == spec
