@@ -174,7 +174,7 @@ class Docker:
             path, method,
             params=params, data=data, headers=headers,
             timeout=timeout)
-        data = await parse_result(response, 'json')
+        data = await parse_result(response)
         return data
 
     async def _websocket(self, path, **params):
