@@ -68,7 +68,11 @@ class DockerSwarmNodes(object):
         return response
 
     async def remove(
-        self, *, node_id: str, force: bool=False) -> Dict[str, Any]:
+        self,
+        *,
+        node_id: str,
+        force: bool=False
+    ) -> Dict[str, Any]:
         """
         Inspect a node
 

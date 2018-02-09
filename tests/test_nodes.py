@@ -2,6 +2,7 @@ import pytest
 
 from aiodocker.exceptions import DockerError
 
+
 @pytest.mark.asyncio
 async def test_nodes_list(swarm):
     swarm_nodes = await swarm.nodes.list()
@@ -29,7 +30,7 @@ async def test_node_remove(swarm):
     with pytest.raises(DockerError) as err_info:
         await swarm.nodes.remove(node_id=node_id)
 
-    assert "is a cluster manager and is a member of the raft cluster." in str(err_info)
+    assert "is a cluster manager and is a member." in str(err_info)
 
 
 @pytest.mark.asyncio
