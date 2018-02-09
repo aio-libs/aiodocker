@@ -1,22 +1,32 @@
 from typing import Dict, Any
+from .utils import clean_filters
 
 
 class DockerSwarmNodes(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self) -> Dict[str, Any]:
+    async def list(self, *, filters: Dict=None) -> Dict[str, Any]:
         """
-        Inspect a swarm
+        Return a list of swarm's nodes.
 
-        Returns:
-            Info about the swarm
+        Args:
+            filters: a dict with a list of filters
+
+        Available filters:
+            id=<node id>
+            label=<engine label>
+            membership=(accepted|pending)`
+            name=<node name>
+            role=(manager|worker)`
         """
-        # TODO add filters
+
+        params = {"filters": clean_filters(filters)}
 
         response = await self.docker._query_json(
             "nodes",
             method='GET',
+            params=params
         )
 
         return response
@@ -27,9 +37,6 @@ class DockerSwarmNodes(object):
 
         Args:
             node_id: The ID or name of the node
-
-        Returns:
-            a dict with info about the node
         """
 
         response = await self.docker._query_json(
@@ -39,31 +46,30 @@ class DockerSwarmNodes(object):
         return response
 
     async def update(
-        self, *, node_id: str, version: int, data: Dict[str, Any]
+        self, *, node_id: str, version: int, spec: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Inspect a node
+        Update the spec of a node.
 
         Args:
             node_id: The ID or name of the node
-
-        Returns:
-            a dict with info about the node
+            version: version number of the node being updated
+            spec: fields to be updated
         """
 
         params = {"version": version}
 
-        if "Role" in data:
-            assert data['Role'] in {"worker", "manager"}
+        if "Role" in spec:
+            assert spec['Role'] in {"worker", "manager"}
 
-        if "Availability" in data:
-            assert data['Availability'] in {"active", "pause", "drain"}
+        if "Availability" in spec:
+            assert spec['Availability'] in {"active", "pause", "drain"}
 
         response = await self.docker._query_json(
             "nodes/{node_id}/update".format(node_id=node_id),
             method="POST",
             params=params,
-            data=data
+            data=spec
         )
         return response
 
@@ -74,13 +80,10 @@ class DockerSwarmNodes(object):
         force: bool=False
     ) -> Dict[str, Any]:
         """
-        Inspect a node
+        Remove a node from a swarm.
 
         Args:
             node_id: The ID or name of the node
-
-        Returns:
-            a dict with info about the node
         """
 
         params = {"force": force}
