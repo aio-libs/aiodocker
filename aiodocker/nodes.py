@@ -1,11 +1,9 @@
-import json
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 
 class DockerSwarmNodes(object):
     def __init__(self, docker):
         self.docker = docker
-
 
     async def list(self) -> Dict[str, Any]:
         """
@@ -23,7 +21,7 @@ class DockerSwarmNodes(object):
 
         return response
 
-    async def inspect(self, node_id: str) -> Dict[str, Any]:
+    async def inspect(self, *, node_id: str) -> Dict[str, Any]:
         """
         Inspect a node
 
@@ -40,7 +38,9 @@ class DockerSwarmNodes(object):
         )
         return response
 
-    async def update(self, node_id: str, version: int, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def update(
+        self, *, node_id: str, version: int, data: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """
         Inspect a node
 
@@ -64,5 +64,26 @@ class DockerSwarmNodes(object):
             method="POST",
             params=params,
             data=data
+        )
+        return response
+
+    async def remove(
+        self, *, node_id: str, force: bool=False) -> Dict[str, Any]:
+        """
+        Inspect a node
+
+        Args:
+            node_id: The ID or name of the node
+
+        Returns:
+            a dict with info about the node
+        """
+
+        params = {"force": force}
+
+        response = await self.docker._query_json(
+            "nodes/{node_id}".format(node_id=node_id),
+            method="DELETE",
+            params=params,
         )
         return response
