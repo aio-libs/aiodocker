@@ -10,6 +10,17 @@ async def test_nodes_list(swarm):
 
 
 @pytest.mark.asyncio
+async def test_nodes_list_with_filter(swarm):
+    filters = {"role": "manager"}
+    filtered_nodes = await swarm.nodes.list(filters=filters)
+    assert len(filtered_nodes) == 1
+
+    filters = {"role": "worker"}
+    filtered_nodes = await swarm.nodes.list(filters=filters)
+    assert len(filtered_nodes) == 0
+
+
+@pytest.mark.asyncio
 async def test_node_inspect(swarm):
     swarm_nodes = await swarm.nodes.list()
     node_id = swarm_nodes[0]["ID"]
