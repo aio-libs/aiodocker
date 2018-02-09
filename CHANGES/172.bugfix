@@ -1,1 +1,1 @@
-Remove asserts used to check login with docker registry.
+Remove asserts used to check auth with docker registry.
