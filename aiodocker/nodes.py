@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Any, Dict, List
 from .utils import clean_filters
 
 
@@ -6,7 +6,7 @@ class DockerSwarmNodes(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Dict=None) -> Dict[str, Any]:
+    async def list(self, *, filters: Dict=None) -> List[Dict]:
         """
         Return a list of swarm's nodes.
 
