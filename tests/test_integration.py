@@ -5,7 +5,6 @@ import os
 import sys
 import tarfile
 import time
-from distutils.version import StrictVersion
 
 import aiohttp
 import pytest

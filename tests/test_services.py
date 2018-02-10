@@ -1,7 +1,6 @@
 import aiohttp
 import asyncio
 import pytest
-from distutils.version import StrictVersion
 
 
 TaskTemplate = {
