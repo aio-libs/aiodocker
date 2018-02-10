@@ -1,0 +1,1 @@
+Remove asserts used to check auth with docker registry.
