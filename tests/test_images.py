@@ -121,10 +121,7 @@ async def test_pups_image_auth(docker):
     registry_addr, image_name = image.split('/', 1)
     await docker.images.tag(name=name, repo=image, tag=tag)
 
-    auth_config = {'username': "testuser",
-                   'password': "testpassword",
-                   'email': None,
-                   'serveraddress': registry_addr}
+    auth_config = {'username': "testuser", 'password': "testpassword"}
 
     await docker.images.push(name=repository, tag=tag, auth=auth_config)
 
