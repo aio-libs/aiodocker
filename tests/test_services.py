@@ -49,9 +49,6 @@ async def test_service_tasks(swarm, tmp_service):
 
 @pytest.mark.asyncio
 async def test_logs_services(swarm):
-    if StrictVersion(swarm.api_version[1:]) < StrictVersion("1.29"):
-        pytest.skip("The feature is experimental before API version 1.29")
-
     TaskTemplate = {
         "ContainerSpec": {
             "Image": "python:3.6.1-alpine",
@@ -90,9 +87,6 @@ async def test_logs_services(swarm):
 
 @pytest.mark.asyncio
 async def test_logs_services_stream(swarm):
-    if StrictVersion(swarm.api_version[1:]) < StrictVersion("1.29"):
-        pytest.skip("The feature is experimental before API version 1.29")
-
     TaskTemplate = {
         "ContainerSpec": {
             "Image": "python:3.6.1-alpine",

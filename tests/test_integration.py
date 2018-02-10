@@ -105,9 +105,6 @@ async def test_container_lifecycles(docker, testing_images):
 @pytest.mark.skipif(sys.platform == 'darwin',
                     reason="Docker for Mac has a bug with websocket")
 async def test_stdio_stdin(docker, testing_images, shell_container):
-    if StrictVersion(docker.api_version[1:]) < StrictVersion("1.28"):
-        pytest.skip("The WebSocket return text before API version 1.28")
-
     # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
     await ws.send_str('echo hello world\n')
