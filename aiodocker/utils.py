@@ -265,10 +265,6 @@ def compose_auth_header(auth: Union[MutableMapping, str, bytes],
         elif 'auth' in auth:
             return compose_auth_header(auth['auth'], registry_addr)
         else:
-            assert 'username' in auth
-            assert 'password' in auth
-            assert 'email' in auth
-            assert 'serveraddress' in auth
             if registry_addr:
                 auth['serveraddress'] = registry_addr
         auth_json = json.dumps(auth).encode('utf-8')
