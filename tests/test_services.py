@@ -38,8 +38,15 @@ async def test_service_list_with_filter(swarm, tmp_service):
 
 
 @pytest.mark.asyncio
-async def test_service_tasks(swarm, tmp_service):
-    assert await swarm.tasks.list()
+async def test_service_tasks_list(swarm, tmp_service):
+    tasks = await swarm.tasks.list()
+    assert len(tasks) == 1
+    assert tasks[0]['ServiceID'] == tmp_service
+    assert await swarm.tasks.inspect(tasks[0]['ID'])
+
+
+@pytest.mark.asyncio
+async def test_service_tasks_list_with_filters(swarm, tmp_service):
     tasks = await swarm.tasks.list(filters={'service': tmp_service})
     assert len(tasks) == 1
     assert tasks[0]['ServiceID'] == tmp_service
