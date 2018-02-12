@@ -1,5 +1,7 @@
 import json
-from typing import Optional, Dict
+from typing import Optional, Dict, List
+
+from .utils import clean_map
 
 
 class DockerSwarm(object):
@@ -14,7 +16,7 @@ class DockerSwarm(object):
                    swarm_spec: Optional[Dict]=None
                    ) -> str:
         """
-        Initialize a new swarm
+        Initialize a new swarm.
 
         Args:
             ListenAddr: listen address used for inter-manager communication
@@ -46,7 +48,7 @@ class DockerSwarm(object):
 
     async def inspect(self) -> Dict:
         """
-        Inspect a swarm
+        Inspect a swarm.
 
         Returns:
             Info about the swarm
@@ -59,13 +61,48 @@ class DockerSwarm(object):
 
         return response
 
+    async def join(
+        self,
+        *,
+        remote_addrs: List[str],
+        join_token: str,
+        listen_addr: str='0.0.0.0:2377',
+        advertise_addr: str=None,
+        data_path_addr: str=None,
+        ) -> bool:
+        """
+        Join a swarm.
+
+        Args:
+            listen_addr: Listen address used for inter-manager communication
+            advertise_addr: Externally reachable address advertised to other nodes. If AdvertiseAddr is not specified, it will be automatically detected when possible.
+            data_path_addr: Address or interface to use for data path traffic, if data_path_addr is unspecified, the same address as AdvertiseAddr is used.
+            remote_addrs: Addresses of manager nodes already participating in the swarm.
+            join_token: Secret token for joining this swarm.
+        """
+
+        data = {
+            "RemoteAddrs": remote_addrs,
+            "JoinToken": join_token,
+            "ListenAddr": listen_addr,
+            "AdvertiseAddr": advertise_addr,
+            "DataPathAddr": data_path_addr,
+        }
+
+        await self.docker._query(
+            "swarm/join",
+            method='POST',
+            data=json.dumps(clean_map(data))
+        )
+
+        return True
+
     async def leave(self, *, force: bool=False) -> bool:
         """
-        Leave a swarm
+        Leave a swarm.
 
         Args:
             force: force to leave the swarm even if the node is a master
-
         """
 
         params = {"force": force}
