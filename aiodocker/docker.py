@@ -22,6 +22,7 @@ from .services import DockerServices
 from .tasks import DockerTasks
 from .volumes import DockerVolumes, DockerVolume
 from .nodes import DockerSwarmNodes
+from .system import DockerSystem
 
 __all__ = (
     'Docker',
@@ -35,6 +36,7 @@ __all__ = (
     'DockerTasks',
     'DockerVolumes', 'DockerVolume',
     'DockerSwarmNodes',
+    'DockerSystem'
 )
 
 log = logging.getLogger(__name__)
@@ -104,6 +106,7 @@ class Docker:
         self.images = DockerImages(self)
         self.volumes = DockerVolumes(self)
         self.nodes = DockerSwarmNodes(self)
+        self.system = DockerSystem(self)
 
         # legacy aliases
         self.pull = self.images.pull
