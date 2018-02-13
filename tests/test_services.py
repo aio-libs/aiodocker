@@ -3,6 +3,8 @@ import asyncio
 from async_timeout import timeout
 import pytest
 
+import async_timeout
+
 
 TaskTemplate = {
     "ContainerSpec": {
