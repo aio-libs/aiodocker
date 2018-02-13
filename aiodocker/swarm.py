@@ -59,14 +59,14 @@ class DockerSwarm(object):
         return response
 
     async def join(
-        self,
-        *,
-        remote_addrs: List[str],
-        join_token: str,
-        listen_addr: str='0.0.0.0:2377',
-        advertise_addr: str=None,
-        data_path_addr: str=None,
-    ) -> bool:
+            self,
+            *,
+            remote_addrs: List[str],
+            listen_addr: str='0.0.0.0:2377',
+            join_token: str,
+            advertise_addr: str=None,
+            data_path_addr: str=None
+            ) -> bool:
         """
         Join a swarm.
 
