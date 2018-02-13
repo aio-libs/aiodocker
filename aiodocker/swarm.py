@@ -7,13 +7,14 @@ class DockerSwarm(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def init(self,
-                   *,
-                   advertise_addr: str=None,
-                   listen_addr: str="0.0.0.0:2377",
-                   force_new_cluster: bool=False,
-                   swarm_spec: Dict=None
-                   ) -> str:
+    async def init(
+        self,
+        *,
+        advertise_addr: str=None,
+        listen_addr: str="0.0.0.0:2377",
+        force_new_cluster: bool=False,
+        swarm_spec: Dict=None
+    ) -> str:
         """
         Initialize a new swarm.
 
