@@ -9,6 +9,7 @@ async def test_swarm_inspect(swarm):
     assert "ID" in swarm_info
     assert "Spec" in swarm_info
 
+
 @pytest.mark.asyncio
 async def test_swarm_failing_joining(swarm):
     swarm_info = await swarm.swarm.inspect()

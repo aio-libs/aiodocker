@@ -1,5 +1,4 @@
-import json
-from typing import Optional, Dict, List
+from typing import Dict, List
 
 from .utils import clean_map
 
@@ -10,10 +9,10 @@ class DockerSwarm(object):
 
     async def init(self,
                    *,
-                   advertise_addr: Optional[str]=None,
+                   advertise_addr: str=None,
                    listen_addr: str="0.0.0.0:2377",
                    force_new_cluster: bool=False,
-                   swarm_spec: Optional[Dict]=None
+                   swarm_spec: Dict=None
                    ) -> str:
         """
         Initialize a new swarm.
@@ -35,13 +34,10 @@ class DockerSwarm(object):
             'Spec': swarm_spec,
         }
 
-        data_str = json.dumps(data)
-
-        response = await self.docker._query(
+        response = await self.docker._query_json(
             "swarm/init",
             method='POST',
-            headers={"content-type": "application/json", },
-            data=data_str
+            data=data
         )
 
         return response
@@ -69,16 +65,25 @@ class DockerSwarm(object):
         listen_addr: str='0.0.0.0:2377',
         advertise_addr: str=None,
         data_path_addr: str=None,
-        ) -> bool:
+    ) -> bool:
         """
         Join a swarm.
 
         Args:
-            listen_addr: Listen address used for inter-manager communication
-            advertise_addr: Externally reachable address advertised to other nodes. If AdvertiseAddr is not specified, it will be automatically detected when possible.
-            data_path_addr: Address or interface to use for data path traffic, if data_path_addr is unspecified, the same address as AdvertiseAddr is used.
-            remote_addrs: Addresses of manager nodes already participating in the swarm.
-            join_token: Secret token for joining this swarm.
+            listen_addr
+                Used for inter-manager communication
+
+            advertise_addr
+                Externally reachable address advertised to other nodes.
+
+            data_path_addr
+                Address or interface to use for data path traffic.
+
+            remote_addrs
+                Addresses of manager nodes already participating in the swarm.
+
+            join_token
+                Secret token for joining this swarm.
         """
 
         data = {
@@ -92,7 +97,7 @@ class DockerSwarm(object):
         await self.docker._query(
             "swarm/join",
             method='POST',
-            data=json.dumps(clean_map(data))
+            data=clean_map(data)
         )
 
         return True
