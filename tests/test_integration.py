@@ -9,7 +9,6 @@ import time
 import aiohttp
 from async_timeout import timeout
 import pytest
-import async_timeout
 
 from aiodocker.docker import Docker
 
