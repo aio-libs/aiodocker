@@ -13,3 +13,5 @@ coverage.xml
 docs/_build
 .tox
 .mypy_cache
+.python-version
+.pytest_cache

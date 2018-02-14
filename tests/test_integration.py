@@ -7,6 +7,7 @@ import tarfile
 import time
 
 import aiohttp
+from async_timeout import timeout
 import pytest
 
 from aiodocker.docker import Docker
@@ -112,7 +113,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     try:
         # collect the websocket outputs for at most 2 secs until we see the
         # output.
-        with aiohttp.Timeout(2):
+        with timeout(2):
             while True:
                 output += await ws.receive_bytes()
                 if b"echo hello world\r\n" in output:
@@ -132,7 +133,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     try:
         # collect the logs for at most 2 secs until we see the output.
         stream = await shell_container.log(stdout=True, follow=True)
-        with aiohttp.Timeout(2):
+        with timeout(2):
             async for s in stream:
                 log.append(s)
                 if "hello world\r\n" in s:
@@ -249,7 +250,7 @@ async def test_events(docker, testing_images, event_loop):
     events_occurred = []
     while True:
         try:
-            with aiohttp.Timeout(0.2):
+            with timeout(0.2):
                 event = await subscriber.get()
             if event['Actor']['ID'] == container._id:
                 events_occurred.append(event['Action'])
