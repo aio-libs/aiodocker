@@ -1,10 +1,8 @@
 from typing import Mapping
 
-from .docker import Docker
-
 
 class DockerSystem(object):
-    def __init__(self, docker: Docker) -> None:
+    def __init__(self, docker) -> None:
         self.docker = docker
 
     async def info(self) -> Mapping:

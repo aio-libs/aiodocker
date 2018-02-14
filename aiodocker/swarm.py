@@ -1,12 +1,10 @@
 from typing import Mapping, Iterable
 
-from .docker import Docker
-
 from .utils import clean_map
 
 
 class DockerSwarm(object):
-    def __init__(self, docker: Docker) -> None:
+    def __init__(self, docker) -> None:
         self.docker = docker
 
     async def init(
