@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Mapping, List
 
 from .utils import clean_map
 
@@ -13,7 +13,7 @@ class DockerSwarm(object):
         advertise_addr: str=None,
         listen_addr: str="0.0.0.0:2377",
         force_new_cluster: bool=False,
-        swarm_spec: Dict=None
+        swarm_spec: Mapping=None
     ) -> str:
         """
         Initialize a new swarm.
@@ -43,7 +43,7 @@ class DockerSwarm(object):
 
         return response
 
-    async def inspect(self) -> Dict:
+    async def inspect(self) -> Mapping:
         """
         Inspect a swarm.
 
