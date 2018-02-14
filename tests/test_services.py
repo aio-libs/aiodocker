@@ -1,5 +1,7 @@
-import aiohttp
 import asyncio
+
+import aiohttp
+from async_timeout import timeout
 import pytest
 
 
@@ -75,7 +77,7 @@ async def test_logs_services(swarm):
     filters = {"service": service_id}
 
     # wait till task status is `complete`
-    with aiohttp.Timeout(60):
+    with timeout(60):
         while True:
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
@@ -113,7 +115,7 @@ async def test_logs_services_stream(swarm):
     filters = {"service": service_id}
 
     # wait till task status is `complete`
-    with aiohttp.Timeout(60):
+    with timeout(60):
         while True:
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
@@ -130,7 +132,7 @@ async def test_logs_services_stream(swarm):
     # let's check for them
     count = 0
     try:
-        with aiohttp.Timeout(2):
+        with timeout(2):
             while True:
                 async for log in stream:
                     if "Hello Python\n" in log:
