@@ -184,7 +184,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return "{key}={value}".format(key=key, value=value)
 
 
-def clean_networks(networks: Optional[Iterable[str]]=None) -> Iterable[str]:
+def clean_networks(networks: Iterable[str]=None) -> Iterable[str]:
     """
     Cleans the values inside `networks`
     Returns a new list
@@ -202,7 +202,7 @@ def clean_networks(networks: Optional[Iterable[str]]=None) -> Iterable[str]:
     return result
 
 
-def clean_filters(filters: Optional[dict]=None) -> str:
+def clean_filters(filters: Mapping=None) -> str:
     """
     Checks the values inside `filters`
     https://docs.docker.com/engine/api/v1.29/#operation/ServiceList
@@ -245,7 +245,7 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
 
 
 def compose_auth_header(auth: Union[MutableMapping, str, bytes],
-                        registry_addr: Optional[str]=None) -> str:
+                        registry_addr: str=None) -> str:
     """
     Validate and compose base64-encoded authentication header
     with an optional support for parsing legacy-style "user:password"
