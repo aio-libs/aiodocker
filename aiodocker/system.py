@@ -1,11 +1,13 @@
-from typing import Dict
+from typing import Mapping
+
+from .docker import Docker
 
 
 class DockerSystem(object):
-    def __init__(self, docker):
+    def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def info(self) -> Dict:
+    async def info(self) -> Mapping:
         """
         Get system information, similar to `docker info`.
 

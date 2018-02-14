@@ -1,10 +1,12 @@
-from typing import Mapping, List
+from typing import Mapping, Iterable
+
+from .docker import Docker
 
 from .utils import clean_map
 
 
 class DockerSwarm(object):
-    def __init__(self, docker):
+    def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
     async def init(
@@ -61,7 +63,7 @@ class DockerSwarm(object):
     async def join(
             self,
             *,
-            remote_addrs: List[str],
+            remote_addrs: Iterable[str],
             listen_addr: str='0.0.0.0:2377',
             join_token: str,
             advertise_addr: str=None,
@@ -88,7 +90,7 @@ class DockerSwarm(object):
         """
 
         data = {
-            "RemoteAddrs": remote_addrs,
+            "RemoteAddrs": list(remote_addrs),
             "JoinToken": join_token,
             "ListenAddr": listen_addr,
             "AdvertiseAddr": advertise_addr,
