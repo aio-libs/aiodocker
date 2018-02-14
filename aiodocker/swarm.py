@@ -1,20 +1,22 @@
-import json
-from typing import Optional, Dict
+from typing import Mapping, Iterable
+
+from .utils import clean_map
 
 
 class DockerSwarm(object):
-    def __init__(self, docker):
+    def __init__(self, docker) -> None:
         self.docker = docker
 
-    async def init(self,
-                   *,
-                   advertise_addr: Optional[str]=None,
-                   listen_addr: str="0.0.0.0:2377",
-                   force_new_cluster: bool=False,
-                   swarm_spec: Optional[Dict]=None
-                   ) -> str:
+    async def init(
+        self,
+        *,
+        advertise_addr: str=None,
+        listen_addr: str="0.0.0.0:2377",
+        force_new_cluster: bool=False,
+        swarm_spec: Mapping=None
+    ) -> str:
         """
-        Initialize a new swarm
+        Initialize a new swarm.
 
         Args:
             ListenAddr: listen address used for inter-manager communication
@@ -33,20 +35,17 @@ class DockerSwarm(object):
             'Spec': swarm_spec,
         }
 
-        data_str = json.dumps(data)
-
-        response = await self.docker._query(
+        response = await self.docker._query_json(
             "swarm/init",
             method='POST',
-            headers={"content-type": "application/json", },
-            data=data_str
+            data=data
         )
 
         return response
 
-    async def inspect(self) -> Dict:
+    async def inspect(self) -> Mapping:
         """
-        Inspect a swarm
+        Inspect a swarm.
 
         Returns:
             Info about the swarm
@@ -59,13 +58,57 @@ class DockerSwarm(object):
 
         return response
 
+    async def join(
+            self,
+            *,
+            remote_addrs: Iterable[str],
+            listen_addr: str='0.0.0.0:2377',
+            join_token: str,
+            advertise_addr: str=None,
+            data_path_addr: str=None
+            ) -> bool:
+        """
+        Join a swarm.
+
+        Args:
+            listen_addr
+                Used for inter-manager communication
+
+            advertise_addr
+                Externally reachable address advertised to other nodes.
+
+            data_path_addr
+                Address or interface to use for data path traffic.
+
+            remote_addrs
+                Addresses of manager nodes already participating in the swarm.
+
+            join_token
+                Secret token for joining this swarm.
+        """
+
+        data = {
+            "RemoteAddrs": list(remote_addrs),
+            "JoinToken": join_token,
+            "ListenAddr": listen_addr,
+            "AdvertiseAddr": advertise_addr,
+            "DataPathAddr": data_path_addr,
+        }
+
+        await self.docker._query(
+            "swarm/join",
+            method='POST',
+            data=clean_map(data)
+        )
+
+        return True
+
     async def leave(self, *, force: bool=False) -> bool:
         """
-        Leave a swarm
+        Leave a swarm.
 
         Args:
             force: force to leave the swarm even if the node is a master
-
         """
 
         params = {"force": force}
