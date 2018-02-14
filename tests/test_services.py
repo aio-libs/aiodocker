@@ -1,6 +1,5 @@
 import asyncio
 
-import aiohttp
 from async_timeout import timeout
 import pytest
 
