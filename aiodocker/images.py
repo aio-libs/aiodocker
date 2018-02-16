@@ -42,8 +42,8 @@ class DockerImages(object):
 
     async def pull(self, from_image: str, *,
                    auth: Optional[Union[MutableMapping, str, bytes]]=None,
-                   tag: Optional[str]=None,
-                   repo: Optional[str]=None,
+                   tag: str=None,
+                   repo: str=None,
                    stream: bool=False) -> Mapping:
         """
         Similar to `docker pull`, pull an image locally
@@ -81,7 +81,7 @@ class DockerImages(object):
 
     async def push(self, name: str, *,
                    auth: Union[MutableMapping, str, bytes]=None,
-                   tag: Optional[str]=None,
+                   tag: str=None,
                    stream: bool=False) -> Mapping:
         params = {}
         headers = {
@@ -105,7 +105,7 @@ class DockerImages(object):
         return (await json_stream_result(response, stream=stream))
 
     async def tag(self, name: str, repo: str, *,
-                  tag: Optional[str]=None) -> bool:
+                  tag: str=None) -> bool:
         """
         Tag the given image so that it becomes part of a repository.
 
@@ -150,19 +150,19 @@ class DockerImages(object):
         return response
 
     async def build(self, *,
-                    remote: Optional[str]=None,
-                    fileobj: Optional[BinaryIO]=None,
-                    path_dockerfile: Optional[str]=None,
-                    tag: Optional[str]=None,
+                    remote: str=None,
+                    fileobj: BinaryIO=None,
+                    path_dockerfile: str=None,
+                    tag: str=None,
                     quiet: bool=False,
                     nocache: bool=False,
-                    buildargs: Optional[Mapping]=None,
+                    buildargs: Mapping=None,
                     pull: bool=False,
                     rm: bool=True,
                     forcerm: bool=False,
-                    labels: Optional[Mapping]=None,
+                    labels: Mapping=None,
                     stream: bool=False,
-                    encoding: Optional[str]=None) -> Mapping:
+                    encoding: str=None) -> Mapping:
         """
         Build an image given a remote Dockerfile
         or a file object with a Dockerfile inside

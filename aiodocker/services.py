@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Dict, List, Any, Union, AsyncIterator
+from typing import Mapping, List, Any, Union, AsyncIterator
 from .multiplexed import multiplexed_result
 from .utils import clean_map, clean_networks, clean_filters, format_env
 
@@ -8,7 +8,7 @@ class DockerServices(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Optional[Dict]=None) -> List[Dict]:
+    async def list(self, *, filters: Mapping=None) -> List[Mapping]:
         """
         Return a list of services
 
@@ -32,16 +32,16 @@ class DockerServices(object):
         return response
 
     async def create(self,
-                     task_template: Dict[str, Any],
+                     task_template: Mapping[str, Any],
                      *,
-                     name: Optional[str]=None,
-                     labels: Optional[List]=None,
-                     mode: Optional[Dict]=None,
-                     update_config: Optional[Dict]=None,
-                     rollback_config: Optional[Dict]=None,
-                     networks: Optional[List]=None,
-                     endpoint_spec: Optional[Dict]=None
-                     ) -> Dict[str, Any]:
+                     name: str=None,
+                     labels: List=None,
+                     mode: Mapping=None,
+                     update_config: Mapping=None,
+                     rollback_config: Mapping=None,
+                     networks: List=None,
+                     endpoint_spec: Mapping=None
+                     ) -> Mapping[str, Any]:
         """
         Create a service
 
@@ -152,7 +152,7 @@ class DockerServices(object):
         )
         return True
 
-    async def inspect(self, service_id: str) -> Dict[str, Any]:
+    async def inspect(self, service_id: str) -> Mapping[str, Any]:
         """
         Inspect a service
 
