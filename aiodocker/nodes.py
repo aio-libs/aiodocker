@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, List, Mapping
 from .utils import clean_filters
 
 
@@ -6,7 +6,7 @@ class DockerSwarmNodes(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Dict=None) -> List[Dict]:
+    async def list(self, *, filters: Mapping=None) -> List[Mapping]:
         """
         Return a list of swarm's nodes.
 
@@ -31,7 +31,7 @@ class DockerSwarmNodes(object):
 
         return response
 
-    async def inspect(self, *, node_id: str) -> Dict[str, Any]:
+    async def inspect(self, *, node_id: str) -> Mapping[str, Any]:
         """
         Inspect a node
 
@@ -46,8 +46,8 @@ class DockerSwarmNodes(object):
         return response
 
     async def update(
-        self, *, node_id: str, version: int, spec: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, *, node_id: str, version: int, spec: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
         """
         Update the spec of a node.
 
@@ -78,7 +78,7 @@ class DockerSwarmNodes(object):
         *,
         node_id: str,
         force: bool=False
-    ) -> Dict[str, Any]:
+    ) -> Mapping[str, Any]:
         """
         Remove a node from a swarm.
 
