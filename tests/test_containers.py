@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 
 from aiodocker.exceptions import DockerError, DockerContainerError
@@ -82,3 +83,27 @@ async def test_run_failing_start_container(docker):
     cid = e_info.value.container_id
     container = docker.containers.container(cid)
     await container.delete()
+
+
+@pytest.mark.asyncio
+async def test_restart(docker):
+    container = await docker.containers.run(
+        config={
+            'Image': 'gcr.io/google-containers/pause'
+        }
+    )
+    try:
+        details = await container.show()
+        assert details['State']['Running']
+        startTime = details['State']['StartedAt']
+        await container.restart(timeout=1)
+        await asyncio.sleep(3)
+        details = await container.show()
+        assert details['State']['Running']
+        restartTime = details['State']['StartedAt']
+
+        assert restartTime > startTime
+
+        await container.stop()
+    finally:
+        await container.delete(force=True)
