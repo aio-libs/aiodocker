@@ -190,12 +190,14 @@ class DockerContainer:
         await response.release()
         return
 
-    async def restart(self, **kwargs):
+    async def restart(self, timeout=None):
+        params = {}
+        if timeout is not None:
+            params['t'] = timeout
         response = await self.docker._query(
             "containers/{self._id}/restart".format(self=self),
             method='POST',
-            headers={"content-type": "application/json"},
-            data=kwargs
+            params=params
         )
         await response.release()
         return
