@@ -10,7 +10,7 @@ async def _validate_hello(container):
         response = await container.wait()
         assert response['StatusCode'] == 0
         logs = await container.log(stdout=True)
-        assert logs == ['hello']
+        assert logs == ['hello\n']
 
         with pytest.raises(TypeError):
             await container.log()
