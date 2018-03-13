@@ -16,23 +16,23 @@ class DockerNetworks:
             method="POST",
             data=config,
         )
-        return DockerNetwork(self.docker, data['Name'])
+        return DockerNetwork(self.docker, data['Id'])
 
 
 class DockerNetwork:
-    def __init__(self, docker, name):
+    def __init__(self, docker, id_):
         self.docker = docker
-        self.name = name
+        self.id = id_
 
     async def show(self):
         data = await self.docker._query_json(
-            "networks/{self.name}".format(self=self)
+            "networks/{self.id}".format(self=self)
         )
         return data
 
     async def delete(self):
         response = await self.docker._query(
-            "networks/{self.name}".format(self=self),
+            "networks/{self.id}".format(self=self),
             method="DELETE",
         )
         await response.release()
@@ -41,7 +41,7 @@ class DockerNetwork:
     async def connect(self, config):
         config = json.dumps(config, sort_keys=True).encode('utf-8')
         await self.docker._query_json(
-            "networks/{self.name}/connect".format(self=self),
+            "networks/{self.id}/connect".format(self=self),
             method="POST",
             data=config,
         )
@@ -49,7 +49,7 @@ class DockerNetwork:
     async def disconnect(self, config):
         config = json.dumps(config, sort_keys=True).encode('utf-8')
         await self.docker._query_json(
-            "networks/{self.name}/disconnect".format(self=self),
+            "networks/{self.id}/disconnect".format(self=self),
             method="POST",
             data=config,
         )
