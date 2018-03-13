@@ -48,7 +48,7 @@ class DockerNetwork:
 
     async def disconnect(self, config):
         config = json.dumps(config, sort_keys=True).encode('utf-8')
-        response = await self.docker._query_json(
+        await self.docker._query_json(
             "networks/{self.name}/disconnect".format(self=self),
             method="POST",
             data=config,
