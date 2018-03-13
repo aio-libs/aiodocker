@@ -21,6 +21,7 @@ from .swarm import DockerSwarm
 from .services import DockerServices
 from .tasks import DockerTasks
 from .volumes import DockerVolumes, DockerVolume
+from .networks import DockerNetworks, DockerNetwork
 from .nodes import DockerSwarmNodes
 from .system import DockerSystem
 
@@ -35,6 +36,7 @@ __all__ = (
     'DockerServices',
     'DockerTasks',
     'DockerVolumes', 'DockerVolume',
+    'DockerNetworks', 'DockerNetwork',
     'DockerSwarmNodes',
     'DockerSystem'
 )
@@ -105,6 +107,7 @@ class Docker:
         self.tasks = DockerTasks(self)
         self.images = DockerImages(self)
         self.volumes = DockerVolumes(self)
+        self.networks = DockerNetworks(self)
         self.nodes = DockerSwarmNodes(self)
         self.system = DockerSystem(self)
 
