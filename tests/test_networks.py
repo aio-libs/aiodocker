@@ -18,10 +18,10 @@ async def test_networks(docker):
     assert data['Name'] == 'test-net'
     container = None
     try:
-    	container = await docker.containers.create({'Image': 'alpine'}, name='test-net')
-    	await network.connect({'Container': 'test-net'})
-    	await network.disconnect({'Container': 'test-net'})
+        container = await docker.containers.create({'Image': 'alpine'}, name='test-net')
+        await network.connect({'Container': 'test-net'})
+        await network.disconnect({'Container': 'test-net'})
     finally:
-    	if container is not None:
-    		await container.delete()
-    	await network.delete()
+        if container is not None:
+            await container.delete()
+        await network.delete()
