@@ -16,4 +16,6 @@ async def test_create_and_destroy_network(docker):
     assert isinstance(network, aiodocker.networks.DockerNetwork)
     data = await network.show()
     assert data['Name'] == 'test-net'
+    await network.connect({'Container': 'aiodocker-test-registry'})
+    await network.disconnect({'Container': 'aiodocker-test-registry'})
     await network.delete()
