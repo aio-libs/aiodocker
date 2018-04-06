@@ -219,3 +219,19 @@ async def test_service_create_error(swarm):
             name=name,
             task_template=TaskTemplate,
         )
+
+
+@pytest.mark.asyncio
+async def test_service_create_error_for_missing_registry(swarm):
+    name = "service-test-with-auth"
+    TaskTemplate = {
+        "ContainerSpec": {
+            "Image": "redis",
+        },
+    }
+    with pytest.raises(KeyError):
+        await swarm.services.create(
+            name=name,
+            task_template=TaskTemplate,
+            auth="myuser:mypassword"
+        )
