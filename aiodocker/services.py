@@ -1,7 +1,20 @@
 import json
-from typing import Mapping, List, Any, Union, AsyncIterator
+from typing import (
+    Mapping, List,
+    Any,
+    Union,
+    AsyncIterator,
+    Optional,
+    MutableMapping
+)
 from .multiplexed import multiplexed_result
-from .utils import clean_map, clean_networks, clean_filters, format_env
+from .utils import (
+    clean_map,
+    clean_networks,
+    clean_filters,
+    format_env,
+    compose_auth_header
+)
 
 
 class DockerServices(object):
@@ -40,7 +53,9 @@ class DockerServices(object):
                      update_config: Mapping=None,
                      rollback_config: Mapping=None,
                      networks: List=None,
-                     endpoint_spec: Mapping=None
+                     endpoint_spec: Mapping=None,
+                     auth: Optional[Union[MutableMapping, str, bytes]]=None,
+                     registry: str=None
                      ) -> Mapping[str, Any]:
         """
         Create a service
@@ -54,6 +69,8 @@ class DockerServices(object):
             rollback_config: rollback strategy of the service
             networks: array of network names/IDs to attach the service to
             endpoint_spec: ports to expose
+            auth: special {'auth': base64} pull private repo
+            registry: used when auth is specified, it provides domain/IP of the registry without a protocol
 
         Returns:
             a dict with info of the created service
@@ -64,12 +81,21 @@ class DockerServices(object):
                 "Missing mandatory Image key in ContainerSpec"
             )
 
+        if auth and registry is None:
+            raise KeyError(
+                "When auth is specified you need to specifiy also the registry"
+            )
+
         # from {"key":"value"} to ["key=value"]
         if "Env" in task_template["ContainerSpec"]:
             task_template["ContainerSpec"]["Env"] = [
                 format_env(k, v)
                 for k, v in task_template["ContainerSpec"]["Env"].items()
             ]
+
+        headers = None
+        if auth:
+            headers = {"X-Registry-Auth": compose_auth_header(auth, registry)}
 
         config = {
             "TaskTemplate": task_template,
@@ -88,6 +114,7 @@ class DockerServices(object):
             "services/create",
             method="POST",
             data=data,
+            headers=headers,
         )
         return response
 
