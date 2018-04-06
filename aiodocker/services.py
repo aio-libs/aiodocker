@@ -69,7 +69,7 @@ class DockerServices(object):
             rollback_config: rollback strategy of the service
             networks: array of network names/IDs to attach the service to
             endpoint_spec: ports to expose
-            auth: special {'auth': base64} pull private repo
+            auth: authentication information, can be a string, dict or bytes
             registry: used when auth is specified, it provides domain/IP of the registry without a protocol
 
         Returns:
