@@ -222,7 +222,7 @@ async def test_service_create_error(swarm):
 
 
 @pytest.mark.asyncio
-async def test_service_create_service_with_aut(swarm):
+async def test_service_create_service_with_auth(swarm):
     name = "service-test-with-auth"
     TaskTemplate = {
         "ContainerSpec": {

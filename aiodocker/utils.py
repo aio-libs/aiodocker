@@ -268,14 +268,12 @@ def compose_auth_header(auth: Union[MutableMapping, str, bytes],
             if registry_addr:
                 auth['serveraddress'] = registry_addr
         auth_json = json.dumps(auth).encode('utf-8')
-        auth = base64.b64encode(auth_json).decode('ascii')
     elif isinstance(auth, (str, bytes)):
         # Parse simple "username:password"-formatted strings
         # and attach the server address specified.
         if isinstance(auth, bytes):
             auth = auth.decode('utf-8')
-        s = base64.b64decode(auth)
-        username, passwd = s.split(b':', 1)
+        username, passwd = auth.split(':', 1)
         config = {
             "username": username.decode('utf-8'),
             "password": passwd.decode('utf-8'),
@@ -283,8 +281,8 @@ def compose_auth_header(auth: Union[MutableMapping, str, bytes],
             "serveraddress": registry_addr,
         }
         auth_json = json.dumps(config).encode('utf-8')
-        auth = base64.b64encode(auth_json).decode('ascii')
     else:
         raise TypeError(
             "auth must be base64 encoded string/bytes or a dictionary")
+    auth = base64.b64encode(auth_json).decode('ascii')
     return auth
