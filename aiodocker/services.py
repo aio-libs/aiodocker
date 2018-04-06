@@ -70,7 +70,8 @@ class DockerServices(object):
             networks: array of network names/IDs to attach the service to
             endpoint_spec: ports to expose
             auth: authentication information, can be a string, dict or bytes
-            registry: used when auth is specified, it provides domain/IP of the registry without a protocol
+            registry: used when auth is specified, it provides domain/IP of
+                the registry without a protocol
 
         Returns:
             a dict with info of the created service
