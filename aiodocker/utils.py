@@ -275,8 +275,8 @@ def compose_auth_header(auth: Union[MutableMapping, str, bytes],
             auth = auth.decode('utf-8')
         username, passwd = auth.split(':', 1)
         config = {
-            "username": username.decode('utf-8'),
-            "password": passwd.decode('utf-8'),
+            "username": username,
+            "password": passwd,
             "email": None,
             "serveraddress": registry_addr,
         }
