@@ -229,13 +229,12 @@ async def test_service_create_service_with_aut(swarm):
             "Image": "redis",
         },
     }
-    with pytest.raises(KeyError):
-        await swarm.services.create(
-            name=name,
-            task_template=TaskTemplate,
-            auth="myuser:mypassword",
-            registry="random.registry.com"
-        )
+    assert await swarm.services.create(
+        name=name,
+        task_template=TaskTemplate,
+        auth="myuser:mypassword",
+        registry="random.registry.com"
+    )
 
 
 @pytest.mark.asyncio
