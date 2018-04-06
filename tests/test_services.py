@@ -232,7 +232,7 @@ async def test_service_create_service_with_auth(swarm):
     assert await swarm.services.create(
         name=name,
         task_template=TaskTemplate,
-        auth="myuser:mypassword",
+        auth={"username": "username", "password": "password"},
         registry="random.registry.com"
     )
 
@@ -249,5 +249,5 @@ async def test_service_create_error_for_missing_registry(swarm):
         await swarm.services.create(
             name=name,
             task_template=TaskTemplate,
-            auth="myuser:mypassword"
+            auth={"username": "username", "password": "password"}
         )

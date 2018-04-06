@@ -273,10 +273,11 @@ def compose_auth_header(auth: Union[MutableMapping, str, bytes],
         # and attach the server address specified.
         if isinstance(auth, bytes):
             auth = auth.decode('utf-8')
-        username, passwd = auth.split(':', 1)
+        s = base64.b64decode(auth)
+        username, passwd = s.split(b':', 1)
         config = {
-            "username": username,
-            "password": passwd,
+            "username": username.decode('utf-8'),
+            "password": passwd.decode('utf-8'),
             "email": None,
             "serveraddress": registry_addr,
         }
