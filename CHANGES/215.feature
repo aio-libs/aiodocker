@@ -1,1 +1,1 @@
-Feature: Add support for auth-registry when you create a service.
+Feature: Add support for registry-auth when you create a service.
