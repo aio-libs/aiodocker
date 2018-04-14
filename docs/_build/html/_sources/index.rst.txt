@@ -103,6 +103,12 @@ We support `Stack Overflow <https://stackoverflow.com>`_.
 Please add *python-asyncio* tag to your question there.
 
 
+Contribution
+------------
+
+Please follow the `Contribution Guide <https://github.com/aio-libs/aiodocker/wiki>`_.
+
+
 Author and License
 -------------------
 
@@ -111,13 +117,21 @@ The ``aiodocker`` package is written by Andrew Svetlov.
 It's *Apache 2* licensed and freely available.
 
 
-
-
 .. toctree::
+   :hidden:
    :maxdepth: 2
-   :caption: Contents:
 
-
+   client
+   containers
+   images
+   services
+   swarm
+   volumes
+   tasks
+   log
+   events
+   exceptions
+   api
 
 Indices and tables
 ==================
@@ -125,3 +139,4 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+

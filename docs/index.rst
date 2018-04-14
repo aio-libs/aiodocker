@@ -131,6 +131,7 @@ It's *Apache 2* licensed and freely available.
    log
    events
    exceptions
+   api
 
 Indices and tables
 ==================
