@@ -136,7 +136,7 @@ class Docker:
 
     async def _query(self, path, method='GET', *,
                      params=None, data=None, headers=None,
-                     timeout=None):
+                     timeout=None, chunked=None):
         '''
         Get the response object by performing the HTTP request.
         The caller is responsible to finalize the response object.
@@ -150,7 +150,8 @@ class Docker:
                 params=httpize(params),
                 headers=headers,
                 data=data,
-                timeout=timeout)
+                timeout=timeout,
+                chunked=chunked)
         except asyncio.TimeoutError:
             raise
         if (response.status // 100) in [4, 5]:
@@ -180,6 +181,22 @@ class Docker:
             path, method,
             params=params, data=data, headers=headers,
             timeout=timeout)
+        data = await parse_result(response)
+        return data
+    
+    async def _query_chunked_post(self, path, method='POST', *,
+                          params=None, data=None, headers=None,
+                          timeout=None):
+        '''
+        A shorthand for uploading data by chunks
+        '''
+        if headers is None:
+            headers = {}
+        headers['content-type'] = 'application/octet-stream'
+        response = await self._query(
+            path, method,
+            params=params, data=data, headers=headers,
+            timeout=timeout, chunked=1024)
         data = await parse_result(response)
         return data
 
