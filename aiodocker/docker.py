@@ -192,7 +192,8 @@ class Docker:
         '''
         if headers is None:
             headers = {}
-        headers['content-type'] = 'application/octet-stream'
+        if headers and 'content-type' not in headers:
+            headers['content-type'] = 'application/octet-stream'
         response = await self._query(
             path, method,
             params=params, data=data, headers=headers,

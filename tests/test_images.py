@@ -1,8 +1,10 @@
+import os
 from io import BytesIO
 
 import pytest
 from aiodocker import utils
 from aiodocker.exceptions import DockerError
+import aiofiles
 
 
 @pytest.mark.asyncio
@@ -121,10 +123,20 @@ async def test_export_image(docker):
 
 @pytest.mark.asyncio
 async def test_import_image(docker):
-    name = "alpine:latest"
-    exported_image = await docker.images.export_image(name=name)
-    response = await docker.images.import_image(data=exported_image)
+
+    async def file_sender(file_name=None):
+        async with aiofiles.open(file_name, 'rb') as f:
+            chunk = await f.read(64*1024)
+            while chunk:
+                yield chunk
+                chunk = await f.read(64*1024)
+    dir = os.path.dirname(__file__)
+    hello_world = os.path.join(dir, 'docker/hello-world.img.tar')
+    response = await docker.images.import_image(
+                                    data=file_sender(file_name=hello_world))
     assert 'error' not in response
+    image = await docker.images.get(name='hello-world:latest')
+    assert image
 
 
 @pytest.mark.asyncio
