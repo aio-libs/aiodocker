@@ -183,10 +183,10 @@ class Docker:
             timeout=timeout)
         data = await parse_result(response)
         return data
-    
+
     async def _query_chunked_post(self, path, method='POST', *,
-                          params=None, data=None, headers=None,
-                          timeout=None):
+                                  params=None, data=None, headers=None,
+                                  timeout=None):
         '''
         A shorthand for uploading data by chunks
         '''

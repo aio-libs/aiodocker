@@ -256,10 +256,9 @@ class DockerImages(object):
         Returns:
             Tarball of the image
         """
-        
         headers = {
             "Content-Type": "application/x-tar",
-        }    
+        }
         response = await self.docker._query_chunked_post(
             "images/load",
             "POST",

@@ -50,6 +50,7 @@ async def test_list_images(docker):
     images = await docker.images.list(filter=name)
     assert len(images) == 1
 
+
 @pytest.mark.asyncio
 async def test_tag_image(docker, random_name):
     name = "alpine:latest"
@@ -110,18 +111,21 @@ async def test_build_from_tar(docker, random_name):
     image = await docker.images.get(name=name)
     assert image
 
+
 @pytest.mark.asyncio
 async def test_export_image(docker):
     name = "alpine:latest"
     exported_image = await docker.images.export_image(name=name)
     assert exported_image
 
+
 @pytest.mark.asyncio
 async def test_import_image(docker):
     name = "alpine:latest"
     exported_image = await docker.images.export_image(name=name)
-    response = await docker.images.import_image(data=exported_image.content)
-    assert not 'error' in response
+    response = await docker.images.import_image(data=exported_image)
+    assert 'error' not in response
+
 
 @pytest.mark.asyncio
 async def test_pups_image_auth(docker):
