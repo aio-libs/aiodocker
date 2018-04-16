@@ -50,7 +50,6 @@ async def test_list_images(docker):
     images = await docker.images.list(filter=name)
     assert len(images) == 1
 
-
 @pytest.mark.asyncio
 async def test_tag_image(docker, random_name):
     name = "alpine:latest"
@@ -110,6 +109,12 @@ async def test_build_from_tar(docker, random_name):
     tar_obj.close()
     image = await docker.images.get(name=name)
     assert image
+
+@pytest.mark.asyncio
+async def test_export_image(docker):
+    name = "alpine:latest"
+    exported_image = await docker.images.export(name=name)
+    assert exported_image
 
 
 @pytest.mark.asyncio

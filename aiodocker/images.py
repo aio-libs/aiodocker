@@ -229,3 +229,19 @@ class DockerImages(object):
         )
 
         return (await json_stream_result(response, stream=stream))
+
+    async def export(self, name: str):
+        """
+        Get a tarball of an image by name or id.
+
+        Args:
+            name: name/id of the image to be exported
+
+        Returns:
+            Tarball of the image
+        """
+        response = await self.docker._query_json(
+            "images/{name}/get".format(name=name),
+            "GET",
+        )
+        return response
