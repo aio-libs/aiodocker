@@ -4,8 +4,6 @@ from io import BytesIO
 import pytest
 from aiodocker import utils
 from aiodocker.exceptions import DockerError
-from async_generator import async_generator, yield_
-import aiofiles
 import aiohttp
 
 
@@ -125,14 +123,6 @@ async def test_export_image(docker):
 
 @pytest.mark.asyncio
 async def test_import_image(docker):
-
-    # @async_generator
-    # async def file_sender(file_name=None):
-    #     async with aiofiles.open(file_name, 'rb') as f:
-    #         chunk = await f.read(64*1024)
-    #         while chunk:
-    #             await yield_(chunk)
-    #             chunk = await f.read(64*1024)
 
     @aiohttp.streamer
     async def file_sender(writer, file_name=None):
