@@ -238,13 +238,13 @@ class DockerImages(object):
             name: name/id of the image to be exported
 
         Returns:
-            Tarball of the image
+            Streamreader of tarball image
         """
         response = await self.docker._query(
             "images/{name}/get".format(name=name),
             "GET",
         )
-        return response
+        return response.content
 
     async def import_image(self, data):
         """
