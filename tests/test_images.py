@@ -113,9 +113,15 @@ async def test_build_from_tar(docker, random_name):
 @pytest.mark.asyncio
 async def test_export_image(docker):
     name = "alpine:latest"
-    exported_image = await docker.images.export(name=name)
+    exported_image = await docker.images.export_image(name=name)
     assert exported_image
 
+@pytest.mark.asyncio
+async def test_import_image(docker):
+    name = "alpine:latest"
+    exported_image = await docker.images.export_image(name=name)
+    response = await docker.images.import_image(data=exported_image.content)
+    assert not 'error' in response
 
 @pytest.mark.asyncio
 async def test_pups_image_auth(docker):

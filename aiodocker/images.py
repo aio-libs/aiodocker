@@ -230,7 +230,7 @@ class DockerImages(object):
 
         return (await json_stream_result(response, stream=stream))
 
-    async def export(self, name: str):
+    async def export_image(self, name: str):
         """
         Get a tarball of an image by name or id.
 
@@ -240,8 +240,30 @@ class DockerImages(object):
         Returns:
             Tarball of the image
         """
-        response = await self.docker._query_json(
+        response = await self.docker._query(
             "images/{name}/get".format(name=name),
             "GET",
+        )
+        return response
+
+    async def import_image(self, data):
+        """
+        Import tarball of image to docker.
+
+        Args:
+            data: tarball data of image to be imported
+
+        Returns:
+            Tarball of the image
+        """
+        
+        headers = {
+            "Content-Type": "application/x-tar",
+        }    
+        response = await self.docker._query_chunked_post(
+            "images/load",
+            "POST",
+            data=data,
+            headers=headers
         )
         return response
