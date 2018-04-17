@@ -20,7 +20,7 @@ class DockerEvents:
                       DeprecationWarning, stacklevel=2)
         return self.channel.subscribe()
 
-    def subscribe(self, *, create_task=True):
+    def subscribe(self, *, create_task=True, **params):
         """Subscribes to the Docker events channel. Use the keyword argument
         create_task=False to prevent automatically spawning the background
         tasks that listen to the events.
@@ -28,7 +28,7 @@ class DockerEvents:
         This function returns a ChannelSubscriber object.
         """
         if create_task and not self.task:
-            self.task = asyncio.ensure_future(self.run())
+            self.task = asyncio.ensure_future(self.run(**params))
         return self.channel.subscribe()
 
     def _transform_event(self, data):
