@@ -198,8 +198,7 @@ class Docker:
             path, method,
             params=params, data=data, headers=headers,
             timeout=timeout, chunked=1024)
-        data = await parse_result(response)
-        return data
+        return response
 
     async def _websocket(self, path, **params):
         if not params:

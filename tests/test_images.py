@@ -133,11 +133,23 @@ async def test_import_image(docker):
                 chunk = f.read(2**16)
 
     dir = os.path.dirname(__file__)
-    hello_world = os.path.join(dir, 'docker/hello-world.img.tar')
+    hello_world = os.path.join(dir, 'docker/google-containers-pause.tar')
+    # hello_world = os.path.join(dir, 'docker/Dockerfile')
     response = await docker.images.import_image(
                                     data=file_sender(file_name=hello_world))
-    assert 'error' not in response
-    image = await docker.images.get(name='hello-world:latest')
+    for item in response:
+        assert 'error' not in item
+    image = await docker.images.get(name='gcr.io/google-containers/pause:1.0')
+    assert image
+    image = await docker.images.get(name='gcr.io/google-containers/pause:go')
+    assert image
+    image = await docker.images.get(
+            name='gcr.io/google-containers/pause:latest')
+    assert image
+    image = await docker.images.get(name='gcr.io/google-containers/pause:test')
+    assert image
+    image = await docker.images.get(
+            name='gcr.io/google-containers/pause:test2')
     assert image
 
 
