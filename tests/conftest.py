@@ -11,9 +11,9 @@ from aiodocker.exceptions import DockerError
 
 
 _api_versions = {
-    "18.03": "v1.37",
-    "17.12": "v1.35",
-    "17.09": "v1.32",
+    "18.03.1": "v1.37",
+    "17.12.1": "v1.35",
+    "17.09.1": "v1.32",
 }
 
 
