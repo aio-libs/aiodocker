@@ -14,10 +14,9 @@ python:
   - "3.7-dev"
 
 env:
-  - DOCKER_VERSION=17.06
-  - DOCKER_VERSION=17.09
-  - DOCKER_VERSION=17.10
-  - DOCKER_VERSION=17.12
+  - DOCKER_VERSION=17.09.1
+  - DOCKER_VERSION=17.12.1
+  - DOCKER_VERSION=18.03.1
 
 # test stage
 services:
