@@ -246,7 +246,7 @@ class DockerImages(object):
         )
         return response.content
 
-    async def import_image(self, data):
+    async def import_image(self, data, stream: bool = False):
         """
         Import tarball of image to docker.
 
@@ -265,4 +265,4 @@ class DockerImages(object):
             data=data,
             headers=headers
         )
-        return response
+        return (await json_stream_result(response, stream=stream))
