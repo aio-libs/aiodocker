@@ -14,7 +14,6 @@ python:
   - "3.7-dev"
 
 env:
-  - DOCKER_VERSION=17.09.1
   - DOCKER_VERSION=17.12.1
   - DOCKER_VERSION=18.03.1
 
