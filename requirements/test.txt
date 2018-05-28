@@ -3,4 +3,4 @@ pytest==3.6.0
 pytest-cov==2.5.1
 pytest-asyncio==0.8.0
 flake8==3.5.0
-mypy==0.590
+mypy==0.600
