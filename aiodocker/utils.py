@@ -114,7 +114,7 @@ def human_bool(s) -> bool:
         return bool(s)
 
 
-def httpize(d: Optional[Mapping]) -> Mapping[str, Any]:
+def httpize(d: Optional[Mapping]) -> Optional[Mapping[str, Any]]:
     if d is None:
         return None
     converted = {}
@@ -184,7 +184,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return "{key}={value}".format(key=key, value=value)
 
 
-def clean_networks(networks: Iterable[str]=None) -> Iterable[str]:
+def clean_networks(networks: Iterable[str]=None) -> Optional[Iterable[str]]:
     """
     Cleans the values inside `networks`
     Returns a new list
