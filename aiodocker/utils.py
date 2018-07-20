@@ -23,7 +23,10 @@ async def parse_result(response, response_type=None, *,
     if response_type is None:
         ct = response.headers.get('content-type')
         if ct is None:
-            raise TypeError('Cannot auto-detect respone type '
+            cl = response.headers.get('content-length')
+            if cl is None or cl == '0':
+                return ''
+            raise TypeError('Cannot auto-detect response type '
                             'due to missing Content-Type header.')
         main_type, sub_type, extras = parse_content_type(ct)
         if sub_type == 'json':
