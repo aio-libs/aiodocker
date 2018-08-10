@@ -76,5 +76,5 @@ async def multiplexed_result(response, follow=False, is_tty=False,
     else:
         d = []
         async for piece in _DecodeHelper(log_stream, encoding=encoding):
-            d.append(piece.strip())
+            d.append(piece.rstrip("\r\n"))
         return d
