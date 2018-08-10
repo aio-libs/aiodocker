@@ -40,9 +40,9 @@ jobs:
       python: 3.6
       deploy:
         provider: pypi
-        user: andrew.svetlov
+        user: barrachri
         password:
-          secure: "KEmYrBVjl3WKRRtlk7zi5kev4eGRdccbyYpd6OngonMSYurZJRG2sILpiawyO9D9H+AXVsqRScH4aI46suuLdCUMcciMdLOkGnI0mHyx80UjoxNTo7yht+76xob4XD5AGErox8hWZU2t/CSknW60mAJaO4zLdVzpE/17j/9kNHQ="
+          secure: "sYlW0ORuRqV6qJIchHaOYAG3LlZWuZM3O+LSmLxWbddqUoaYxEOYKSclP8Ar9q8p2AXJywvgSCv5m6HJwcYMJO7R5ic8zfHus8ohvDEei6kYP+AYUbqnqoeuyPdIUm7R/bzDrzvylXaFoK1nxwGBrJZKqVGKI8VwI1Hf3HLOrCcJ1IekDKemq9cB+O9L34bqzdq3DgqkzKGczP7UdPzh9hthVuFcK/Pj3PnJYz8WgTWHUwYE3XhK2GxsjCbAxiBgNNr73y78tqEuvcJjATvAAavdlpjfq++M55Cw0vioXudwFiuJSK8+A3sTU3St73AjCj310Z1eOyL84dk0qDtlNQgKq72s2Y1k+yTvrvPyFTsKMDsXKKaPl0r1/CcHjpFOeACbSdTkJ4/d860mlKGZ9gGY+gQpRcC3Q+z/W6cEuVr+dc3oyCCyT2tZlm+xadq3Zuk03T82c4c5jYz2z+sAvRmIbLwAKfDpYH5Nn2eqds6BCVwOh2fpewLh4OHh9cGZfxgOtwehL0sRDqJaEbx8lAzBq7VNHrEGUIMRwReT6bNoZRElNcjw37fk8s6XcmHHRyYEjOjT1yQ+mA/abMiu2sRvCcPx5ocF4dP1i83OFua3q9fN9zSpGd10Tr5RU+OEKTbuVWHSMcL6gUU8mDy0Ao3kAfnDgXOjDma7MfzU5hk="
         distributions: sdist bdist_wheel
         on:
           tags: true
