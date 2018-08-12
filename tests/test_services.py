@@ -89,7 +89,7 @@ async def test_logs_services(swarm):
         service_id, stdout=True)
 
     assert len(logs) == 10
-    assert logs[0] == "Hello Python"
+    assert logs[0] == "Hello Python\n"
 
 
 @pytest.mark.asyncio
