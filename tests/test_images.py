@@ -1,8 +1,10 @@
+import os
 from io import BytesIO
 
 import pytest
 from aiodocker import utils
 from aiodocker.exceptions import DockerError
+import aiohttp
 
 
 @pytest.mark.asyncio
@@ -109,6 +111,45 @@ async def test_build_from_tar(docker, random_name):
     await docker.images.build(fileobj=tar_obj, encoding="gzip", tag=name)
     tar_obj.close()
     image = await docker.images.get(name=name)
+    assert image
+
+
+@pytest.mark.asyncio
+async def test_export_image(docker):
+    name = "alpine:latest"
+    exported_image = await docker.images.export_image(name=name)
+    assert exported_image
+
+
+@pytest.mark.asyncio
+async def test_import_image(docker):
+
+    @aiohttp.streamer
+    async def file_sender(writer, file_name=None):
+        with open(file_name, 'rb') as f:
+            chunk = f.read(2**16)
+            while chunk:
+                await writer.write(chunk)
+                chunk = f.read(2**16)
+
+    dir = os.path.dirname(__file__)
+    hello_world = os.path.join(dir, 'docker/google-containers-pause.tar')
+    # hello_world = os.path.join(dir, 'docker/Dockerfile')
+    response = await docker.images.import_image(
+                                    data=file_sender(file_name=hello_world))
+    for item in response:
+        assert 'error' not in item
+    image = await docker.images.get(name='gcr.io/google-containers/pause:1.0')
+    assert image
+    image = await docker.images.get(name='gcr.io/google-containers/pause:go')
+    assert image
+    image = await docker.images.get(
+            name='gcr.io/google-containers/pause:latest')
+    assert image
+    image = await docker.images.get(name='gcr.io/google-containers/pause:test')
+    assert image
+    image = await docker.images.get(
+            name='gcr.io/google-containers/pause:test2')
     assert image
 
 

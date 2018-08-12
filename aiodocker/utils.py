@@ -23,7 +23,10 @@ async def parse_result(response, response_type=None, *,
     if response_type is None:
         ct = response.headers.get('content-type')
         if ct is None:
-            raise TypeError('Cannot auto-detect respone type '
+            cl = response.headers.get('content-length')
+            if cl is None or cl == '0':
+                return ''
+            raise TypeError('Cannot auto-detect response type '
                             'due to missing Content-Type header.')
         main_type, sub_type, extras = parse_content_type(ct)
         if sub_type == 'json':
@@ -114,7 +117,7 @@ def human_bool(s) -> bool:
         return bool(s)
 
 
-def httpize(d: Optional[Mapping]) -> Mapping[str, Any]:
+def httpize(d: Optional[Mapping]) -> Optional[Mapping[str, Any]]:
     if d is None:
         return None
     converted = {}
@@ -184,7 +187,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return "{key}={value}".format(key=key, value=value)
 
 
-def clean_networks(networks: Iterable[str]=None) -> Iterable[str]:
+def clean_networks(networks: Iterable[str]=None) -> Optional[Iterable[str]]:
     """
     Cleans the values inside `networks`
     Returns a new list
@@ -268,7 +271,6 @@ def compose_auth_header(auth: Union[MutableMapping, str, bytes],
             if registry_addr:
                 auth['serveraddress'] = registry_addr
         auth_json = json.dumps(auth).encode('utf-8')
-        auth = base64.b64encode(auth_json).decode('ascii')
     elif isinstance(auth, (str, bytes)):
         # Parse simple "username:password"-formatted strings
         # and attach the server address specified.
@@ -283,8 +285,8 @@ def compose_auth_header(auth: Union[MutableMapping, str, bytes],
             "serveraddress": registry_addr,
         }
         auth_json = json.dumps(config).encode('utf-8')
-        auth = base64.b64encode(auth_json).decode('ascii')
     else:
         raise TypeError(
             "auth must be base64 encoded string/bytes or a dictionary")
+    auth = base64.b64encode(auth_json).decode('ascii')
     return auth
