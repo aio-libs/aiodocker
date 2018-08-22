@@ -22,7 +22,7 @@ async def test_build_from_remote_file(docker, random_name,
     params = {'tag': tag, 'remote': remote}
     await docker.images.build(**params)
 
-    image = await docker.images.get(tag)
+    image = await docker.images.inspect(tag)
     assert image
 
 
@@ -35,7 +35,7 @@ async def test_build_from_remote_tar(docker, random_name):
     params = {'tag': tag, 'remote': remote}
     await docker.images.build(**params)
 
-    image = await docker.images.get(tag)
+    image = await docker.images.inspect(tag)
     assert image
 
 
@@ -59,7 +59,7 @@ async def test_tag_image(docker, random_name):
     repository = random_name()
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
-    image = await docker.images.get(name)
+    image = await docker.images.inspect(name)
     assert len([x for x in image['RepoTags'] if x.startswith(repository)]) == 2
 
 
@@ -76,7 +76,7 @@ async def test_delete_image(docker):
     name = "alpine:latest"
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
-    assert await docker.images.get(repository)
+    assert await docker.images.inspect(repository)
     await docker.images.delete(name=repository)
     images = await docker.images.list(filter=repository)
     assert len(images) == 0
@@ -86,14 +86,14 @@ async def test_delete_image(docker):
 async def test_not_existing_image(docker, random_name):
     name = "{}:latest".format(random_name())
     with pytest.raises(DockerError) as excinfo:
-        await docker.images.get(name=name)
+        await docker.images.inspect(name=name)
     assert excinfo.value.status == 404
 
 
 @pytest.mark.asyncio
 async def test_pull_image(docker):
     name = "alpine:latest"
-    image = await docker.images.get(name=name)
+    image = await docker.images.inspect(name=name)
     assert image
 
 
@@ -110,7 +110,7 @@ async def test_build_from_tar(docker, random_name):
     tar_obj = utils.mktar_from_dockerfile(f)
     await docker.images.build(fileobj=tar_obj, encoding="gzip", tag=name)
     tar_obj.close()
-    image = await docker.images.get(name=name)
+    image = await docker.images.inspect(name=name)
     assert image
 
 
@@ -161,7 +161,7 @@ async def test_pups_image_auth(docker):
     await docker.images.pull(repository,
                              auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
 
-    await docker.images.get(repository)
+    await docker.images.inspect(repository)
     await docker.images.delete(name=repository)
 
     # Now compose_auth_header automatically parse and rebuild
@@ -174,4 +174,4 @@ async def test_pups_image_auth(docker):
                           auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.pull(repository,
                       auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
-    await docker.images.get(repository)
+    await docker.images.inspect(repository)
