@@ -7,7 +7,7 @@ from aiodocker.exceptions import DockerError
 
 async def demo(docker):
     try:
-        await docker.images.get('alpine:latest')
+        await docker.images.inspect('alpine:latest')
     except DockerError as e:
         if e.status == 404:
             await docker.pull('alpine:latest')

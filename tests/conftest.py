@@ -64,7 +64,7 @@ def testing_images():
         ]
         for img in required_images:
             try:
-                await docker.images.get(img)
+                await docker.images.inspect(img)
             except DockerError as e:
                 assert e.status == 404
                 print('Pulling "{img}" for the testing session...'

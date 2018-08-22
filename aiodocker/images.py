@@ -22,7 +22,7 @@ class DockerImages(object):
         )
         return response
 
-    async def get(self, name: str) -> Mapping:
+    async def inspect(self, name: str) -> Mapping:
         """
         Return low-level information about an image
 
@@ -246,16 +246,31 @@ class DockerImages(object):
         )
         return response.content
 
-    async def import_image(self, data, stream: bool = False):
+    async def import_image(
+        self,
+        data,
+        *,
+        repository: str,
+        tag: str,
+        stream: bool = False
+    ):
         """
         Import tarball of image to docker.
 
         Args:
             data: tarball data of image to be imported
+            repository: The repository to create
+            tag: The tag to apply
 
         Returns:
             Tarball of the image
         """
+        params = {}
+        if repository:
+            params['repo'] = repository
+        if tag:
+            params['tag'] = tag
+
         headers = {
             "Content-Type": "application/x-tar",
         }
@@ -263,6 +278,7 @@ class DockerImages(object):
             "images/load",
             "POST",
             data=data,
+            params=params,
             headers=headers
         )
         return (await json_stream_result(response, stream=stream))

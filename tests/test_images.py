@@ -135,12 +135,12 @@ async def test_import_image(docker):
     dir = os.path.dirname(__file__)
     hello_world = os.path.join(dir, 'docker/google-containers-pause.tar')
     response = await docker.images.import_image(
-                                    data=file_sender(file_name=hello_world))
+                                    data=file_sender(file_name=hello_world),
+                                    repository="docker/google-containers",
+                                    tag="1.0")
     for item in response:
         assert 'error' not in item
-    image = await docker.images.get(name='library/alpine:3.8')
-    assert image
-    image = await docker.images.get(name='library/alpine:latest')
+    image = await docker.images.inspect(name='docker/google-containers:1.0')
     assert image
 
 
