@@ -138,17 +138,11 @@ async def test_import_image(docker):
                                     data=file_sender(file_name=hello_world))
     for item in response:
         assert 'error' not in item
-    image = await docker.images.get(name='gcr.io/google-containers/pause:1.0')
+    image = await docker.images.get(name='alpine:3.8')
     assert image
-    image = await docker.images.get(name='gcr.io/google-containers/pause:go')
+    image = await docker.images.get(name='alpine:latest')
     assert image
-    image = await docker.images.get(
-            name='gcr.io/google-containers/pause')
-    assert image
-    image = await docker.images.get(name='gcr.io/google-containers/pause:test')
-    assert image
-    image = await docker.images.get(
-            name='gcr.io/google-containers/pause:test2')
+    image = await docker.images.get(name='alpine)
     assert image
 
 
