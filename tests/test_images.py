@@ -142,7 +142,7 @@ async def test_import_image(docker):
     assert image
     image = await docker.images.get(name='alpine:latest')
     assert image
-    image = await docker.images.get(name='alpine)
+    image = await docker.images.get(name='alpine')
     assert image
 
 
