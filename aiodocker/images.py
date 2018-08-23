@@ -250,9 +250,9 @@ class DockerImages(object):
         self,
         data,
         *,
-        repository: str,
-        tag: str,
-        stream: bool = False
+        repository: str=None,
+        tag: str=None,
+        stream: bool=False
     ):
         """
         Import tarball of image to docker.
