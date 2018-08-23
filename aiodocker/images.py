@@ -246,14 +246,7 @@ class DockerImages(object):
         )
         return response.content
 
-    async def import_image(
-        self,
-        data,
-        *,
-        repository: str=None,
-        tag: str=None,
-        stream: bool=False
-    ):
+    async def import_image(self, data, stream: bool=False):
         """
         Import tarball of image to docker.
 
@@ -265,12 +258,6 @@ class DockerImages(object):
         Returns:
             Tarball of the image
         """
-        params = {}
-        if repository:
-            params['repo'] = repository
-        if tag:
-            params['tag'] = tag
-
         headers = {
             "Content-Type": "application/x-tar",
         }
@@ -278,7 +265,6 @@ class DockerImages(object):
             "images/load",
             "POST",
             data=data,
-            params=params,
             headers=headers
         )
         return (await json_stream_result(response, stream=stream))
