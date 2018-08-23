@@ -252,8 +252,6 @@ class DockerImages(object):
 
         Args:
             data: tarball data of image to be imported
-            repository: The repository to create
-            tag: The tag to apply
 
         Returns:
             Tarball of the image
