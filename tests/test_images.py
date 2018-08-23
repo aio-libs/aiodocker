@@ -138,16 +138,13 @@ async def test_import_image(docker):
                                     data=file_sender(file_name=hello_world))
     for item in response:
         assert 'error' not in item
+
     repository = "gcr.io/google-containers/pause"
-    image = await docker.images.inspect(name="{}:1.0".format(repository))
-    assert image
-    image = await docker.images.inspect(name="{}:go".format(repository))
-    assert image
-    image = await docker.images.inspect(name="{}:latest".format(repository))
-    assert image
-    image = await docker.images.inspect(name="{}:test".format(repository))
-    assert image
-    image = await docker.images.inspect(name="{}:test2".format(repository))
+
+    for tag in ["1.0", "go", "latest", "test", "test2"]:
+        name = "{}:{}".format(repository, tag)
+        image = await docker.images.inspect(name=name)
+        assert image
 
 
 @pytest.mark.asyncio
