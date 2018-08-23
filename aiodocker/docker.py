@@ -61,7 +61,7 @@ class Docker:
                  connector=None,
                  session=None,
                  ssl_context=None,
-                 api_version='v1.30'):
+                 api_version='v1.35'):
 
         docker_host = url  # rename
         if docker_host is None:
