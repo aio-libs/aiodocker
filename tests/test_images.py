@@ -96,6 +96,9 @@ async def test_pull_image(docker):
     image = await docker.images.inspect(name=name)
     assert image
 
+    image = await docker.images.get(name=name)
+    assert image
+
 
 @pytest.mark.asyncio
 async def test_build_from_tar(docker, random_name):

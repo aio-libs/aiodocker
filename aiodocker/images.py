@@ -4,6 +4,7 @@ from typing import (
     List, MutableMapping, Mapping,
     BinaryIO,
 )
+import warnings
 from .utils import clean_map, compose_auth_header
 from .jsonstream import json_stream_result
 
@@ -33,6 +34,15 @@ class DockerImages(object):
             "images/{name}/json".format(name=name),
         )
         return response
+
+    async def get(self, name: str) -> Mapping:
+        warnings.warn(
+            "images.get is deprecated and will be removed in the next release, please use images.inspect instead.",
+            DeprecationWarning
+        )
+        return await self.inspect(name)
+
+
 
     async def history(self, name: str) -> Mapping:
         response = await self.docker._query_json(
