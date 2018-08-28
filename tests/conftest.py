@@ -11,7 +11,8 @@ from aiodocker.exceptions import DockerError
 
 
 _api_versions = {
-    "17.06": "v1.30",
+    "18.03.1": "v1.37",
+    "17.12.1": "v1.35",
 }
 
 
@@ -63,7 +64,7 @@ def testing_images():
         ]
         for img in required_images:
             try:
-                await docker.images.get(img)
+                await docker.images.inspect(img)
             except DockerError as e:
                 assert e.status == 404
                 print('Pulling "{img}" for the testing session...'

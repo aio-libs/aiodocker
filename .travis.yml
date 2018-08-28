@@ -14,11 +14,16 @@ python:
   - "3.7-dev"
 
 env:
-  - DOCKER_VERSION=17.06
+  - DOCKER_VERSION=17.12.1
+  - DOCKER_VERSION=18.03.1
 
 # test stage
 services:
   - docker
+
+before_install:
+  - sudo apt-get update
+  - sudo apt-get install docker-ce
 
 install:
   - docker run -d --privileged --net host --name ci-docker docker:$DOCKER_VERSION-dind dockerd -H tcp://localhost:27015

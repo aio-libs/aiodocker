@@ -27,7 +27,8 @@ from .system import DockerSystem
 
 __all__ = (
     'Docker',
-    'DockerContainers', 'DockerContainer',
+    'DockerContainers',
+    'DockerContainer',
     'DockerEvents',
     'DockerError',
     'DockerImages',
@@ -35,10 +36,12 @@ __all__ = (
     'DockerSwarm',
     'DockerServices',
     'DockerTasks',
-    'DockerVolumes', 'DockerVolume',
-    'DockerNetworks', 'DockerNetwork',
+    'DockerVolumes',
+    'DockerVolume',
+    'DockerNetworks',
+    'DockerNetwork',
     'DockerSwarmNodes',
-    'DockerSystem'
+    'DockerSystem',
 )
 
 log = logging.getLogger(__name__)
@@ -58,7 +61,7 @@ class Docker:
                  connector=None,
                  session=None,
                  ssl_context=None,
-                 api_version='v1.30'):
+                 api_version='v1.35'):
 
         docker_host = url  # rename
         if docker_host is None:
