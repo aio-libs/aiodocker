@@ -37,12 +37,11 @@ class DockerImages(object):
 
     async def get(self, name: str) -> Mapping:
         warnings.warn(
-            "images.get is deprecated and will be removed in the next release, please use images.inspect instead.",
+            """images.get is deprecated and will be removed in the next release,
+            please use images.inspect instead.""",
             DeprecationWarning
         )
         return await self.inspect(name)
-
-
 
     async def history(self, name: str) -> Mapping:
         response = await self.docker._query_json(
