@@ -10,8 +10,8 @@ AsyncIO bindings for docker.io
    :target: https://pypi.org/project/aiodocker/
    :alt: Python Versions
 
-.. image:: https://travis-ci.org/aio-libs/aiodocker.svg?branch=master
-   :target: https://travis-ci.org/aio-libs/aiodocker
+.. image:: https://travis-ci.com/aio-libs/aiodocker.svg?branch=master
+   :target: https://travis-ci.com/aio-libs/aiodocker
    :alt: Build Status
 
 .. image:: https://codecov.io/gh/aio-libs/aiodocker/branch/master/graph/badge.svg
