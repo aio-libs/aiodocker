@@ -128,6 +128,7 @@ It's *Apache 2* licensed and freely available.
    swarm
    volumes
    tasks
+   secrets
    log
    events
    exceptions

@@ -14,5 +14,6 @@ Joshua Chung
 Martin Koppehel
 Nikolay Novik
 Paul Tagliamonte
+Stanislav Zhavoronkov
 Tianon Gravi
 Travis DePrato
