@@ -131,7 +131,6 @@ async def test_export_image(docker):
 
 @pytest.mark.asyncio
 async def test_import_image(docker):
-    @aiohttp.streamer
     async def file_sender(writer, file_name=None):
         with open(file_name, "rb") as f:
             chunk = f.read(2 ** 16)

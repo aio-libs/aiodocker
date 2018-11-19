@@ -38,7 +38,7 @@ def random_name():
                 if img["RepoTags"][0].startswith("aiodocker-"):
                     print("Deleting image id: {0}".format(img["Id"]))
                     await docker.images.delete(img["Id"], force=True)
-            except DockerError as e:
+            except DockerError:
                 traceback.print_exc()
         await docker.close()
 

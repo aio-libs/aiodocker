@@ -15,12 +15,7 @@ with (Path(__file__).parent / "aiodocker" / "__init__.py").open() as fp:
 long_description = open("README.rst").read() + open("CHANGES.rst").read()
 
 
-with open("./requirements/base.txt") as test_reqs_txt:
-    requirements = list(iter(test_reqs_txt))
-
-
-with open("./requirements/test.txt") as test_reqs_txt:
-    test_requirements = list(iter(test_reqs_txt))
+requirements = ["aiohttp>=2.3.10", "yarl>=1.0"]
 
 
 setup(
@@ -48,6 +43,4 @@ setup(
     packages=["aiodocker"],
     python_requires=">=3.5",
     install_requires=requirements,
-    tests_require=test_requirements,
-    test_suite="tests",
 )
