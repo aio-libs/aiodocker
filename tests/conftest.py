@@ -10,23 +10,20 @@ from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 
-_api_versions = {
-    "18.03.1": "v1.37",
-    "17.12.1": "v1.35",
-}
+_api_versions = {"18.03.1": "v1.37", "17.12.1": "v1.35"}
 
 
 def _random_name():
     return "aiodocker-" + uuid.uuid4().hex[:7]
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def random_name():
     yield _random_name
 
     # If some test cases have used randomly-named temporary images,
     # we need to clean up them!
-    if ENV.get('CI', '') == 'true':
+    if ENV.get("CI", "") == "true":
         # But inside the CI server, we don't need clean up!
         return
     event_loop = asyncio.get_event_loop()
@@ -35,12 +32,12 @@ def random_name():
         docker = Docker()
         images = await docker.images.list()
         for img in images:
-            if img['RepoTags'] is None:
+            if img["RepoTags"] is None:
                 continue
             try:
-                if img['RepoTags'][0].startswith('aiodocker-'):
-                    print('Deleting image id: {0}'.format(img['Id']))
-                    await docker.images.delete(img['Id'], force=True)
+                if img["RepoTags"][0].startswith("aiodocker-"):
+                    print("Deleting image id: {0}".format(img["Id"]))
+                    await docker.images.delete(img["Id"], force=True)
             except DockerError as e:
                 traceback.print_exc()
         await docker.close()
@@ -48,7 +45,7 @@ def random_name():
     event_loop.run_until_complete(_clean())
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def testing_images():
     # Prepare a small Linux image shared by most test cases.
     event_loop = asyncio.get_event_loop()
@@ -56,19 +53,18 @@ def testing_images():
     async def _pull():
         docker = Docker()
         required_images = [
-            'alpine:latest',
-            'redis:latest',
-            'redis:3.0.2',
-            'redis:4.0',
-            'python:3.6.1-alpine',
+            "alpine:latest",
+            "redis:latest",
+            "redis:3.0.2",
+            "redis:4.0",
+            "python:3.6.1-alpine",
         ]
         for img in required_images:
             try:
                 await docker.images.inspect(img)
             except DockerError as e:
                 assert e.status == 404
-                print('Pulling "{img}" for the testing session...'
-                      .format(img=img))
+                print('Pulling "{img}" for the testing session...'.format(img=img))
                 await docker.pull(img)
         await docker.close()
 
@@ -85,12 +81,12 @@ def docker(event_loop, testing_images):
 
     async def _finalize():
         await docker.close()
+
     event_loop.run_until_complete(_finalize())
 
 
 @pytest.fixture
 def requires_api_version(docker):
-
     def check(version, reason):
         if StrictVersion(docker.api_version[1:]) < StrictVersion(version[1:]):
             pytest.skip(reason)
@@ -121,9 +117,10 @@ def shell_container(event_loop, docker):
     async def _spawn():
         nonlocal container
         container = await docker.containers.create_or_replace(
-            config=config,
-            name='aiodocker-testing-shell')
+            config=config, name="aiodocker-testing-shell"
+        )
         await container.start()
+
     event_loop.run_until_complete(_spawn())
 
     yield container
@@ -131,23 +128,22 @@ def shell_container(event_loop, docker):
     async def _delete():
         nonlocal container
         await container.delete(force=True)
+
     event_loop.run_until_complete(_delete())
 
 
 @pytest.fixture
 def redis_container(event_loop, docker):
     container = None
-    config = {
-        "Image": "redis:latest",
-        "PublishAllPorts": True,
-    }
+    config = {"Image": "redis:latest", "PublishAllPorts": True}
 
     async def _spawn():
         nonlocal container
         container = await docker.containers.create_or_replace(
-            config=config,
-            name='aiodocker-testing-redis')
+            config=config, name="aiodocker-testing-redis"
+        )
         await container.start()
+
     event_loop.run_until_complete(_spawn())
 
     yield container
@@ -155,4 +151,5 @@ def redis_container(event_loop, docker):
     async def _delete():
         nonlocal container
         await container.delete(force=True)
+
     event_loop.run_until_complete(_delete())

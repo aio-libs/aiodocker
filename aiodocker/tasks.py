@@ -6,7 +6,7 @@ class DockerTasks(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping=None) -> List[Mapping]:
+    async def list(self, *, filters: Mapping = None) -> List[Mapping]:
         """
         Return a list of tasks
 
@@ -25,11 +25,7 @@ class DockerTasks(object):
 
         params = {"filters": clean_filters(filters)}
 
-        response = await self.docker._query_json(
-            "tasks",
-            method='GET',
-            params=params
-        )
+        response = await self.docker._query_json("tasks", method="GET", params=params)
         return response
 
     async def inspect(self, task_id: str) -> Mapping[str, Any]:
@@ -42,7 +38,6 @@ class DockerTasks(object):
         """
 
         response = await self.docker._query_json(
-            "tasks/{task_id}".format(task_id=task_id),
-            method='GET',
+            "tasks/{task_id}".format(task_id=task_id), method="GET"
         )
         return response

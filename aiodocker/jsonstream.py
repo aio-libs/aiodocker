@@ -26,10 +26,9 @@ class _JsonStreamResult:
                 data = yield from self._response.content.readline()
                 if not data:
                     break
-            except (aiohttp.ClientConnectionError,
-                    aiohttp.ServerDisconnectedError):
+            except (aiohttp.ClientConnectionError, aiohttp.ServerDisconnectedError):
                 break
-            return self._transform(json.loads(data.decode('utf8')))
+            return self._transform(json.loads(data.decode("utf8")))
 
         raise StopAsyncIteration
 

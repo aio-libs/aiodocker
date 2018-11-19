@@ -10,10 +10,10 @@ class DockerSwarm(object):
     async def init(
         self,
         *,
-        advertise_addr: str=None,
-        listen_addr: str="0.0.0.0:2377",
-        force_new_cluster: bool=False,
-        swarm_spec: Mapping=None
+        advertise_addr: str = None,
+        listen_addr: str = "0.0.0.0:2377",
+        force_new_cluster: bool = False,
+        swarm_spec: Mapping = None
     ) -> str:
         """
         Initialize a new swarm.
@@ -29,17 +29,13 @@ class DockerSwarm(object):
         """
 
         data = {
-            'AdvertiseAddr': advertise_addr,
-            'ListenAddr': listen_addr,
-            'ForceNewCluster': force_new_cluster,
-            'Spec': swarm_spec,
+            "AdvertiseAddr": advertise_addr,
+            "ListenAddr": listen_addr,
+            "ForceNewCluster": force_new_cluster,
+            "Spec": swarm_spec,
         }
 
-        response = await self.docker._query_json(
-            "swarm/init",
-            method='POST',
-            data=data
-        )
+        response = await self.docker._query_json("swarm/init", method="POST", data=data)
 
         return response
 
@@ -51,22 +47,19 @@ class DockerSwarm(object):
             Info about the swarm
         """
 
-        response = await self.docker._query_json(
-            "swarm",
-            method='GET',
-        )
+        response = await self.docker._query_json("swarm", method="GET")
 
         return response
 
     async def join(
-            self,
-            *,
-            remote_addrs: Iterable[str],
-            listen_addr: str='0.0.0.0:2377',
-            join_token: str,
-            advertise_addr: str=None,
-            data_path_addr: str=None
-            ) -> bool:
+        self,
+        *,
+        remote_addrs: Iterable[str],
+        listen_addr: str = "0.0.0.0:2377",
+        join_token: str,
+        advertise_addr: str = None,
+        data_path_addr: str = None
+    ) -> bool:
         """
         Join a swarm.
 
@@ -95,15 +88,11 @@ class DockerSwarm(object):
             "DataPathAddr": data_path_addr,
         }
 
-        await self.docker._query(
-            "swarm/join",
-            method='POST',
-            data=clean_map(data)
-        )
+        await self.docker._query("swarm/join", method="POST", data=clean_map(data))
 
         return True
 
-    async def leave(self, *, force: bool=False) -> bool:
+    async def leave(self, *, force: bool = False) -> bool:
         """
         Leave a swarm.
 
@@ -113,10 +102,6 @@ class DockerSwarm(object):
 
         params = {"force": force}
 
-        await self.docker._query(
-            "swarm/leave",
-            method='POST',
-            params=params
-        )
+        await self.docker._query("swarm/leave", method="POST", params=params)
 
         return True

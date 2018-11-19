@@ -1,19 +1,12 @@
 import json
-from typing import (
-    Mapping, List,
-    Any,
-    Union,
-    AsyncIterator,
-    Optional,
-    MutableMapping
-)
+from typing import Mapping, List, Any, Union, AsyncIterator, Optional, MutableMapping
 from .multiplexed import multiplexed_result
 from .utils import (
     clean_map,
     clean_networks,
     clean_filters,
     format_env,
-    compose_auth_header
+    compose_auth_header,
 )
 
 
@@ -21,7 +14,7 @@ class DockerServices(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping=None) -> List[Mapping]:
+    async def list(self, *, filters: Mapping = None) -> List[Mapping]:
         """
         Return a list of services
 
@@ -38,25 +31,24 @@ class DockerServices(object):
         params = {"filters": clean_filters(filters)}
 
         response = await self.docker._query_json(
-            "services",
-            method="GET",
-            params=params
+            "services", method="GET", params=params
         )
         return response
 
-    async def create(self,
-                     task_template: Mapping[str, Any],
-                     *,
-                     name: str=None,
-                     labels: List=None,
-                     mode: Mapping=None,
-                     update_config: Mapping=None,
-                     rollback_config: Mapping=None,
-                     networks: List=None,
-                     endpoint_spec: Mapping=None,
-                     auth: Optional[Union[MutableMapping, str, bytes]]=None,
-                     registry: str=None
-                     ) -> Mapping[str, Any]:
+    async def create(
+        self,
+        task_template: Mapping[str, Any],
+        *,
+        name: str = None,
+        labels: List = None,
+        mode: Mapping = None,
+        update_config: Mapping = None,
+        rollback_config: Mapping = None,
+        networks: List = None,
+        endpoint_spec: Mapping = None,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        registry: str = None
+    ) -> Mapping[str, Any]:
         """
         Create a service
 
@@ -78,9 +70,7 @@ class DockerServices(object):
         """
 
         if "Image" not in task_template["ContainerSpec"]:
-            raise KeyError(
-                "Missing mandatory Image key in ContainerSpec"
-            )
+            raise KeyError("Missing mandatory Image key in ContainerSpec")
 
         if auth and registry is None:
             raise KeyError(
@@ -106,26 +96,24 @@ class DockerServices(object):
             "UpdateConfig": update_config,
             "RollbackConfig": rollback_config,
             "Networks": clean_networks(networks),
-            "EndpointSpec": endpoint_spec
+            "EndpointSpec": endpoint_spec,
         }
 
         data = json.dumps(clean_map(config))
 
         response = await self.docker._query_json(
-            "services/create",
-            method="POST",
-            data=data,
-            headers=headers,
+            "services/create", method="POST", data=data, headers=headers
         )
         return response
 
-    async def update(self,
-                     service_id: str,
-                     version: str,
-                     *,
-                     image: str=None,
-                     rollback: bool=False
-                     ) -> bool:
+    async def update(
+        self,
+        service_id: str,
+        version: str,
+        *,
+        image: str = None,
+        rollback: bool = False
+    ) -> bool:
         """
         Update a service.
         If rollback is True image will be ignored.
@@ -145,13 +133,11 @@ class DockerServices(object):
         spec = inspect_service["Spec"]
 
         if image is not None:
-            spec['TaskTemplate']['ContainerSpec']['Image'] = image
+            spec["TaskTemplate"]["ContainerSpec"]["Image"] = image
 
-        params = {
-            "version": version,
-        }
+        params = {"version": version}
         if rollback is True:
-            params["rollback"] = 'previous'
+            params["rollback"] = "previous"
 
         data = json.dumps(clean_map(spec))
 
@@ -159,7 +145,7 @@ class DockerServices(object):
             "services/{service_id}/update".format(service_id=service_id),
             method="POST",
             data=data,
-            params=params
+            params=params,
         )
         return True
 
@@ -175,8 +161,7 @@ class DockerServices(object):
         """
 
         await self.docker._query(
-            "services/{service_id}".format(service_id=service_id),
-            method="DELETE",
+            "services/{service_id}".format(service_id=service_id), method="DELETE"
         )
         return True
 
@@ -192,21 +177,23 @@ class DockerServices(object):
         """
 
         response = await self.docker._query_json(
-            "services/{service_id}".format(service_id=service_id),
-            method="GET",
+            "services/{service_id}".format(service_id=service_id), method="GET"
         )
         return response
 
-    async def logs(self, service_id: str, *,
-                   details: bool=False,
-                   follow: bool=False,
-                   stdout: bool=False,
-                   stderr: bool=False,
-                   since: int=0,
-                   timestamps: bool=False,
-                   is_tty: bool=False,
-                   tail: str="all"
-                   ) -> Union[str, AsyncIterator[str]]:
+    async def logs(
+        self,
+        service_id: str,
+        *,
+        details: bool = False,
+        follow: bool = False,
+        stdout: bool = False,
+        stderr: bool = False,
+        since: int = 0,
+        timestamps: bool = False,
+        is_tty: bool = False,
+        tail: str = "all"
+    ) -> Union[str, AsyncIterator[str]]:
         """
         Retrieve logs of the given service
 
@@ -234,12 +221,12 @@ class DockerServices(object):
             "stderr": stderr,
             "since": since,
             "timestamps": timestamps,
-            "tail": tail
+            "tail": tail,
         }
 
         response = await self.docker._query(
             "services/{service_id}/logs".format(service_id=service_id),
             method="GET",
-            params=params
+            params=params,
         )
-        return (await multiplexed_result(response, follow, is_tty=is_tty))
+        return await multiplexed_result(response, follow, is_tty=is_tty)

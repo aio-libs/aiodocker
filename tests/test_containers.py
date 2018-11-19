@@ -8,9 +8,9 @@ async def _validate_hello(container):
     try:
         await container.start()
         response = await container.wait()
-        assert response['StatusCode'] == 0
+        assert response["StatusCode"] == 0
         logs = await container.log(stdout=True)
-        assert logs == ['hello\n']
+        assert logs == ["hello\n"]
 
         with pytest.raises(TypeError):
             await container.log()
@@ -23,11 +23,7 @@ async def test_run_existing_container(docker):
     name = "alpine:latest"
     await docker.pull(name)
     container = await docker.containers.run(
-        config={
-            'Cmd': ['-c', 'echo hello'],
-            'Entrypoint': 'sh',
-            'Image': name
-        }
+        config={"Cmd": ["-c", "echo hello"], "Entrypoint": "sh", "Image": name}
     )
 
     await _validate_hello(container)
@@ -46,11 +42,7 @@ async def test_run_container_with_missing_image(docker):
 
     # should automatically pull the image
     container = await docker.containers.run(
-        config={
-            'Cmd': ['-c', 'echo hello'],
-            'Entrypoint': 'sh',
-            'Image': name
-        }
+        config={"Cmd": ["-c", "echo hello"], "Entrypoint": "sh", "Image": name}
     )
 
     await _validate_hello(container)
@@ -72,8 +64,8 @@ async def test_run_failing_start_container(docker):
             config={
                 # we want to raise an error
                 # `executable file not found`
-                'Cmd': ['pyton', 'echo hello'],
-                'Image': name
+                "Cmd": ["pyton", "echo hello"],
+                "Image": name,
             }
         )
 
@@ -88,19 +80,17 @@ async def test_run_failing_start_container(docker):
 @pytest.mark.asyncio
 async def test_restart(docker):
     container = await docker.containers.run(
-        config={
-            'Image': 'gcr.io/google-containers/pause'
-        }
+        config={"Image": "gcr.io/google-containers/pause"}
     )
     try:
         details = await container.show()
-        assert details['State']['Running']
-        startTime = details['State']['StartedAt']
+        assert details["State"]["Running"]
+        startTime = details["State"]["StartedAt"]
         await container.restart(timeout=1)
         await asyncio.sleep(3)
         details = await container.show()
-        assert details['State']['Running']
-        restartTime = details['State']['StartedAt']
+        assert details["State"]["Running"]
+        restartTime = details["State"]["StartedAt"]
 
         assert restartTime > startTime
 

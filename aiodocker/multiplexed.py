@@ -39,15 +39,17 @@ class MultiplexedResult:
                 hdrlen = constants.STREAM_HEADER_SIZE_BYTES
                 header = yield from self._response.content.readexactly(hdrlen)
 
-                _, length = struct.unpack('>BxxxL', header)
+                _, length = struct.unpack(">BxxxL", header)
                 if not length:
                     continue
 
                 data = yield from self._response.content.readexactly(length)
 
-            except (aiohttp.ClientConnectionError,
-                    aiohttp.ServerDisconnectedError,
-                    asyncio.IncompleteReadError):
+            except (
+                aiohttp.ClientConnectionError,
+                aiohttp.ServerDisconnectedError,
+                asyncio.IncompleteReadError,
+            ):
                 break
             return data
 
@@ -65,8 +67,7 @@ class MultiplexedResult:
         await self._response.release()
 
 
-async def multiplexed_result(response, follow=False, is_tty=False,
-                             encoding='utf-8'):
+async def multiplexed_result(response, follow=False, is_tty=False, encoding="utf-8"):
 
     # if is_tty is True you get a raw output
     log_stream = MultiplexedResult(response, raw=is_tty)

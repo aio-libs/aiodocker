@@ -4,6 +4,12 @@ flake: .flake
 
 .flake:
 	@flake8 aiodocker tests
+	if python -c "import sys; sys.exit(sys.version_info<(3,6))"; then \
+		black --check aiodocker tests setup.py; \
+	fi
+
+fmt:
+	black aiodocker tests setup.py
 
 develop:
 	@pip install -e .

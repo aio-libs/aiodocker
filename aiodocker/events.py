@@ -16,8 +16,9 @@ class DockerEvents:
         self.task = None
 
     def listen(self):
-        warnings.warn("use subscribe() method instead",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "use subscribe() method instead", DeprecationWarning, stacklevel=2
+        )
         return self.channel.subscribe()
 
     def subscribe(self, *, create_task=True, **params):
@@ -32,8 +33,8 @@ class DockerEvents:
         return self.channel.subscribe()
 
     def _transform_event(self, data):
-        if 'time' in data:
-            data['time'] = dt.datetime.fromtimestamp(data['time'])
+        if "time" in data:
+            data["time"] = dt.datetime.fromtimestamp(data["time"])
         return data
 
     async def run(self, **params):
@@ -43,12 +44,9 @@ class DockerEvents:
         Publish messages inside the asyncio queue.
         """
         if self.json_stream:
-            warnings.warn("already running",
-                          RuntimeWarning, stackelevel=2)
+            warnings.warn("already running", RuntimeWarning, stackelevel=2)
             return
-        forced_params = {
-            'stream': True,
-        }
+        forced_params = {"stream": True}
         params = ChainMap(forced_params, params)
         try:
             # timeout has to be set to 0, None is not passed
@@ -56,15 +54,10 @@ class DockerEvents:
             # will close the connection
             # http://aiohttp.readthedocs.io/en/stable/client_reference.html#aiohttp.ClientSession.request
             response = await self.docker._query(
-                "events",
-                method="GET",
-                params=params,
-                timeout=0
+                "events", method="GET", params=params, timeout=0
             )
             self.json_stream = await json_stream_result(
-                response,
-                self._transform_event,
-                human_bool(params['stream']),
+                response, self._transform_event, human_bool(params["stream"])
             )
             try:
                 async for data in self.json_stream:

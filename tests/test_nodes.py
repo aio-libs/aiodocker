@@ -27,7 +27,7 @@ async def test_node_inspect(swarm):
     hostname = swarm_nodes[0]["Description"]["Hostname"]
 
     node = await swarm.nodes.inspect(node_id=hostname)
-    assert node_id in node['ID']
+    assert node_id in node["ID"]
 
     node = await swarm.nodes.inspect(node_id=node_id)
     assert hostname in node["Description"]["Hostname"]
@@ -53,11 +53,9 @@ async def test_node_update(swarm):
         "Availability": "active",
         "Name": "special-node",
         "Role": "manager",
-        'Labels': {
-            "new_label": "true"
-        }
+        "Labels": {"new_label": "true"},
     }
 
     await swarm.nodes.update(node_id=node_id, version=version, spec=spec)
     node = await swarm.nodes.inspect(node_id=node_id)
-    assert node['Spec'] == spec
+    assert node["Spec"] == spec

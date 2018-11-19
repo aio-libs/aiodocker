@@ -16,13 +16,15 @@ from aiodocker.docker import Docker
 @pytest.mark.asyncio
 async def test_autodetect_host(monkeypatch):
     docker = Docker()
-    if 'DOCKER_HOST' in os.environ:
-        if (os.environ['DOCKER_HOST'].startswith('http://') or
-                os.environ['DOCKER_HOST'].startswith('https://') or
-                os.environ['DOCKER_HOST'].startswith('tcp://')):
-            assert docker.docker_host == os.environ['DOCKER_HOST']
+    if "DOCKER_HOST" in os.environ:
+        if (
+            os.environ["DOCKER_HOST"].startswith("http://")
+            or os.environ["DOCKER_HOST"].startswith("https://")
+            or os.environ["DOCKER_HOST"].startswith("tcp://")
+        ):
+            assert docker.docker_host == os.environ["DOCKER_HOST"]
         else:
-            assert docker.docker_host == 'unix://localhost'
+            assert docker.docker_host == "unix://localhost"
     else:
         # assuming that docker daemon is installed locally.
         assert docker.docker_host is not None
@@ -31,7 +33,7 @@ async def test_autodetect_host(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_connect_invalid_unix_socket():
-    docker = Docker('unix:///var/run/does-not-exist-docker.sock')
+    docker = Docker("unix:///var/run/does-not-exist-docker.sock")
     assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
     with pytest.raises(aiohttp.ClientOSError):
         await docker.containers.list()
@@ -40,19 +42,18 @@ async def test_connect_invalid_unix_socket():
 
 @pytest.mark.asyncio
 async def test_connect_envvar(monkeypatch):
-    monkeypatch.setenv('DOCKER_HOST',
-                       'unix:///var/run/does-not-exist-docker.sock')
+    monkeypatch.setenv("DOCKER_HOST", "unix:///var/run/does-not-exist-docker.sock")
     docker = Docker()
     assert isinstance(docker.connector, aiohttp.connector.UnixConnector)
-    assert docker.docker_host == 'unix://localhost'
+    assert docker.docker_host == "unix://localhost"
     with pytest.raises(aiohttp.ClientOSError):
         await docker.containers.list()
     await docker.close()
 
-    monkeypatch.setenv('DOCKER_HOST', 'http://localhost:9999')
+    monkeypatch.setenv("DOCKER_HOST", "http://localhost:9999")
     docker = Docker()
     assert isinstance(docker.connector, aiohttp.TCPConnector)
-    assert docker.docker_host == 'http://localhost:9999'
+    assert docker.docker_host == "http://localhost:9999"
     with pytest.raises(aiohttp.ClientOSError):
         await docker.containers.list()
     await docker.close()
@@ -102,13 +103,14 @@ async def test_container_lifecycles(docker, testing_images):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(sys.platform == 'darwin',
-                    reason="Docker for Mac has a bug with websocket")
+@pytest.mark.skipif(
+    sys.platform == "darwin", reason="Docker for Mac has a bug with websocket"
+)
 async def test_stdio_stdin(docker, testing_images, shell_container):
     # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
-    await ws.send_str('echo hello world\n')
-    output = b''
+    await ws.send_str("echo hello world\n")
+    output = b""
     found = False
     try:
         # collect the websocket outputs for at most 2 secs until we see the
@@ -142,9 +144,9 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     except asyncio.TimeoutError:
         pass
     if not found:
-        output = ''.join(log)
+        output = "".join(log)
         output.strip()
-        found = "hello world" in output.split('\r\n')
+        found = "hello world" in output.split("\r\n")
     assert found
 
 
@@ -167,14 +169,14 @@ async def test_put_archive(docker, testing_images):
         "AttachStdout": False,
         "AttachStderr": False,
         "Tty": False,
-        "OpenStdin": False
+        "OpenStdin": False,
     }
 
     file_data = b"hello world"
     file_like_object = io.BytesIO()
-    tar = tarfile.open(fileobj=file_like_object, mode='w')
+    tar = tarfile.open(fileobj=file_like_object, mode="w")
 
-    info = tarfile.TarInfo(name='bar')
+    info = tarfile.TarInfo(name="bar")
     info.type = tarfile.DIRTYPE
     info.mode = 0o755
     info.mtime = time.time()
@@ -187,11 +189,9 @@ async def test_put_archive(docker, testing_images):
     tar.close()
 
     container = await docker.containers.create_or_replace(
-        config=config,
-        name='aiodocker-testing-archive')
-    await container.put_archive(
-        path='/tmp',
-        data=file_like_object.getvalue())
+        config=config, name="aiodocker-testing-archive"
+    )
+    await container.put_archive(path="/tmp", data=file_like_object.getvalue())
     await container.start()
     await container.wait(timeout=5)
 
@@ -210,19 +210,19 @@ async def test_get_archive(docker, testing_images):
         "AttachStdout": False,
         "AttachStderr": False,
         "Tty": True,
-        "OpenStdin": False
+        "OpenStdin": False,
     }
 
     container = await docker.containers.create_or_replace(
-        config=config,
-        name='aiodocker-testing-get-archive')
+        config=config, name="aiodocker-testing-get-archive"
+    )
     await container.start()
-    tar_archive = await container.get_archive('/tmp/foo.txt')
+    tar_archive = await container.get_archive("/tmp/foo.txt")
 
     assert tar_archive is not None
     assert len(tar_archive.members) == 1
-    foo_file = tar_archive.extractfile('foo.txt')
-    assert foo_file.read() == b'test\n'
+    foo_file = tar_archive.extractfile("foo.txt")
+    assert foo_file.read() == b"test\n"
     await container.delete(force=True)
 
 
@@ -237,13 +237,10 @@ async def test_events(docker, testing_images, event_loop):
     subscriber = docker.events.subscribe()
 
     # Do some stuffs to generate events.
-    config = {
-        "Cmd": ["/bin/ash"],
-        "Image": "alpine:latest",
-    }
+    config = {"Cmd": ["/bin/ash"], "Image": "alpine:latest"}
     container = await docker.containers.create_or_replace(
-        config=config,
-        name='aiodocker-testing-temp')
+        config=config, name="aiodocker-testing-temp"
+    )
     await container.start()
     await container.delete(force=True)
 
@@ -252,14 +249,14 @@ async def test_events(docker, testing_images, event_loop):
         try:
             with timeout(0.2):
                 event = await subscriber.get()
-            if event['Actor']['ID'] == container._id:
-                events_occurred.append(event['Action'])
+            if event["Actor"]["ID"] == container._id:
+                events_occurred.append(event["Action"])
         except asyncio.TimeoutError:
             # no more events
             break
         except asyncio.CancelledError:
             break
 
-    assert events_occurred == ['create', 'start', 'kill', 'die', 'destroy']
+    assert events_occurred == ["create", "start", "kill", "die", "destroy"]
 
     await docker.events.stop()

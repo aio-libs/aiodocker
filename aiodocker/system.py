@@ -13,9 +13,6 @@ class DockerSystem(object):
             A dict with docker engine info.
         """
 
-        response = await self.docker._query_json(
-            "info",
-            method='GET',
-        )
+        response = await self.docker._query_json("info", method="GET")
 
         return response

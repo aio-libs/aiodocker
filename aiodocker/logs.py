@@ -14,8 +14,9 @@ class DockerLog:
         self.response = None
 
     def listen(self):
-        warnings.warn("use subscribe() method instead",
-                      DeprecationWarning, stacklevel=2)
+        warnings.warn(
+            "use subscribe() method instead", DeprecationWarning, stacklevel=2
+        )
         return self.channel.subscribe()
 
     def subscribe(self):
@@ -23,29 +24,21 @@ class DockerLog:
 
     async def run(self, **params):
         if self.response:
-            warnings.warn("already running",
-                          RuntimeWarning, stackelevel=2)
+            warnings.warn("already running", RuntimeWarning, stackelevel=2)
             return
-        forced_params = {
-            'follow': True,
-        }
-        default_params = {
-            'stdout': True,
-            'stderr': True,
-        }
+        forced_params = {"follow": True}
+        default_params = {"stdout": True, "stderr": True}
         params = ChainMap(forced_params, params, default_params)
         try:
             self.response = await self.docker._query(
-                'containers/{self.container._id}/logs'.format(self=self),
-                params=params,
+                "containers/{self.container._id}/logs".format(self=self), params=params
             )
             while True:
                 msg = await self.response.content.readline()
                 if not msg:
                     break
                 await self.channel.publish(msg)
-        except (aiohttp.ClientConnectionError,
-                aiohttp.ServerDisconnectedError):
+        except (aiohttp.ClientConnectionError, aiohttp.ServerDisconnectedError):
             pass
         finally:
             # signal termination to subscribers

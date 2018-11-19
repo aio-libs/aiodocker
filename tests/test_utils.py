@@ -4,41 +4,32 @@ from aiodocker import utils
 
 
 def test_clean_mapping():
-    dirty_dict = {
-        "a": None,
-        "b": {},
-        "c": [],
-        "d": 1,
-    }
-    clean_dict = {
-        "b": {},
-        "c": [],
-        "d": 1,
-    }
+    dirty_dict = {"a": None, "b": {}, "c": [], "d": 1}
+    clean_dict = {"b": {}, "c": [], "d": 1}
     result = utils.clean_map(dirty_dict)
     assert result == clean_dict
 
 
 def test_parse_content_type():
-    ct = 'text/plain'
+    ct = "text/plain"
     mt, st, opts = utils.parse_content_type(ct)
-    assert mt == 'text'
-    assert st == 'plain'
+    assert mt == "text"
+    assert st == "plain"
     assert opts == {}
 
-    ct = 'text/plain; charset=utf-8'
+    ct = "text/plain; charset=utf-8"
     mt, st, opts = utils.parse_content_type(ct)
-    assert mt == 'text'
-    assert st == 'plain'
-    assert opts == {'charset': 'utf-8'}
+    assert mt == "text"
+    assert st == "plain"
+    assert opts == {"charset": "utf-8"}
 
-    ct = 'text/plain; '
+    ct = "text/plain; "
     mt, st, opts = utils.parse_content_type(ct)
-    assert mt == 'text'
-    assert st == 'plain'
+    assert mt == "text"
+    assert st == "plain"
     assert opts == {}
 
-    ct = 'text/plain; asdfasdf'
+    ct = "text/plain; asdfasdf"
     with pytest.raises(ValueError):
         mt, st, opts = utils.parse_content_type(ct)
 

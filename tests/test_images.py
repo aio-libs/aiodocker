@@ -8,18 +8,21 @@ import aiohttp
 
 
 @pytest.mark.asyncio
-async def test_build_from_remote_file(docker, random_name,
-                                      requires_api_version):
+async def test_build_from_remote_file(docker, random_name, requires_api_version):
 
-    requires_api_version("v1.28",
-                         "TODO: test disabled because it fails on "
-                         "API version 1.27, this should be fixed")
+    requires_api_version(
+        "v1.28",
+        "TODO: test disabled because it fails on "
+        "API version 1.27, this should be fixed",
+    )
 
-    remote = ("https://raw.githubusercontent.com/aio-libs/"
-              "aiodocker/master/tests/docker/Dockerfile")
+    remote = (
+        "https://raw.githubusercontent.com/aio-libs/"
+        "aiodocker/master/tests/docker/Dockerfile"
+    )
 
     tag = "{}:1.0".format(random_name())
-    params = {'tag': tag, 'remote': remote}
+    params = {"tag": tag, "remote": remote}
     await docker.images.build(**params)
 
     image = await docker.images.inspect(tag)
@@ -28,11 +31,13 @@ async def test_build_from_remote_file(docker, random_name,
 
 @pytest.mark.asyncio
 async def test_build_from_remote_tar(docker, random_name):
-    remote = ("https://github.com/aio-libs/aiodocker/"
-              "raw/master/tests/docker/docker_context.tar")
+    remote = (
+        "https://github.com/aio-libs/aiodocker/"
+        "raw/master/tests/docker/docker_context.tar"
+    )
 
     tag = "{}:1.0".format(random_name())
-    params = {'tag': tag, 'remote': remote}
+    params = {"tag": tag, "remote": remote}
     await docker.images.build(**params)
 
     image = await docker.images.inspect(tag)
@@ -60,7 +65,7 @@ async def test_tag_image(docker, random_name):
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
     image = await docker.images.inspect(name)
-    assert len([x for x in image['RepoTags'] if x.startswith(repository)]) == 2
+    assert len([x for x in image["RepoTags"] if x.startswith(repository)]) == 2
 
 
 @pytest.mark.asyncio
@@ -103,13 +108,13 @@ async def test_pull_image(docker):
 @pytest.mark.asyncio
 async def test_build_from_tar(docker, random_name):
     name = "{}:latest".format(random_name())
-    dockerfile = '''
+    dockerfile = """
     # Shared Volume
     FROM alpine:latest
     VOLUME /data
     CMD ["/bin/sh"]
-    '''
-    f = BytesIO(dockerfile.encode('utf-8'))
+    """
+    f = BytesIO(dockerfile.encode("utf-8"))
     tar_obj = utils.mktar_from_dockerfile(f)
     await docker.images.build(fileobj=tar_obj, encoding="gzip", tag=name)
     tar_obj.close()
@@ -126,21 +131,19 @@ async def test_export_image(docker):
 
 @pytest.mark.asyncio
 async def test_import_image(docker):
-
     @aiohttp.streamer
     async def file_sender(writer, file_name=None):
-        with open(file_name, 'rb') as f:
-            chunk = f.read(2**16)
+        with open(file_name, "rb") as f:
+            chunk = f.read(2 ** 16)
             while chunk:
                 await writer.write(chunk)
-                chunk = f.read(2**16)
+                chunk = f.read(2 ** 16)
 
     dir = os.path.dirname(__file__)
-    hello_world = os.path.join(dir, 'docker/google-containers-pause.tar')
-    response = await docker.images.import_image(
-                                    data=file_sender(file_name=hello_world))
+    hello_world = os.path.join(dir, "docker/google-containers-pause.tar")
+    response = await docker.images.import_image(data=file_sender(file_name=hello_world))
     for item in response:
-        assert 'error' not in item
+        assert "error" not in item
 
     repository = "gcr.io/google-containers/pause"
 
@@ -155,29 +158,25 @@ async def test_pups_image_auth(docker):
     name = "alpine:latest"
     await docker.images.pull(from_image=name)
     repository = "localhost:5001/image:latest"
-    image, tag = repository.rsplit(':', 1)
-    registry_addr, image_name = image.split('/', 1)
+    image, tag = repository.rsplit(":", 1)
+    registry_addr, image_name = image.split("/", 1)
     await docker.images.tag(name=name, repo=image, tag=tag)
 
-    auth_config = {'username': "testuser", 'password': "testpassword"}
+    auth_config = {"username": "testuser", "password": "testpassword"}
 
     await docker.images.push(name=repository, tag=tag, auth=auth_config)
 
     await docker.images.delete(name=repository)
-    await docker.images.pull(repository,
-                             auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
+    await docker.images.pull(repository, auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
 
     await docker.images.inspect(repository)
     await docker.images.delete(name=repository)
 
     # Now compose_auth_header automatically parse and rebuild
     # the encoded value if required.
-    await docker.pull(repository,
-                      auth="dGVzdHVzZXI6dGVzdHBhc3N3b3Jk")
+    await docker.pull(repository, auth="dGVzdHVzZXI6dGVzdHBhc3N3b3Jk")
     with pytest.raises(ValueError):
         # The repository arg must include the registry address.
-        await docker.pull("image:latest",
-                          auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
-    await docker.pull(repository,
-                      auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
+        await docker.pull("image:latest", auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
+    await docker.pull(repository, auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.images.inspect(repository)

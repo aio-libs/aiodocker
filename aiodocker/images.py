@@ -1,9 +1,5 @@
 import json
-from typing import (
-    Optional, Union,
-    List, MutableMapping, Mapping,
-    BinaryIO,
-)
+from typing import Optional, Union, List, MutableMapping, Mapping, BinaryIO
 import warnings
 from .utils import clean_map, compose_auth_header
 from .jsonstream import json_stream_result
@@ -17,10 +13,7 @@ class DockerImages(object):
         """
         List of images
         """
-        response = await self.docker._query_json(
-            "images/json", "GET",
-            params=params,
-        )
+        response = await self.docker._query_json("images/json", "GET", params=params)
         return response
 
     async def inspect(self, name: str) -> Mapping:
@@ -30,30 +23,32 @@ class DockerImages(object):
         Args:
             name: name of the image
         """
-        response = await self.docker._query_json(
-            "images/{name}/json".format(name=name),
-        )
+        response = await self.docker._query_json("images/{name}/json".format(name=name))
         return response
 
     async def get(self, name: str) -> Mapping:
         warnings.warn(
             """images.get is deprecated and will be removed in the next release,
             please use images.inspect instead.""",
-            DeprecationWarning
+            DeprecationWarning,
         )
         return await self.inspect(name)
 
     async def history(self, name: str) -> Mapping:
         response = await self.docker._query_json(
-            "images/{name}/history".format(name=name),
+            "images/{name}/history".format(name=name)
         )
         return response
 
-    async def pull(self, from_image: str, *,
-                   auth: Optional[Union[MutableMapping, str, bytes]]=None,
-                   tag: str=None,
-                   repo: str=None,
-                   stream: bool=False) -> Mapping:
+    async def pull(
+        self,
+        from_image: str,
+        *,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: str = None,
+        repo: str = None,
+        stream: bool = False
+    ) -> Mapping:
         """
         Similar to `docker pull`, pull an image locally
 
@@ -65,56 +60,58 @@ class DockerImages(object):
             auth: special {'auth': base64} pull private repo
         """
         image = from_image  # TODO: clean up
-        params = {
-            'fromImage': image,
-        }
+        params = {"fromImage": image}
         headers = {}
         if repo:
-            params['repo'] = repo
+            params["repo"] = repo
         if tag:
-            params['tag'] = tag
+            params["tag"] = tag
         if auth is not None:
-            registry, has_registry_host, _ = image.partition('/')
+            registry, has_registry_host, _ = image.partition("/")
             if not has_registry_host:
-                raise ValueError('Image should have registry host '
-                                 'when auth information is provided')
+                raise ValueError(
+                    "Image should have registry host "
+                    "when auth information is provided"
+                )
             # TODO: assert registry == repo?
-            headers['X-Registry-Auth'] = compose_auth_header(auth, registry)
+            headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
         response = await self.docker._query(
-            "images/create",
-            "POST",
-            params=params,
-            headers=headers,
+            "images/create", "POST", params=params, headers=headers
         )
-        return (await json_stream_result(response, stream=stream))
+        return await json_stream_result(response, stream=stream)
 
-    async def push(self, name: str, *,
-                   auth: Union[MutableMapping, str, bytes]=None,
-                   tag: str=None,
-                   stream: bool=False) -> Mapping:
+    async def push(
+        self,
+        name: str,
+        *,
+        auth: Union[MutableMapping, str, bytes] = None,
+        tag: str = None,
+        stream: bool = False
+    ) -> Mapping:
         params = {}
         headers = {
             # Anonymous push requires a dummy auth header.
-            'X-Registry-Auth': 'placeholder',
+            "X-Registry-Auth": "placeholder"
         }
         if tag:
-            params['tag'] = tag
+            params["tag"] = tag
         if auth is not None:
-            registry, has_registry_host, _ = name.partition('/')
+            registry, has_registry_host, _ = name.partition("/")
             if not has_registry_host:
-                raise ValueError('Image should have registry host '
-                                 'when auth information is provided')
-            headers['X-Registry-Auth'] = compose_auth_header(auth, registry)
+                raise ValueError(
+                    "Image should have registry host "
+                    "when auth information is provided"
+                )
+            headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
         response = await self.docker._query(
             "images/{name}/push".format(name=name),
             "POST",
             params=params,
             headers=headers,
         )
-        return (await json_stream_result(response, stream=stream))
+        return await json_stream_result(response, stream=stream)
 
-    async def tag(self, name: str, repo: str, *,
-                  tag: str=None) -> bool:
+    async def tag(self, name: str, repo: str, *, tag: str = None) -> bool:
         """
         Tag the given image so that it becomes part of a repository.
 
@@ -135,8 +132,9 @@ class DockerImages(object):
         )
         return True
 
-    async def delete(self, name: str, *, force: bool=False,
-                     noprune: bool=False) -> List:
+    async def delete(
+        self, name: str, *, force: bool = False, noprune: bool = False
+    ) -> List:
         """
         Remove an image along with any untagged parent
         images that were referenced by that image
@@ -150,28 +148,29 @@ class DockerImages(object):
         Returns:
             List of deleted images
         """
-        params = {'force': force, 'noprune': noprune}
+        params = {"force": force, "noprune": noprune}
         response = await self.docker._query_json(
-            "images/{name}".format(name=name),
-            "DELETE",
-            params=params,
+            "images/{name}".format(name=name), "DELETE", params=params
         )
         return response
 
-    async def build(self, *,
-                    remote: str=None,
-                    fileobj: BinaryIO=None,
-                    path_dockerfile: str=None,
-                    tag: str=None,
-                    quiet: bool=False,
-                    nocache: bool=False,
-                    buildargs: Mapping=None,
-                    pull: bool=False,
-                    rm: bool=True,
-                    forcerm: bool=False,
-                    labels: Mapping=None,
-                    stream: bool=False,
-                    encoding: str=None) -> Mapping:
+    async def build(
+        self,
+        *,
+        remote: str = None,
+        fileobj: BinaryIO = None,
+        path_dockerfile: str = None,
+        tag: str = None,
+        quiet: bool = False,
+        nocache: bool = False,
+        buildargs: Mapping = None,
+        pull: bool = False,
+        rm: bool = True,
+        forcerm: bool = False,
+        labels: Mapping = None,
+        stream: bool = False,
+        encoding: str = None
+    ) -> Mapping:
         """
         Build an image given a remote Dockerfile
         or a file object with a Dockerfile inside
@@ -194,14 +193,14 @@ class DockerImages(object):
         headers = {}
 
         params = {
-            't': tag,
-            'rm': rm,
-            'q': quiet,
-            'pull': pull,
-            'remote': remote,
-            'nocache': nocache,
-            'forcerm': forcerm,
-            'dockerfile': path_dockerfile,
+            "t": tag,
+            "rm": rm,
+            "q": quiet,
+            "pull": pull,
+            "remote": remote,
+            "nocache": nocache,
+            "forcerm": forcerm,
+            "dockerfile": path_dockerfile,
         }
 
         if remote is None and fileobj is None:
@@ -221,23 +220,23 @@ class DockerImages(object):
             headers["content-type"] = "application/x-tar"
 
         if fileobj and encoding:
-            headers['Content-Encoding'] = encoding
+            headers["Content-Encoding"] = encoding
 
         if buildargs:
-            params.update({'buildargs': json.dumps(buildargs)})
+            params.update({"buildargs": json.dumps(buildargs)})
 
         if labels:
-            params.update({'labels': json.dumps(labels)})
+            params.update({"labels": json.dumps(labels)})
 
         response = await self.docker._query(
             "build",
             "POST",
             params=clean_map(params),
             headers=headers,
-            data=local_context
+            data=local_context,
         )
 
-        return (await json_stream_result(response, stream=stream))
+        return await json_stream_result(response, stream=stream)
 
     async def export_image(self, name: str):
         """
@@ -250,12 +249,11 @@ class DockerImages(object):
             Streamreader of tarball image
         """
         response = await self.docker._query(
-            "images/{name}/get".format(name=name),
-            "GET",
+            "images/{name}/get".format(name=name), "GET"
         )
         return response.content
 
-    async def import_image(self, data, stream: bool=False):
+    async def import_image(self, data, stream: bool = False):
         """
         Import tarball of image to docker.
 
@@ -265,13 +263,8 @@ class DockerImages(object):
         Returns:
             Tarball of the image
         """
-        headers = {
-            "Content-Type": "application/x-tar",
-        }
+        headers = {"Content-Type": "application/x-tar"}
         response = await self.docker._query_chunked_post(
-            "images/load",
-            "POST",
-            data=data,
-            headers=headers
+            "images/load", "POST", data=data, headers=headers
         )
-        return (await json_stream_result(response, stream=stream))
+        return await json_stream_result(response, stream=stream)

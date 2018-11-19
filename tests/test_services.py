@@ -4,16 +4,12 @@ from async_timeout import timeout
 import pytest
 
 
-TaskTemplate = {
-    "ContainerSpec": {
-        "Image": "redis",
-    },
-}
+TaskTemplate = {"ContainerSpec": {"Image": "redis"}}
 
 
 async def _wait_service(swarm, service_id):
     for i in range(5):
-        tasks = await swarm.tasks.list(filters={'service': service_id})
+        tasks = await swarm.tasks.list(filters={"service": service_id})
         if tasks:
             return
         await asyncio.sleep(0.2)
@@ -23,16 +19,17 @@ async def _wait_service(swarm, service_id):
 @pytest.fixture
 def tmp_service(event_loop, swarm, random_name):
     service = event_loop.run_until_complete(
-        swarm.services.create(task_template=TaskTemplate, name=random_name()))
-    event_loop.run_until_complete(_wait_service(swarm, service['ID']))
-    yield service['ID']
-    event_loop.run_until_complete(swarm.services.delete(service['ID']))
+        swarm.services.create(task_template=TaskTemplate, name=random_name())
+    )
+    event_loop.run_until_complete(_wait_service(swarm, service["ID"]))
+    yield service["ID"]
+    event_loop.run_until_complete(swarm.services.delete(service["ID"]))
 
 
 @pytest.mark.asyncio
 async def test_service_list_with_filter(swarm, tmp_service):
     docker_service = await swarm.services.inspect(service_id=tmp_service)
-    name = docker_service['Spec']['Name']
+    name = docker_service["Spec"]["Name"]
     filters = {"name": name}
     filtered_list = await swarm.services.list(filters=filters)
     assert len(filtered_list) == 1
@@ -42,16 +39,16 @@ async def test_service_list_with_filter(swarm, tmp_service):
 async def test_service_tasks_list(swarm, tmp_service):
     tasks = await swarm.tasks.list()
     assert len(tasks) == 1
-    assert tasks[0]['ServiceID'] == tmp_service
-    assert await swarm.tasks.inspect(tasks[0]['ID'])
+    assert tasks[0]["ServiceID"] == tmp_service
+    assert await swarm.tasks.inspect(tasks[0]["ID"])
 
 
 @pytest.mark.asyncio
 async def test_service_tasks_list_with_filters(swarm, tmp_service):
-    tasks = await swarm.tasks.list(filters={'service': tmp_service})
+    tasks = await swarm.tasks.list(filters={"service": tmp_service})
     assert len(tasks) == 1
-    assert tasks[0]['ServiceID'] == tmp_service
-    assert await swarm.tasks.inspect(tasks[0]['ID'])
+    assert tasks[0]["ServiceID"] == tmp_service
+    assert await swarm.tasks.inspect(tasks[0]["ID"])
 
 
 @pytest.mark.asyncio
@@ -59,19 +56,12 @@ async def test_logs_services(swarm):
     TaskTemplate = {
         "ContainerSpec": {
             "Image": "python:3.6.1-alpine",
-            "Args": [
-                "python", "-c",
-                "for _ in range(10): print('Hello Python')"
-            ]
+            "Args": ["python", "-c", "for _ in range(10): print('Hello Python')"],
         },
-        "RestartPolicy": {
-            "Condition": "none"
-        }
+        "RestartPolicy": {"Condition": "none"},
     }
-    service = await swarm.services.create(
-        task_template=TaskTemplate,
-    )
-    service_id = service['ID']
+    service = await swarm.services.create(task_template=TaskTemplate)
+    service_id = service["ID"]
 
     filters = {"service": service_id}
 
@@ -81,12 +71,11 @@ async def test_logs_services(swarm):
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
             if task:
-                status = task[0]['Status']['State']
-                if status == 'complete':
+                status = task[0]["Status"]["State"]
+                if status == "complete":
                     break
 
-    logs = await swarm.services.logs(
-        service_id, stdout=True)
+    logs = await swarm.services.logs(service_id, stdout=True)
 
     assert len(logs) == 10
     assert logs[0] == "Hello Python\n"
@@ -97,19 +86,12 @@ async def test_logs_services_stream(swarm):
     TaskTemplate = {
         "ContainerSpec": {
             "Image": "python:3.6.1-alpine",
-            "Args": [
-                "python", "-c",
-                "for _ in range(10): print('Hello Python')"
-            ]
+            "Args": ["python", "-c", "for _ in range(10): print('Hello Python')"],
         },
-        "RestartPolicy": {
-            "Condition": "none"
-        }
+        "RestartPolicy": {"Condition": "none"},
     }
-    service = await swarm.services.create(
-        task_template=TaskTemplate,
-    )
-    service_id = service['ID']
+    service = await swarm.services.create(task_template=TaskTemplate)
+    service_id = service["ID"]
 
     filters = {"service": service_id}
 
@@ -119,13 +101,11 @@ async def test_logs_services_stream(swarm):
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
             if task:
-                status = task[0]['Status']['State']
-                if status == 'complete':
+                status = task[0]["Status"]["State"]
+                if status == "complete":
                     break
 
-    stream = await swarm.services.logs(
-        service_id, stdout=True, follow=True
-    )
+    stream = await swarm.services.logs(service_id, stdout=True, follow=True)
 
     # the service printed 10 `Hello Python`
     # let's check for them
@@ -147,19 +127,12 @@ async def test_service_update(swarm):
     name = "service-update"
     initial_image = "redis:3.0.2"
     image_after_update = "redis:4.0"
-    TaskTemplate = {
-        "ContainerSpec": {
-            "Image": initial_image,
-        },
-    }
+    TaskTemplate = {"ContainerSpec": {"Image": initial_image}}
 
-    await swarm.services.create(
-        name=name,
-        task_template=TaskTemplate,
-    )
+    await swarm.services.create(name=name, task_template=TaskTemplate)
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
-    version = service['Version']['Index']
+    version = service["Version"]["Index"]
     assert initial_image in current_image
 
     # update the service
@@ -171,13 +144,11 @@ async def test_service_update(swarm):
 
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
-    version = service['Version']['Index']
+    version = service["Version"]["Index"]
     assert image_after_update in current_image
 
     # rollback to the previous one
-    await swarm.services.update(
-        service_id=name, version=version, rollback=True
-    )
+    await swarm.services.update(service_id=name, version=version, rollback=True)
     service = await swarm.services.inspect(name)
     current_image = service["Spec"]["TaskTemplate"]["ContainerSpec"]["Image"]
     assert initial_image in current_image
@@ -188,18 +159,11 @@ async def test_service_update(swarm):
 @pytest.mark.asyncio
 async def test_service_update_error(swarm):
     name = "service-update"
-    TaskTemplate = {
-        "ContainerSpec": {
-            "Image": "redis:3.0.2",
-        },
-    }
-    await swarm.services.create(
-        name=name,
-        task_template=TaskTemplate,
-    )
+    TaskTemplate = {"ContainerSpec": {"Image": "redis:3.0.2"}}
+    await swarm.services.create(name=name, task_template=TaskTemplate)
     await asyncio.sleep(1)
     service = await swarm.services.inspect(name)
-    version = service['Version']['Index']
+    version = service["Version"]["Index"]
 
     with pytest.raises(ValueError):
         await swarm.services.update(service_id=name, version=version)
@@ -210,44 +174,30 @@ async def test_service_update_error(swarm):
 @pytest.mark.asyncio
 async def test_service_create_error(swarm):
     name = "service-test-error"
-    TaskTemplate = {
-        "ContainerSpec": {
-        },
-    }
+    TaskTemplate = {"ContainerSpec": {}}
     with pytest.raises(KeyError):
-        await swarm.services.create(
-            name=name,
-            task_template=TaskTemplate,
-        )
+        await swarm.services.create(name=name, task_template=TaskTemplate)
 
 
 @pytest.mark.asyncio
 async def test_service_create_service_with_auth(swarm):
     name = "service-test-with-auth"
-    TaskTemplate = {
-        "ContainerSpec": {
-            "Image": "redis",
-        },
-    }
+    TaskTemplate = {"ContainerSpec": {"Image": "redis"}}
     assert await swarm.services.create(
         name=name,
         task_template=TaskTemplate,
         auth={"username": "username", "password": "password"},
-        registry="random.registry.com"
+        registry="random.registry.com",
     )
 
 
 @pytest.mark.asyncio
 async def test_service_create_error_for_missing_registry(swarm):
     name = "service-test-error-with-auth"
-    TaskTemplate = {
-        "ContainerSpec": {
-            "Image": "redis",
-        },
-    }
+    TaskTemplate = {"ContainerSpec": {"Image": "redis"}}
     with pytest.raises(KeyError):
         await swarm.services.create(
             name=name,
             task_template=TaskTemplate,
-            auth={"username": "username", "password": "password"}
+            auth={"username": "username", "password": "password"},
         )

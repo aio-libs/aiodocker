@@ -6,7 +6,7 @@ class DockerSwarmNodes(object):
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping=None) -> List[Mapping]:
+    async def list(self, *, filters: Mapping = None) -> List[Mapping]:
         """
         Return a list of swarm's nodes.
 
@@ -23,11 +23,7 @@ class DockerSwarmNodes(object):
 
         params = {"filters": clean_filters(filters)}
 
-        response = await self.docker._query_json(
-            "nodes",
-            method='GET',
-            params=params
-        )
+        response = await self.docker._query_json("nodes", method="GET", params=params)
 
         return response
 
@@ -40,8 +36,7 @@ class DockerSwarmNodes(object):
         """
 
         response = await self.docker._query_json(
-            "nodes/{node_id}".format(node_id=node_id),
-            method="GET",
+            "nodes/{node_id}".format(node_id=node_id), method="GET"
         )
         return response
 
@@ -60,25 +55,20 @@ class DockerSwarmNodes(object):
         params = {"version": version}
 
         if "Role" in spec:
-            assert spec['Role'] in {"worker", "manager"}
+            assert spec["Role"] in {"worker", "manager"}
 
         if "Availability" in spec:
-            assert spec['Availability'] in {"active", "pause", "drain"}
+            assert spec["Availability"] in {"active", "pause", "drain"}
 
         response = await self.docker._query_json(
             "nodes/{node_id}/update".format(node_id=node_id),
             method="POST",
             params=params,
-            data=spec
+            data=spec,
         )
         return response
 
-    async def remove(
-        self,
-        *,
-        node_id: str,
-        force: bool=False
-    ) -> Mapping[str, Any]:
+    async def remove(self, *, node_id: str, force: bool = False) -> Mapping[str, Any]:
         """
         Remove a node from a swarm.
 
@@ -89,8 +79,6 @@ class DockerSwarmNodes(object):
         params = {"force": force}
 
         response = await self.docker._query_json(
-            "nodes/{node_id}".format(node_id=node_id),
-            method="DELETE",
-            params=params,
+            "nodes/{node_id}".format(node_id=node_id), method="DELETE", params=params
         )
         return response
