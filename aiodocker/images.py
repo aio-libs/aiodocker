@@ -31,6 +31,7 @@ class DockerImages(object):
             """images.get is deprecated and will be removed in the next release,
             please use images.inspect instead.""",
             DeprecationWarning,
+            stacklevel=2,
         )
         return await self.inspect(name)
 

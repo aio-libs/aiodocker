@@ -207,7 +207,7 @@ class Docker:
             data=data,
             headers=headers,
             timeout=timeout,
-            chunked=1024,
+            chunked=True,
         )
         return response
 
