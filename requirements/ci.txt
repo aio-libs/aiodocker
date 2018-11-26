@@ -2,7 +2,7 @@ codecov==2.0.15
 docutils==0.14
 tox==3.5.3
 tox-travis==0.11
-pygments==2.2.0
+pygments==2.3.0
 aiohttp==3.4.0
 yarl==1.1.1
 multidict==4.1.0
