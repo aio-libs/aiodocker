@@ -1,9 +1,9 @@
 async-timeout==3.0.1
 async-generator==1.10
-pytest==3.8.2
+pytest==4.0.2
 pytest-cov==2.6.0
 pytest-asyncio==0.9.0
-flake8==3.5.0
-mypy==0.630
+flake8==3.6.0
+mypy==0.650
 black==18.9b0; python_version>="3.6"
 -r ci.txt
