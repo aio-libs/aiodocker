@@ -203,7 +203,6 @@ class DockerContainer:
             "containers/{self._id}".format(self=self), method="DELETE", params=kwargs
         )
         await response.release()
-        return
 
     async def websocket(self, **params):
         path = "containers/{self._id}/attach/ws".format(self=self)
