@@ -172,6 +172,19 @@ class _DecodeHelper:
         else:
             return self._decoder.decode(stream)
 
+    async def aclose(self):
+        if not self._flag:
+            self._flag = True
+            # close inner generator manual with aclose method
+            if hasattr(self._gen, 'aclose'):
+                await self._gen.aclose()
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.aclose()
+
 
 def clean_map(obj: Mapping[Any, Any]) -> Mapping[Any, Any]:
     """

@@ -20,6 +20,8 @@ class MultiplexedResult:
         return self
 
     async def __anext__(self):
+        if self._gen is None:
+            raise StopAsyncIteration
         response = await self._gen()
 
         if not response:
@@ -64,7 +66,17 @@ class MultiplexedResult:
             return data
 
     async def _close(self):
-        await self._response.release()
+        if self._gen:
+            self._gen = None
+            await self._response.release()
+    # use to close gen in outer gen ....
+    aclose = _close
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self._close()
 
 
 async def multiplexed_result(response, follow=False, is_tty=False, encoding="utf-8"):
