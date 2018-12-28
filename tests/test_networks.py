@@ -13,6 +13,8 @@ async def test_list_networks(docker):
 @pytest.mark.asyncio
 async def test_networks(docker):
     network = await docker.networks.create({"Name": "test-net"})
+    net_find = await docker.networks.get("test-net")
+    assert (await net_find.show())["Name"] == "test-net"
     assert isinstance(network, aiodocker.networks.DockerNetwork)
     data = await network.show()
     assert data["Name"] == "test-net"
