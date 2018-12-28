@@ -11,6 +11,7 @@ Igor Alexandrov
 Jason Kraus
 Joongi Kim
 Joshua Chung
+Julien Kmec
 Martin Koppehel
 Nikolay Novik
 Paul Tagliamonte
