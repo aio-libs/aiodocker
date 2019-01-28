@@ -5,6 +5,7 @@ import os
 import sys
 import tarfile
 import time
+import pathlib
 
 import aiohttp
 from async_timeout import timeout
@@ -29,6 +30,18 @@ async def test_autodetect_host(monkeypatch):
         # assuming that docker daemon is installed locally.
         assert docker.docker_host is not None
     await docker.close()
+
+@pytest.mark.asyncio
+async def test_ssl_context(monkeypatch):
+    cert_dir = pathlib.Path(__file__).parent / 'certs'
+    monkeypatch.setenv('DOCKER_HOST', 'tcp://127.0.0.1:3456')
+    monkeypatch.setenv('DOCKER_TLS_VERIFY', '1')
+    monkeypatch.setenv('DOCKER_CERT_PATH', str(cert_dir))
+    docker = Docker()
+    assert docker.connector._ssl
+    await docker.close()
+
+
 
 
 @pytest.mark.asyncio

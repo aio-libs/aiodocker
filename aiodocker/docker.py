@@ -88,7 +88,7 @@ class Docker:
                     docker_host = _rx_tcp_schemes.sub("https://", docker_host)
                 else:
                     ssl_context = None
-                connector = aiohttp.TCPConnector(ssl_context=ssl_context)
+                connector = aiohttp.TCPConnector(ssl=ssl_context)
                 self.docker_host = docker_host
             elif docker_host.startswith("unix://"):
                 connector = aiohttp.UnixConnector(docker_host[7:])
