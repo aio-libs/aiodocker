@@ -4,6 +4,6 @@ pytest==4.2.1
 pytest-cov==2.6.1
 pytest-asyncio==0.10.0
 flake8==3.7.5
-mypy==0.660
+mypy==0.670
 black==18.9b0; python_version>="3.6"
 -r ci.txt
