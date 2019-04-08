@@ -1,4 +1,4 @@
-sphinx==1.8.5
+sphinx==2.0.0
 sphinxcontrib-asyncio==0.2.0
 alabaster==0.7.12
 sphinx-autodoc-typehints==1.6.0
