@@ -9,9 +9,9 @@ async def test_exec_start_stream(shell_container):
         Cmd=['cat'],
     )
     stream = await execute.start(stream=True, Detach=False, Tty=True)
-    stream.send_str("Hello")
-    data = await stream.receive()
-    assert data == b'Hello'
+    await stream.send_str("Hello")
+    msg = await stream.receive()
+    assert msg.data == b'Hello'
 
 
 @pytest.mark.asyncio

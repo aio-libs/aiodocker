@@ -3,7 +3,9 @@ import json
 
 import async_timeout
 from aiohttp.client_exceptions import ClientError
+from aiohttp.client_ws import ClientWebSocketResponse
 from aiohttp.helpers import set_result
+from aiohttp.http_websocket import WSMessage, WSMsgType
 from aiohttp.streams import EofStream, FlowControlDataQueue
 
 
@@ -20,7 +22,9 @@ class ExecReader:
             return True, data
 
         try:
-            self.queue.feed_data(data, len(data))
+            # Wrap with WSMessage to deceive ClientWebSocketResponse
+            msg = WSMessage(WSMsgType.BINARY, data, '')
+            self.queue.feed_data(msg, len(data))
             return False, b''
         except Exception as exc:
             self._exc = exc
@@ -28,84 +32,17 @@ class ExecReader:
             return True, b''
 
 
-class ExecStreamResponse:
-    def __init__(self, response):
-        conn = response.connection
-        transport = conn.transport
-        protocol = conn.protocol
-        loop = response._loop
+class ExecWriter:
+    def __init__(self, transport):
+        self.transport = transport
 
-        reader = FlowControlDataQueue(protocol, limit=2 ** 16, loop=loop)
-        protocol.set_parser(ExecReader(reader), reader)
+    async def send(self, message, *args, **kwargs):
+        if isinstance(message, str):
+            message = message.encode('utf-8')
+        self.transport.write(message)
 
-        self._reader = reader
-        self._transport = transport
-        self._response = response
-        self._loop = loop
-        self._closed = False
-        self._waiting = None
-
-    @property
-    def closed(self):
-        return self._closed
-
-    def send_bytes(self, data):
-        self._transport.write(data)
-
-    def send_str(self, data):
-        msg = data.encode('utf-8')
-        self.send_bytes(msg)
-
-    async def close(self):
-        if self._waiting is not None and not self._closed:
-            await self._waiting
-        if self._closed:
-            return False
-
-        self._closed = True
-        self._response.close()
-        return True
-
-    async def receive(self, timeout=None):
-        while True:
-            try:
-                self._waiting = self._loop.create_future()
-
-                try:
-                    with async_timeout.timeout(timeout, loop=self._loop):
-                        msg = await self._reader.read()
-                finally:
-                    waiter = self._waiting
-                    self._waiting = None
-                    set_result(waiter, True)
-            except (asyncio.CancelledError, asyncio.TimeoutError):
-                raise
-            except EofStream:
-                await self.close()
-                return
-            except ClientError:
-                self._closed = True
-                return
-            except Exception:
-                await self.close()
-                raise
-
-            return msg
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self):
-        msg = await self.receive()
-        if msg is None:
-            raise StopAsyncIteration
-        return msg
-
-    def __aenter__(self):
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.close()
+    async def close(self, code=1000, message=b''):
+        return None
 
 
 class Exec:
@@ -121,7 +58,7 @@ class Exec:
         )
         return cls(data["Id"], container)
 
-    async def start(self, stream=False, **kwargs):
+    async def start(self, stream=False, timeout=None, receive_timeout=None, **kwargs):
         # Don't use docker._query_json
         # content-type of response will be "vnd.docker.raw-stream",
         # so it will cause error.
@@ -131,10 +68,29 @@ class Exec:
             headers={"content-type": "application/json"},
             data=json.dumps(kwargs),
             read_until_eof=not stream,
+            timeout=timeout,
         )
 
         if stream:
-            return ExecStreamResponse(response)
+            conn = response.connection
+            transport = conn.transport
+            protocol = conn.protocol
+            loop = response._loop
+
+            reader = FlowControlDataQueue(protocol, limit=2 ** 16, loop=loop)
+            writer = ExecWriter(transport)
+            protocol.set_parser(ExecReader(reader), reader)
+            return ClientWebSocketResponse(
+                reader,
+                writer,
+                None,  # protocol
+                response,
+                timeout,
+                True,  # autoclose
+                False,  # autoping
+                loop,
+                receive_timeout=receive_timeout)
+
         else:
             result = await response.read()
             await response.release()
