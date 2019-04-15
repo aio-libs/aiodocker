@@ -106,5 +106,5 @@ async def test_exec(shell_container):
         AttachStdin=True, Tty=True,
         Cmd=['echo', 'Hello'],
     )
-    res = await execute.start(Detach=False, Tty=True)
-    assert res.data == b"Hello\r\n"
+    data = await execute.start(Detach=False, Tty=True)
+    assert data == b"Hello\r\n"
