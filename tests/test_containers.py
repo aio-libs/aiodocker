@@ -97,3 +97,14 @@ async def test_restart(docker):
         await container.stop()
     finally:
         await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_exec(shell_container):
+    execute = await shell_container.exec_create(
+        AttachStdout=True, AttachStderr=True,
+        AttachStdin=True, Tty=True,
+        Cmd=['echo', 'Hello'],
+    )
+    res = await execute.start(Detach=False, Tty=True)
+    assert res == b"Hello\r\n"
