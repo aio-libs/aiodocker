@@ -142,7 +142,8 @@ class Docker:
         data=None,
         headers=None,
         timeout=None,
-        chunked=None
+        chunked=None,
+        read_until_eof=True
     ):
         """
         Get the response object by performing the HTTP request.
@@ -160,6 +161,7 @@ class Docker:
                 data=data,
                 timeout=timeout,
                 chunked=chunked,
+                read_until_eof=read_until_eof,
             )
         except asyncio.TimeoutError:
             raise
