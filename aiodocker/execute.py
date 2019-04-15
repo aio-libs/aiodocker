@@ -11,7 +11,7 @@ class Exec:
         )
         return cls(data["Id"], container)
 
-    async def start(self, **kwargs):
+    async def start(self, stream=False, **kwargs):
         # Don't use docker._query_json
         # content-type of response will be "vnd.docker.raw-stream", so it will cause error.
         response = await self.container.docker._query(
@@ -19,10 +19,15 @@ class Exec:
             method='POST',
             headers={"content-type": "application/json"},
             data=json.dumps(kwargs),
+            read_until_eof=not stream,
         )
-        result = await response.read()
-        await response.release()
-        return result
+
+        if stream:
+            return response.connection
+        else:
+            result = await response.read()
+            await response.release()
+            return result
 
     async def resize(self, **kwargs):
         data = await self.container.docker._query_json(
