@@ -2,6 +2,7 @@ import json
 import tarfile
 
 from .exceptions import DockerError, DockerContainerError
+from .execute import Exec
 from .jsonstream import json_stream_result
 from .multiplexed import multiplexed_result
 from .utils import identical, parse_result
@@ -208,6 +209,9 @@ class DockerContainer:
         path = "containers/{self._id}/attach/ws".format(self=self)
         ws = await self.docker._websocket(path, **params)
         return ws
+
+    async def exec_create(self, **kwargs):
+        return await Exec.create(self, **kwargs)
 
     async def port(self, private_port):
         if "NetworkSettings" not in self._container:
