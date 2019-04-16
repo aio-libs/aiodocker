@@ -51,7 +51,9 @@ class Exec:
         self.container = container
 
     @classmethod
-    async def create(cls, container, **kwargs):
+    async def create(cls, container, **kwargs) -> "Exec":
+        """ Create and return an instance of Exec
+        """
         data = await container.docker._query_json(
             "containers/{container._id}/exec".format(container=container),
             method='POST', data=kwargs,
@@ -59,6 +61,15 @@ class Exec:
         return cls(data["Id"], container)
 
     async def start(self, stream=False, timeout=None, receive_timeout=None, **kwargs):
+        """
+        Start an exec.
+
+        stream
+        ======
+        If it's False, this method will return result of exec process as binary string.
+        If it's True, "WebSocketClientResponse" will be returned.
+        You can use it as same as response of "ws_connect" of aiohttp.
+        """
         # Don't use docker._query_json
         # content-type of response will be "vnd.docker.raw-stream",
         # so it will cause error.

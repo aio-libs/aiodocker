@@ -210,7 +210,9 @@ class DockerContainer:
         ws = await self.docker._websocket(path, **params)
         return ws
 
-    async def exec_create(self, **kwargs):
+    async def exec_create(self, **kwargs) -> Exec:
+        """ Create an exec (Instance of Exec).
+        """
         return await Exec.create(self, **kwargs)
 
     async def port(self, private_port):
