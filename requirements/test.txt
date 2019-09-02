@@ -1,7 +1,7 @@
 async-timeout==3.0.1
 async-generator==1.10
 pytest==5.1.2
-pytest-cov==2.6.1
+pytest-cov==2.7.1
 pytest-asyncio==0.10.0
 flake8==3.7.7
 mypy==0.701
