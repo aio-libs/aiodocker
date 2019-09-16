@@ -72,17 +72,14 @@ def testing_images():
 
 
 @pytest.fixture
-def docker(event_loop, testing_images):
+async def docker(event_loop, testing_images):
     kwargs = {}
     if "DOCKER_VERSION" in ENV:
         kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
     docker = Docker(**kwargs)
     yield docker
 
-    async def _finalize():
-        await docker.close()
-
-    event_loop.run_until_complete(_finalize())
+    await docker.close()
 
 
 @pytest.fixture
