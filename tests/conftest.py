@@ -76,7 +76,9 @@ def docker(event_loop, testing_images):
     kwargs = {}
     if "DOCKER_VERSION" in ENV:
         kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
-    docker = Docker(**kwargs)
+    async def _make_docker():
+        return Docker(**kwargs)
+    docker = event_loop.run_until_complete(_make_docker())
     yield docker
 
     async def _finalize():
