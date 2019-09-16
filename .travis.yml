@@ -11,7 +11,8 @@ stages:
 python:
   - "3.5"
   - "3.6"
-  - "3.7-dev"
+  - "3.7"
+  - "3.8-dev"
 
 env:
   - DOCKER_VERSION=17.12.1
@@ -42,7 +43,7 @@ after_success:
 jobs:
   include:
     - stage: deploy
-      python: 3.6
+      python: 3.7
       deploy:
         provider: pypi
         user: barrachri
