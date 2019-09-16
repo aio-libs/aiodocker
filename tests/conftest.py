@@ -5,6 +5,7 @@ from os import environ as ENV
 import traceback
 
 import pytest
+from async_generator import async_generator, yield_
 
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
@@ -77,7 +78,7 @@ async def docker(event_loop, testing_images):
     if "DOCKER_VERSION" in ENV:
         kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
     docker = Docker(**kwargs)
-    yield docker
+    await yield_(docker)
 
     await docker.close()
 
