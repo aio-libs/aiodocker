@@ -5,7 +5,6 @@ from os import environ as ENV
 import traceback
 
 import pytest
-from async_generator import async_generator, yield_
 
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
@@ -73,14 +72,17 @@ def testing_images():
 
 
 @pytest.fixture
-async def docker(event_loop, testing_images):
+def docker(event_loop, testing_images):
     kwargs = {}
     if "DOCKER_VERSION" in ENV:
         kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
     docker = Docker(**kwargs)
-    await yield_(docker)
+    yield docker
 
-    await docker.close()
+    async def _finalize():
+        await docker.close()
+
+    event_loop.run_until_complete(_finalize())
 
 
 @pytest.fixture
