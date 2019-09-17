@@ -76,8 +76,6 @@ stages:
     - script: |
         python -m pytest
       displayName: 'Run tests'
-      env:
-        DOCKER_VERSION: '$(docker)'
 
     - script: |
         python -m codecov -f coverage.xml -X gcov
