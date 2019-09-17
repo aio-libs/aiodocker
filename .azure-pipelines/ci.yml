@@ -49,7 +49,7 @@ stages:
 
     - task: DockerInstaller@0
       inputs:
-        dockerVersion: '$(docker)'
+        dockerVersion: '$(docker)-ce'
 
     - script: |
         docker run -d --privileged --net host --name ci-docker docker:$DOCKER_VERSION-dind dockerd -H tcp://localhost:27015
