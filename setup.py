@@ -16,7 +16,7 @@ with (Path(__file__).parent / "aiodocker" / "__init__.py").open() as fp:
 long_description = open("README.rst").read() + open("CHANGES.rst").read()
 
 
-requirements = ["aiohttp>=2.3.10", "yarl>=1.0"]
+requirements = ["aiohttp>=3.0", "yarl>=1.0"]
 
 
 setup(
@@ -42,6 +42,6 @@ setup(
     url="https://github.com/aio-libs/aiodocker",
     platforms=["any"],
     packages=["aiodocker"],
-    python_requires=">=3.5",
+    python_requires=">=3.5.3",
     install_requires=requirements,
 )
