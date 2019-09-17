@@ -13,7 +13,7 @@ class DockerSwarm(object):
         advertise_addr: str = None,
         listen_addr: str = "0.0.0.0:2377",
         force_new_cluster: bool = False,
-        swarm_spec: Mapping = None
+        swarm_spec: Mapping = None,
     ) -> str:
         """
         Initialize a new swarm.
@@ -58,7 +58,7 @@ class DockerSwarm(object):
         listen_addr: str = "0.0.0.0:2377",
         join_token: str,
         advertise_addr: str = None,
-        data_path_addr: str = None
+        data_path_addr: str = None,
     ) -> bool:
         """
         Join a swarm.

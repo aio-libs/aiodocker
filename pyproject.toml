@@ -3,3 +3,6 @@ package = "aiodocker"
 filename = "CHANGES.rst"
 directory = "CHANGES/"
 title_format = "{version} ({project_date})"
+
+[tool.black]
+target_version = ["py35"]

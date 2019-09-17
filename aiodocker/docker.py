@@ -142,7 +142,7 @@ class Docker:
         data=None,
         headers=None,
         timeout=None,
-        chunked=None
+        chunked=None,
     ):
         """
         Get the response object by performing the HTTP request.

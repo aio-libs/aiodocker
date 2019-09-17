@@ -48,7 +48,7 @@ class DockerServices(object):
         networks: List = None,
         endpoint_spec: Mapping = None,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        registry: str = None
+        registry: str = None,
     ) -> Mapping[str, Any]:
         """
         Create a service
@@ -113,7 +113,7 @@ class DockerServices(object):
         version: str,
         *,
         image: str = None,
-        rollback: bool = False
+        rollback: bool = False,
     ) -> bool:
         """
         Update a service.
@@ -193,7 +193,7 @@ class DockerServices(object):
         since: int = 0,
         timestamps: bool = False,
         is_tty: bool = False,
-        tail: str = "all"
+        tail: str = "all",
     ) -> Union[str, AsyncIterator[str]]:
         """
         Retrieve logs of the given service

@@ -49,7 +49,7 @@ class DockerImages(object):
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: str = None,
         repo: str = None,
-        stream: bool = False
+        stream: bool = False,
     ) -> Mapping:
         """
         Similar to `docker pull`, pull an image locally
@@ -88,7 +88,7 @@ class DockerImages(object):
         *,
         auth: Union[MutableMapping, str, bytes] = None,
         tag: str = None,
-        stream: bool = False
+        stream: bool = False,
     ) -> Mapping:
         params = {}
         headers = {
@@ -171,7 +171,7 @@ class DockerImages(object):
         forcerm: bool = False,
         labels: Mapping = None,
         stream: bool = False,
-        encoding: str = None
+        encoding: str = None,
     ) -> Mapping:
         """
         Build an image given a remote Dockerfile
