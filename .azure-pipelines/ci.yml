@@ -67,7 +67,11 @@ stages:
       displayName: 'Check metadata'
 
     - script: |
-        tox
+        make lint
+      displayName: 'Lint'
+
+    - script: |
+        python -m pytest
       displayName: 'Run tests'
       env:
         DOCKER_VERSION: '$(docker)'
