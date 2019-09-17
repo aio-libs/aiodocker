@@ -15,3 +15,4 @@ docs/_build
 .mypy_cache
 .python-version
 .pytest_cache
+pip-wheel-metadata
