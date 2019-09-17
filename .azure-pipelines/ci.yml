@@ -37,7 +37,7 @@ stages:
         Py37-Windows-Docker_17.09:
           python.version: '3.7'
           image: 'windows-latest'
-          docker: '17.09.1'
+          docker: '17.09.0'
         
     pool:
       vmImage: $[ variables['image'] ]
