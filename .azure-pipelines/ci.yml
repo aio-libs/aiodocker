@@ -59,7 +59,7 @@ stages:
 
     - script: |
         pip install -U pip
-        pip install -r requirements/ci.txt
+        pip install -r requirements/test.txt
       displayName: 'Install dependencies'
 
     - script: |
