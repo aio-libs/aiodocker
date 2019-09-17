@@ -22,22 +22,27 @@ stages:
           python.version: '3.6'
           image: 'ubuntu-latest'
           docker: '17.12.1'
+          registry: '1'
         Py37-Linux-Docker_17.12:
           python.version: '3.7'
           image: 'ubuntu-latest'
           docker: '17.12.1'
+          registry: '1'
         Py36-Linux-Docker_18.03:
           python.version: '3.6'
           image: 'ubuntu-latest'
           docker: '18.03.1'
+          registry: '1'
         Py37-Linux-Docker_18.03:
           python.version: '3.7'
           image: 'ubuntu-latest'
           docker: '18.03.1'
+          registry: '1'
         Py37-Windows-Docker_17.09:
           python.version: '3.7'
           image: 'windows-latest'
           docker: '17.09.0'
+          registry: '0'
         
     pool:
       vmImage: $[ variables['image'] ]
@@ -59,6 +64,7 @@ stages:
         docker run -d --name aiodocker-test-registry -p 5000:5000 registry:2
         docker run -d -p 5001:5001 --name aiodocker-test-registry2 -v `pwd`/tests/certs:/certs -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/certs/htpasswd -e REGISTRY_HTTP_ADDR=0.0.0.0:5001 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
       displayName: 'Start Docker services'
+      condition: and(succeeded(), eq(variables['registry'], '1'))
 
     - script: |
         pip install -U pip
