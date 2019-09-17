@@ -1,9 +1,11 @@
-import sys
-import types
 import asyncio
 import json
 import logging
+import sys
+import types
+
 import aiohttp
+
 
 log = logging.getLogger(__name__)
 

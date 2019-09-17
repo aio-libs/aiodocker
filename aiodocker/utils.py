@@ -1,22 +1,22 @@
 import asyncio
 import base64
 import codecs
-from io import BytesIO
-import sys
-from typing import (
-    Any,
-    Iterable,
-    Optional,
-    Union,
-    MutableMapping,
-    Mapping,
-    Tuple,
-    BinaryIO,
-    IO,
-)
-import tempfile
-import tarfile
 import json
+import sys
+import tarfile
+import tempfile
+from io import BytesIO
+from typing import (
+    IO,
+    Any,
+    BinaryIO,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 
 async def parse_result(response, response_type=None, *, encoding="utf-8"):

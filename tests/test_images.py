@@ -2,9 +2,10 @@ import os
 from io import BytesIO
 
 import pytest
+from async_generator import async_generator, yield_
+
 from aiodocker import utils
 from aiodocker.exceptions import DockerError
-from async_generator import async_generator, yield_
 
 
 @pytest.mark.asyncio

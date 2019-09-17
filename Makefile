@@ -1,14 +1,16 @@
 # Some simple testing tasks (sorry, UNIX only).
 
-flake: .flake
+lint flake: .flake
 
 .flake:
 	@flake8 aiodocker tests
 	if python -c "import sys; sys.exit(sys.version_info<(3,6))"; then \
 		black --check aiodocker tests setup.py; \
+	        isort --check -rc aiodocker tests setup.py; \
 	fi
 
 fmt:
+	isort -rc aiodocker tests setup.py
 	black aiodocker tests setup.py
 
 develop:

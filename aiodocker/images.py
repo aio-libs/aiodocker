@@ -1,8 +1,9 @@
 import json
-from typing import Optional, Union, List, MutableMapping, Mapping, BinaryIO
 import warnings
-from .utils import clean_map, compose_auth_header
+from typing import BinaryIO, List, Mapping, MutableMapping, Optional, Union
+
 from .jsonstream import json_stream_result
+from .utils import clean_map, compose_auth_header
 
 
 class DockerImages(object):

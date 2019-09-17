@@ -1,11 +1,13 @@
-import sys
-import types
 import asyncio
 import struct
+import sys
+import types
+
 import aiohttp
 
-from . import constants
 from aiodocker.utils import _DecodeHelper
+
+from . import constants
 
 
 class MultiplexedResult:

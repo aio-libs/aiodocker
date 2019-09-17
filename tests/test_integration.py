@@ -7,8 +7,8 @@ import tarfile
 import time
 
 import aiohttp
-from async_timeout import timeout
 import pytest
+from async_timeout import timeout
 
 from aiodocker.docker import Docker
 

@@ -2,28 +2,28 @@ import asyncio
 import json
 import logging
 import os
-from pathlib import Path
 import re
 import ssl
+from pathlib import Path
 
 import aiohttp
 from yarl import URL
 
-from .utils import httpize, parse_result
-
 # Sub-API classes
-from .containers import DockerContainers, DockerContainer
+from .containers import DockerContainer, DockerContainers
 from .events import DockerEvents
 from .exceptions import DockerError
 from .images import DockerImages
 from .logs import DockerLog
-from .swarm import DockerSwarm
-from .services import DockerServices
-from .tasks import DockerTasks
-from .volumes import DockerVolumes, DockerVolume
-from .networks import DockerNetworks, DockerNetwork
+from .networks import DockerNetwork, DockerNetworks
 from .nodes import DockerSwarmNodes
+from .services import DockerServices
+from .swarm import DockerSwarm
 from .system import DockerSystem
+from .tasks import DockerTasks
+from .utils import httpize, parse_result
+from .volumes import DockerVolume, DockerVolumes
+
 
 __all__ = (
     "Docker",

@@ -1,7 +1,7 @@
 import asyncio
 
-from async_timeout import timeout
 import pytest
+from async_timeout import timeout
 
 
 TaskTemplate = {"ContainerSpec": {"Image": "redis"}}

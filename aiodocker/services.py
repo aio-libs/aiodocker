@@ -1,12 +1,13 @@
 import json
-from typing import Mapping, List, Any, Union, AsyncIterator, Optional, MutableMapping
+from typing import Any, AsyncIterator, List, Mapping, MutableMapping, Optional, Union
+
 from .multiplexed import multiplexed_result
 from .utils import (
+    clean_filters,
     clean_map,
     clean_networks,
-    clean_filters,
-    format_env,
     compose_auth_header,
+    format_env,
 )
 
 

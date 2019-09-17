@@ -1,8 +1,8 @@
 import asyncio
+import traceback
 import uuid
 from distutils.version import StrictVersion
 from os import environ as ENV
-import traceback
 
 import pytest
 

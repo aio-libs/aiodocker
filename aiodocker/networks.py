@@ -18,7 +18,7 @@ class DockerNetworks:
 
     async def get(self, net_specs):
         data = await self.docker._query_json(
-            "networks/{net_specs}".format(net_specs=net_specs), method="GET",
+            "networks/{net_specs}".format(net_specs=net_specs), method="GET"
         )
         return DockerNetwork(self.docker, data["Id"])
 

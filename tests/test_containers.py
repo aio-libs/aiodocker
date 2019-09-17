@@ -1,7 +1,8 @@
 import asyncio
+
 import pytest
 
-from aiodocker.exceptions import DockerError, DockerContainerError
+from aiodocker.exceptions import DockerContainerError, DockerError
 
 
 async def _validate_hello(container):

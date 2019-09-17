@@ -1,12 +1,11 @@
 import json
 import tarfile
 
-from .exceptions import DockerError, DockerContainerError
+from .exceptions import DockerContainerError, DockerError
 from .jsonstream import json_stream_result
+from .logs import DockerLog
 from .multiplexed import multiplexed_result
 from .utils import identical, parse_result
-
-from .logs import DockerLog
 
 
 class DockerContainers(object):

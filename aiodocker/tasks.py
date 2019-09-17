@@ -1,4 +1,5 @@
-from typing import List, Any, Mapping
+from typing import Any, List, Mapping
+
 from .utils import clean_filters
 
 
