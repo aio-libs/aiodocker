@@ -18,26 +18,26 @@ stages:
     displayName: " "
     strategy:
       matrix:
-        Py36-Linux-DockerOld:
+        Py36-Linux-Docker_17.12:
           python.version: '3.6'
           image: 'ubuntu-latest'
           docker: '17.12.1'
-        Py37-Linux-DockerOld:
+        Py37-Linux-Docker_17.12:
           python.version: '3.7'
           image: 'ubuntu-latest'
           docker: '17.12.1'
-        Py36-Linux-DockerNew:
+        Py36-Linux-Docker_18.03:
           python.version: '3.6'
           image: 'ubuntu-latest'
           docker: '18.03.1'
-        Py37-Linux-DockerNew:
+        Py37-Linux-Docker_18.03:
           python.version: '3.7'
           image: 'ubuntu-latest'
           docker: '18.03.1'
-        Py37-Windows-DockerNew:
+        Py37-Windows-Docker_17.09:
           python.version: '3.7'
           image: 'windows-latest'
-          docker: '18.03.1'
+          docker: '17.09.1'
         
     pool:
       vmImage: $[ variables['image'] ]
