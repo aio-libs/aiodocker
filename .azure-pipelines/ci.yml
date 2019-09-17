@@ -34,6 +34,10 @@ stages:
           python.version: '3.7'
           image: 'ubuntu-latest'
           docker: '18.03.1'
+        Py37-Windows-DockerNew:
+          python.version: '3.7'
+          image: 'windows-latest'
+          docker: '18.03.1'
         
     pool:
       vmImage: $[ variables['image'] ]
