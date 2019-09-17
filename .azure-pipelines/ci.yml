@@ -58,6 +58,7 @@ stages:
       displayName: 'Start Docker services'
 
     - script: |
+        pip install -U pip
         pip install -r requirements/ci.txt
       displayName: 'Install dependencies'
 
