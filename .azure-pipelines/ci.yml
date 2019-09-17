@@ -69,8 +69,8 @@ stages:
         tox
       displayName: 'Run tests'
       env:
-        DOCKER_VERSION=$(docker)
-        DOCKER_HOST=tcp://localhost:27015
+        DOCKER_VERSION: '$(docker)'
+        DOCKER_HOST: 'tcp://localhost:27015'
 
     - script: |
         python -m codecov -f coverage.xml -X gcov
