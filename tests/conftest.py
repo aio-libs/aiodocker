@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import traceback
 import uuid
 from distutils.version import StrictVersion
@@ -11,6 +12,19 @@ from aiodocker.exceptions import DockerError
 
 
 _api_versions = {"18.03.1": "v1.37", "17.12.1": "v1.35"}
+
+if sys.platform == "win32":
+    if sys.version_info < (3, 7):
+        # Python 3.6 has no WindowsProactorEventLoopPolicy class
+        from asyncio import events
+
+        class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+            _loop_factory = asyncio.ProactorEventLoop
+
+    else:
+        WindowsProactorEventLoopPolicy = asyncio.WindowsProactorEventLoopPolicy
+
+    asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
 
 
 def _random_name():
