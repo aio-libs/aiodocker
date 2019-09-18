@@ -143,6 +143,8 @@ async def test_export_image(docker):
 
 @pytest.mark.asyncio
 async def test_import_image(docker):
+    skip_windows()
+
     @async_generator
     async def file_sender(file_name=None):
         with open(file_name, "rb") as f:
