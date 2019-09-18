@@ -118,13 +118,10 @@ async def test_pull_image(docker):
 
 @pytest.mark.asyncio
 async def test_build_from_tar(docker, random_name):
-    skip_windows()
-
     name = "{}:latest".format(random_name())
     dockerfile = """
     # Shared Volume
     FROM python:latest
-    VOLUME /data
     """
     f = BytesIO(dockerfile.encode("utf-8"))
     tar_obj = utils.mktar_from_dockerfile(f)
