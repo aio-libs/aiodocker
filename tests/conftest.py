@@ -11,7 +11,7 @@ from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 
-_api_versions = {"18.03.1": "v1.37", "17.12.1": "v1.35"}
+_api_versions = {"18.03.1": "v1.37", "17.12.1": "v1.35", "17.09.0": "v1.32"}
 
 if sys.platform == "win32":
     if sys.version_info < (3, 7):
