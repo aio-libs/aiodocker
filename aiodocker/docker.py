@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import sys
 import ssl
 from pathlib import Path
 
@@ -47,6 +48,7 @@ __all__ = (
 log = logging.getLogger(__name__)
 
 _sock_search_paths = [Path("/run/docker.sock"), Path("/var/run/docker.sock")]
+_win_search_paths = [Path(r"\\.pipe\docker_engine")]
 
 _rx_version = re.compile(r"^v\d+\.\d+$")
 _rx_tcp_schemes = re.compile(r"^(tcp|http)://")
@@ -70,6 +72,11 @@ class Docker:
                 if sockpath.is_socket():
                     docker_host = "unix://" + str(sockpath)
                     break
+        if docker_host is None and sys.platform == "win32":
+            for pipepath in _win_search_paths:
+                if pipepath.exists():
+                    docker_host = "npipe://" + str(sockpath).replace("\\", "/")
+                    break
         self.docker_host = docker_host
 
         assert _rx_version.search(api_version) is not None, "Invalid API version format"
@@ -91,9 +98,13 @@ class Docker:
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 self.docker_host = docker_host
             elif docker_host.startswith("unix://"):
-                connector = aiohttp.UnixConnector(docker_host[7:])
+                connector = aiohttp.UnixConnector(docker_host[len("unix://"):])
                 # dummy hostname for URL composition
                 self.docker_host = "unix://localhost"
+            elif docker_host.startswith("npipe://"):
+                connector = aiohttp.NamedPipeConnector(docker_host[len("npipe://"):])
+                # dummy hostname for URL composition
+                self.docker_host = "npipe://localhost"
             else:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector
