@@ -175,7 +175,7 @@ async def test_wait_timeout(docker, testing_images, shell_container):
 @pytest.mark.asyncio
 async def test_put_archive(docker, testing_images):
     config = {
-        "Cmd": ["python", "-c", "print(open('/tmp/bar/foo.txt').read())"],
+        "Cmd": ["python", "-c", "print(open('tmp/bar/foo.txt').read())"],
         "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
@@ -203,7 +203,7 @@ async def test_put_archive(docker, testing_images):
     container = await docker.containers.create_or_replace(
         config=config, name="aiodocker-testing-archive"
     )
-    await container.put_archive(path="/tmp", data=file_like_object.getvalue())
+    await container.put_archive(path="tmp", data=file_like_object.getvalue())
     await container.start()
     await container.wait(timeout=5)
 
@@ -219,7 +219,7 @@ async def test_get_archive(docker, testing_images):
         "Cmd": [
             "python",
             "-c",
-            "with open('/tmp/foo.txt', 'w') as f: f.write('test\\n')",
+            "with open('tmp/foo.txt', 'w') as f: f.write('test\\n')",
         ],
         "Image": "python:latest",
         "AttachStdin": False,
@@ -234,7 +234,7 @@ async def test_get_archive(docker, testing_images):
     )
     await container.start()
     await asyncio.sleep(1)
-    tar_archive = await container.get_archive("/tmp/foo.txt")
+    tar_archive = await container.get_archive("tmp/foo.txt")
 
     assert tar_archive is not None
     assert len(tar_archive.members) == 1
