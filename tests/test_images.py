@@ -11,11 +11,11 @@ from aiodocker.exceptions import DockerError
 @pytest.mark.asyncio
 async def test_build_from_remote_file(docker, random_name, requires_api_version):
 
-    requires_api_version(
-        "v1.28",
-        "TODO: test disabled because it fails on "
-        "API version 1.27, this should be fixed",
-    )
+    # requires_api_version(
+    #     "v1.28",
+    #     "TODO: test disabled because it fails on "
+    #     "API version 1.27, this should be fixed",
+    # )
 
     remote = (
         "https://raw.githubusercontent.com/aio-libs/"
