@@ -13,7 +13,7 @@ async def _validate_hello(container):
         assert response["StatusCode"] == 0
         await asyncio.sleep(5)  # wait for output in case of slow test container
         logs = await container.log(stdout=True)
-        assert "hello"+os.linesep in logs
+        assert "hello" + os.linesep in logs
 
         with pytest.raises(TypeError):
             await container.log()
@@ -67,7 +67,7 @@ async def test_run_failing_start_container(docker):
             config={
                 # we want to raise an error
                 # `executable file not found`
-                "Cmd": ["pytohon", "echo hello"],
+                "Cmd": ["pytohon", "-c" "print('hello')"],
                 "Image": name,
             }
         )
@@ -82,8 +82,12 @@ async def test_run_failing_start_container(docker):
 
 @pytest.mark.asyncio
 async def test_restart(docker):
+    # sleep for 10 min to emulate hanging container
     container = await docker.containers.run(
-        config={"Image": "gcr.io/google-containers/pause"}
+        config={
+            "Cmd": ["python", "-c", "import time;time.sleep(600)"],
+            "Image": "python:latest",
+        }
     )
     try:
         details = await container.show()
