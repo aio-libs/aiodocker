@@ -71,7 +71,9 @@ def testing_images():
             "redis:latest",
             "redis:3.0.2",
             "redis:4.0",
-            "python:3.6.1-alpine",
+            "python:latest",
+            "python:3.6.1",
+            "python:3.7.4",
         ]
         for img in required_images:
             try:

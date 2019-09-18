@@ -55,7 +55,7 @@ async def test_service_tasks_list_with_filters(swarm, tmp_service):
 async def test_logs_services(swarm):
     TaskTemplate = {
         "ContainerSpec": {
-            "Image": "python:3.6.1-alpine",
+            "Image": "python:3.6.1",
             "Args": ["python", "-c", "for _ in range(10): print('Hello Python')"],
         },
         "RestartPolicy": {"Condition": "none"},
@@ -85,7 +85,7 @@ async def test_logs_services(swarm):
 async def test_logs_services_stream(swarm):
     TaskTemplate = {
         "ContainerSpec": {
-            "Image": "python:3.6.1-alpine",
+            "Image": "python:3.6.1",
             "Args": ["python", "-c", "for _ in range(10): print('Hello Python')"],
         },
         "RestartPolicy": {"Condition": "none"},

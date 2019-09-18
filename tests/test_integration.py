@@ -85,8 +85,8 @@ async def test_container_lifecycles(docker, testing_images):
     orig_count = len(containers)
 
     config = {
-        "Cmd": ["/bin/ls"],
-        "Image": "alpine:latest",
+        "Cmd": ["python"],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -175,8 +175,8 @@ async def test_wait_timeout(docker, testing_images, shell_container):
 @pytest.mark.asyncio
 async def test_put_archive(docker, testing_images):
     config = {
-        "Cmd": ["cat", "/tmp/bar/foo.txt"],
-        "Image": "alpine:latest",
+        "Cmd": ["python", "-c", "print(open('/tmp/bar/foo.txt').read())"],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -208,7 +208,7 @@ async def test_put_archive(docker, testing_images):
     await container.wait(timeout=5)
 
     output = await container.log(stdout=True, stderr=True)
-    assert output[0] == "hello world"
+    assert output[0] == "hello world\n"
 
     await container.delete(force=True)
 
@@ -216,8 +216,9 @@ async def test_put_archive(docker, testing_images):
 @pytest.mark.asyncio
 async def test_get_archive(docker, testing_images):
     config = {
-        "Cmd": ["ash", "-c", "echo 'test' > /tmp/foo.txt"],
-        "Image": "alpine:latest",
+        "Cmd": ["python", "-c",
+                "with open('/tmp/foo.txt', 'w') as f: f.write('test\\n')"],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -229,6 +230,7 @@ async def test_get_archive(docker, testing_images):
         config=config, name="aiodocker-testing-get-archive"
     )
     await container.start()
+    await asyncio.sleep(1)
     tar_archive = await container.get_archive("/tmp/foo.txt")
 
     assert tar_archive is not None
@@ -249,7 +251,7 @@ async def test_events(docker, testing_images, event_loop):
     subscriber = docker.events.subscribe()
 
     # Do some stuffs to generate events.
-    config = {"Cmd": ["/bin/ash"], "Image": "alpine:latest"}
+    config = {"Cmd": ["python"], "Image": "python:latest"}
     container = await docker.containers.create_or_replace(
         config=config, name="aiodocker-testing-temp"
     )
