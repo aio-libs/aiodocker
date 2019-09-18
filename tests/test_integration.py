@@ -216,8 +216,11 @@ async def test_put_archive(docker, testing_images):
 @pytest.mark.asyncio
 async def test_get_archive(docker, testing_images):
     config = {
-        "Cmd": ["python", "-c",
-                "with open('/tmp/foo.txt', 'w') as f: f.write('test\\n')"],
+        "Cmd": [
+            "python",
+            "-c",
+            "with open('/tmp/foo.txt', 'w') as f: f.write('test\\n')",
+        ],
         "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
