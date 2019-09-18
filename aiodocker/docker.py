@@ -3,8 +3,8 @@ import json
 import logging
 import os
 import re
-import sys
 import ssl
+import sys
 from pathlib import Path
 
 import aiohttp
@@ -98,11 +98,11 @@ class Docker:
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 self.docker_host = docker_host
             elif docker_host.startswith("unix://"):
-                connector = aiohttp.UnixConnector(docker_host[len("unix://"):])
+                connector = aiohttp.UnixConnector(docker_host[len("unix://") :])
                 # dummy hostname for URL composition
                 self.docker_host = "unix://localhost"
             elif docker_host.startswith("npipe://"):
-                connector = aiohttp.NamedPipeConnector(docker_host[len("npipe://"):])
+                connector = aiohttp.NamedPipeConnector(docker_host[len("npipe://") :])
                 # dummy hostname for URL composition
                 self.docker_host = "npipe://localhost"
             else:
