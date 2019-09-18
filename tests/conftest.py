@@ -125,8 +125,8 @@ def swarm(event_loop, docker):
 def shell_container(event_loop, docker):
     container = None
     config = {
-        "Cmd": ["/bin/ash"],
-        "Image": "alpine:latest",
+        "Cmd": ["python"],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,

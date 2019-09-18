@@ -121,7 +121,7 @@ async def test_container_lifecycles(docker, testing_images):
 async def test_stdio_stdin(docker, testing_images, shell_container):
     # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
-    await ws.send_str("echo hello world\n")
+    await ws.send_str("print('hello world\\n')\n")
     output = b""
     found = False
     try:
@@ -130,14 +130,14 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
         with timeout(2):
             while True:
                 output += await ws.receive_bytes()
-                if b"echo hello world\r\n" in output:
+                if b"print('hello world\\n')\r\n" in output:
                     found = True
                     break
     except asyncio.TimeoutError:
         pass
     await ws.close()
     if not found:
-        found = b"echo hello world\r\n" in output
+        found = b"print('hello world\\n')\r\n" in output
     assert found
 
     # cross-check with container logs.
