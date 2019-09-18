@@ -81,7 +81,7 @@ stages:
 
     - script: |
         python -m pytest -vvx
-      displayName: 'Run tests
+      displayName: 'Run tests'
       env:
         DOCKER_VERSION: '$(docker)'
 
