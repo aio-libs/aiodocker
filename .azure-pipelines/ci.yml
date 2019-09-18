@@ -80,7 +80,7 @@ stages:
       displayName: 'Lint'
 
     - script: |
-        python -m pytest
+        python -m pytest -vv
       displayName: 'Run tests'
 
     - script: |
