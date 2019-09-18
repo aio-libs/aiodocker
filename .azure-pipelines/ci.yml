@@ -81,7 +81,9 @@ stages:
 
     - script: |
         python -m pytest -vvx
-      displayName: 'Run tests'
+      displayName: 'Run tests
+      env:
+        DOCKER_VERSION: '$(docker)''
 
     - script: |
         python -m codecov -f coverage.xml -X gcov
