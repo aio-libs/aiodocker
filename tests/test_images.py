@@ -118,6 +118,8 @@ async def test_pull_image(docker):
 
 @pytest.mark.asyncio
 async def test_build_from_tar(docker, random_name):
+    skip_windows()
+
     name = "{}:latest".format(random_name())
     dockerfile = """
     # Shared Volume
