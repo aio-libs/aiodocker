@@ -274,6 +274,13 @@ async def test_events(docker, testing_images, event_loop):
         except asyncio.CancelledError:
             break
 
-    assert events_occurred == ["create", "start", "kill", "die", "destroy"]
+    # 'kill' event may be omitted
+    assert events_occurred == [
+        "create",
+        "start",
+        "kill",
+        "die",
+        "destroy",
+    ] or events_occurred == ["create", "start", "die", "destroy"]
 
     await docker.events.stop()
