@@ -67,7 +67,6 @@ def testing_images():
     async def _pull():
         docker = Docker()
         required_images = [
-            "alpine:latest",
             "redis:latest",
             "redis:3.0.2",
             "redis:4.0",
