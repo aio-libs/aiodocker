@@ -89,6 +89,10 @@ class Docker:
             )
 
         if connector is None:
+            UNIX_PRE = "unix://"
+            UNIX_PRE_LEN = len(UNIX_PRE)
+            WIN_PRE = "npipe://"
+            WIN_PRE_LEN = len(WIN_PRE)
             if _rx_tcp_schemes.search(docker_host):
                 if os.environ.get("DOCKER_TLS_VERIFY", "0") == "1":
                     ssl_context = self._docker_machine_ssl_context()
@@ -97,14 +101,14 @@ class Docker:
                     ssl_context = None
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 self.docker_host = docker_host
-            elif docker_host.startswith("unix://"):
-                connector = aiohttp.UnixConnector(docker_host[len("unix://") :])
+            elif docker_host.startswith(UNIX_PRE):
+                connector = aiohttp.UnixConnector(docker_host[UNIX_PRE_LEN:])
                 # dummy hostname for URL composition
-                self.docker_host = "unix://localhost"
-            elif docker_host.startswith("npipe://"):
-                connector = aiohttp.NamedPipeConnector(docker_host[len("npipe://") :])
+                self.docker_host = UNIX_PRE + "localhost"
+            elif docker_host.startswith(WIN_PRE):
+                connector = aiohttp.NamedPipeConnector(docker_host[WIN_PRE_LEN:])
                 # dummy hostname for URL composition
-                self.docker_host = "npipe://localhost"
+                self.docker_host = WIN_PRE + "localhost"
             else:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector
