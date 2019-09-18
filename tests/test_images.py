@@ -1,4 +1,5 @@
 import os
+import sys
 from io import BytesIO
 
 import pytest
@@ -8,14 +9,20 @@ from aiodocker import utils
 from aiodocker.exceptions import DockerError
 
 
+def skip_windows():
+    if sys.platform == 'win32':
+        pytest.xfail("image operation fails on Windows")
+
+
 @pytest.mark.asyncio
 async def test_build_from_remote_file(docker, random_name, requires_api_version):
+    skip_windows()
 
-    # requires_api_version(
-    #     "v1.28",
-    #     "TODO: test disabled because it fails on "
-    #     "API version 1.27, this should be fixed",
-    # )
+    requires_api_version(
+        "v1.28",
+        "TODO: test disabled because it fails on "
+        "API version 1.27, this should be fixed",
+    )
 
     remote = (
         "https://raw.githubusercontent.com/aio-libs/"
@@ -32,6 +39,8 @@ async def test_build_from_remote_file(docker, random_name, requires_api_version)
 
 @pytest.mark.asyncio
 async def test_build_from_remote_tar(docker, random_name):
+    skip_windows()
+
     remote = (
         "https://github.com/aio-libs/aiodocker/"
         "raw/master/tests/docker/docker_context.tar"
