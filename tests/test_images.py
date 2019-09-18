@@ -47,21 +47,21 @@ async def test_build_from_remote_tar(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_history(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     history = await docker.images.history(name=name)
     assert history
 
 
 @pytest.mark.asyncio
 async def test_list_images(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     images = await docker.images.list(filter=name)
     assert len(images) == 1
 
 
 @pytest.mark.asyncio
 async def test_tag_image(docker, random_name):
-    name = "alpine:latest"
+    name = "python:latest"
     repository = random_name()
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
@@ -71,7 +71,7 @@ async def test_tag_image(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_push_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
     await docker.images.push(name=repository)
@@ -79,7 +79,7 @@ async def test_push_image(docker):
 
 @pytest.mark.asyncio
 async def test_delete_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
     assert await docker.images.inspect(repository)
@@ -98,7 +98,7 @@ async def test_not_existing_image(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_pull_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     image = await docker.images.inspect(name=name)
     assert image
 
@@ -112,9 +112,8 @@ async def test_build_from_tar(docker, random_name):
     name = "{}:latest".format(random_name())
     dockerfile = """
     # Shared Volume
-    FROM alpine:latest
+    FROM python:latest
     VOLUME /data
-    CMD ["/bin/sh"]
     """
     f = BytesIO(dockerfile.encode("utf-8"))
     tar_obj = utils.mktar_from_dockerfile(f)
@@ -126,7 +125,7 @@ async def test_build_from_tar(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_export_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     exported_image = await docker.images.export_image(name=name)
     assert exported_image
 
@@ -157,7 +156,7 @@ async def test_import_image(docker):
 
 @pytest.mark.asyncio
 async def test_pups_image_auth(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     await docker.images.pull(from_image=name)
     repository = "localhost:5001/image:latest"
     image, tag = repository.rsplit(":", 1)
