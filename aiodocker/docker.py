@@ -72,7 +72,8 @@ class Docker:
                     docker_host = "unix://" + str(sockpath)
                     break
         if docker_host is None and sys.platform == "win32":
-            docker_host = "npipe:////./pipe/docker_engine"
+            if Path("\\\\.\\pipe\\docker_engine").exists():
+                docker_host = "npipe:////./pipe/docker_engine"
         self.docker_host = docker_host
 
         assert _rx_version.search(api_version) is not None, "Invalid API version format"
