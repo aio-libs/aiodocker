@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import pytest
 
@@ -12,7 +13,7 @@ async def _validate_hello(container):
         assert response["StatusCode"] == 0
         await asyncio.sleep(5)  # wait for output in case of slow test container
         logs = await container.log(stdout=True)
-        assert "hello\n" in logs
+        assert "hello"+os.linesep in logs
 
         with pytest.raises(TypeError):
             await container.log()
