@@ -67,9 +67,6 @@ def testing_images():
     async def _pull():
         docker = Docker()
         required_images = [
-            "redis:latest",
-            "redis:3.0.2",
-            "redis:4.0",
             "python:latest",
             "python:3.6.1",
             "python:3.7.4",
@@ -139,29 +136,6 @@ def shell_container(event_loop, docker):
         nonlocal container
         container = await docker.containers.create_or_replace(
             config=config, name="aiodocker-testing-shell"
-        )
-        await container.start()
-
-    event_loop.run_until_complete(_spawn())
-
-    yield container
-
-    async def _delete():
-        nonlocal container
-        await container.delete(force=True)
-
-    event_loop.run_until_complete(_delete())
-
-
-@pytest.fixture
-def redis_container(event_loop, docker):
-    container = None
-    config = {"Image": "redis:latest", "PublishAllPorts": True}
-
-    async def _spawn():
-        nonlocal container
-        container = await docker.containers.create_or_replace(
-            config=config, name="aiodocker-testing-redis"
         )
         await container.start()
 
