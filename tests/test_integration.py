@@ -144,7 +144,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     await ws.close()
     if not found:
         found = b"print('hello world\\n')\r\n" in output
-    assert found
+    assert found, output
 
     # cross-check with container logs.
     log = []
