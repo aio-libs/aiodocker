@@ -31,7 +31,7 @@ async def test_autodetect_host(monkeypatch):
         ):
             assert docker.docker_host == os.environ["DOCKER_HOST"]
         else:
-            assert docker.docker_host == "unix://localhost"
+            assert docker.docker_host in ["unix://localhost", "npipe://localhost"]
     else:
         # assuming that docker daemon is installed locally.
         assert docker.docker_host is not None
