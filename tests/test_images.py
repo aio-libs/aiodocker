@@ -3,7 +3,6 @@ import sys
 from io import BytesIO
 
 import pytest
-from async_generator import async_generator, yield_
 
 from aiodocker import utils
 from aiodocker.exceptions import DockerError
@@ -143,12 +142,11 @@ async def test_export_image(docker):
 async def test_import_image(docker):
     skip_windows()
 
-    @async_generator
     async def file_sender(file_name=None):
         with open(file_name, "rb") as f:
             chunk = f.read(2 ** 16)
             while chunk:
-                await yield_(chunk)
+                yield chunk
                 chunk = f.read(2 ** 16)
 
     dir = os.path.dirname(__file__)
