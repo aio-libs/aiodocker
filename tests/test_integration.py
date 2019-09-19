@@ -261,9 +261,31 @@ async def test_get_archive(docker, testing_images):
 
 
 @pytest.mark.asyncio
-async def test_port(docker, testing_images, redis_container):
-    port = await redis_container.port(6379)
-    assert port
+async def test_port(docker, testing_images):
+    config = {
+        "Cmd": [
+            "python",
+            "-c",
+            "import socket\n"
+            "s=socket.socket()\n"
+            "s.bind(('0.0.0.0', 5678))\n"
+            "s.listen()\n"
+            "while True: s.accept()",
+        ],
+        "Image": "python:latest",
+        "ExposedPorts": {"5678/tcp": {}},
+        "PublishAllPorts": True,
+    }
+    container = await docker.containers.create_or_replace(
+        config=config, name="aiodocker-testing-temp"
+    )
+    await container.start()
+
+    try:
+        port = await container.port(5678)
+        assert port
+    finally:
+        await container.delete(force=True)
 
 
 @pytest.mark.asyncio
