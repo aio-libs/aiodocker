@@ -55,6 +55,9 @@ async def test_connect_invalid_unix_socket():
     await docker.close()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Unix sockets are not supported on Windows"
+)
 @pytest.mark.asyncio
 async def test_connect_envvar(monkeypatch):
     monkeypatch.setenv("DOCKER_HOST", "unix:///var/run/does-not-exist-docker.sock")
