@@ -4,7 +4,7 @@ import pytest
 from async_timeout import timeout
 
 
-TaskTemplate = {"ContainerSpec": {"Image": "redis"}}
+TaskTemplate = {"ContainerSpec": {"Image": "python"}}
 
 
 async def _wait_service(swarm, service_id):
@@ -125,8 +125,8 @@ async def test_logs_services_stream(swarm):
 @pytest.mark.asyncio
 async def test_service_update(swarm):
     name = "service-update"
-    initial_image = "redis:3.0.2"
-    image_after_update = "redis:4.0"
+    initial_image = "python:3.6.1"
+    image_after_update = "python:3.7.4"
     TaskTemplate = {"ContainerSpec": {"Image": initial_image}}
 
     await swarm.services.create(name=name, task_template=TaskTemplate)
@@ -159,7 +159,7 @@ async def test_service_update(swarm):
 @pytest.mark.asyncio
 async def test_service_update_error(swarm):
     name = "service-update"
-    TaskTemplate = {"ContainerSpec": {"Image": "redis:3.0.2"}}
+    TaskTemplate = {"ContainerSpec": {"Image": "python:3.6.1"}}
     await swarm.services.create(name=name, task_template=TaskTemplate)
     await asyncio.sleep(1)
     service = await swarm.services.inspect(name)
@@ -182,7 +182,7 @@ async def test_service_create_error(swarm):
 @pytest.mark.asyncio
 async def test_service_create_service_with_auth(swarm):
     name = "service-test-with-auth"
-    TaskTemplate = {"ContainerSpec": {"Image": "redis"}}
+    TaskTemplate = {"ContainerSpec": {"Image": "python"}}
     assert await swarm.services.create(
         name=name,
         task_template=TaskTemplate,
@@ -194,7 +194,7 @@ async def test_service_create_service_with_auth(swarm):
 @pytest.mark.asyncio
 async def test_service_create_error_for_missing_registry(swarm):
     name = "service-test-error-with-auth"
-    TaskTemplate = {"ContainerSpec": {"Image": "redis"}}
+    TaskTemplate = {"ContainerSpec": {"Image": "python"}}
     with pytest.raises(KeyError):
         await swarm.services.create(
             name=name,
