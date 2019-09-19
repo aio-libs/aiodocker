@@ -166,6 +166,8 @@ async def test_import_image(docker):
 
 @pytest.mark.asyncio
 async def test_pups_image_auth(docker):
+    skip_windows()
+
     name = "python:latest"
     await docker.images.pull(from_image=name)
     repository = "localhost:5001/image:latest"
