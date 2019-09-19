@@ -122,7 +122,8 @@ async def test_container_lifecycles(docker, testing_images):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(
-    sys.platform == "darwin", reason="Docker for Mac has a bug with websocket"
+    sys.platform in ["darwin", "win32"],
+    reason="Docker for Mac and Windows has a bug with websocket"
 )
 async def test_stdio_stdin(docker, testing_images, shell_container):
     # echo of the input.
