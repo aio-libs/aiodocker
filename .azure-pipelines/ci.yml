@@ -80,8 +80,10 @@ stages:
       displayName: 'Lint'
 
     - script: |
-        python -m pytest
+        python -m pytest -vv
       displayName: 'Run tests'
+      env:
+        DOCKER_VERSION: '$(docker)'
 
     - script: |
         python -m codecov -f coverage.xml -X gcov

@@ -14,6 +14,12 @@ from async_timeout import timeout
 from aiodocker.docker import Docker
 
 
+def skip_windows():
+    if sys.platform == "win32":
+        # replaced xfail with skip for sake of tests speed
+        pytest.skip("image operation fails on Windows")
+
+
 @pytest.mark.asyncio
 async def test_autodetect_host(monkeypatch):
     docker = Docker()
@@ -25,7 +31,7 @@ async def test_autodetect_host(monkeypatch):
         ):
             assert docker.docker_host == os.environ["DOCKER_HOST"]
         else:
-            assert docker.docker_host == "unix://localhost"
+            assert docker.docker_host in ["unix://localhost", "npipe://localhost"]
     else:
         # assuming that docker daemon is installed locally.
         assert docker.docker_host is not None
@@ -43,6 +49,9 @@ async def test_ssl_context(monkeypatch):
     await docker.close()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Unix sockets are not supported on Windows"
+)
 @pytest.mark.asyncio
 async def test_connect_invalid_unix_socket():
     docker = Docker("unix:///var/run/does-not-exist-docker.sock")
@@ -52,6 +61,9 @@ async def test_connect_invalid_unix_socket():
     await docker.close()
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Unix sockets are not supported on Windows"
+)
 @pytest.mark.asyncio
 async def test_connect_envvar(monkeypatch):
     monkeypatch.setenv("DOCKER_HOST", "unix:///var/run/does-not-exist-docker.sock")
@@ -85,8 +97,8 @@ async def test_container_lifecycles(docker, testing_images):
     orig_count = len(containers)
 
     config = {
-        "Cmd": ["/bin/ls"],
-        "Image": "alpine:latest",
+        "Cmd": ["python"],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -116,12 +128,13 @@ async def test_container_lifecycles(docker, testing_images):
 
 @pytest.mark.asyncio
 @pytest.mark.skipif(
-    sys.platform == "darwin", reason="Docker for Mac has a bug with websocket"
+    sys.platform in ["darwin", "win32"],
+    reason="Docker for Mac and Windows has a bug with websocket",
 )
 async def test_stdio_stdin(docker, testing_images, shell_container):
     # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
-    await ws.send_str("echo hello world\n")
+    await ws.send_str("print('hello world\\n')\n")
     output = b""
     found = False
     try:
@@ -130,15 +143,15 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
         with timeout(2):
             while True:
                 output += await ws.receive_bytes()
-                if b"echo hello world\r\n" in output:
+                if b"print('hello world\\n')" in output:
                     found = True
                     break
     except asyncio.TimeoutError:
         pass
     await ws.close()
     if not found:
-        found = b"echo hello world\r\n" in output
-    assert found
+        found = b"print('hello world\\n')" in output
+    assert found, output
 
     # cross-check with container logs.
     log = []
@@ -159,7 +172,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
         output = "".join(log)
         output.strip()
         found = "hello world" in output.split("\r\n")
-    assert found
+    assert found, output
 
 
 @pytest.mark.asyncio
@@ -174,9 +187,11 @@ async def test_wait_timeout(docker, testing_images, shell_container):
 
 @pytest.mark.asyncio
 async def test_put_archive(docker, testing_images):
+    skip_windows()
+
     config = {
-        "Cmd": ["cat", "/tmp/bar/foo.txt"],
-        "Image": "alpine:latest",
+        "Cmd": ["python", "-c", "print(open('tmp/bar/foo.txt').read())"],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -203,21 +218,27 @@ async def test_put_archive(docker, testing_images):
     container = await docker.containers.create_or_replace(
         config=config, name="aiodocker-testing-archive"
     )
-    await container.put_archive(path="/tmp", data=file_like_object.getvalue())
+    await container.put_archive(path="tmp", data=file_like_object.getvalue())
     await container.start()
     await container.wait(timeout=5)
 
     output = await container.log(stdout=True, stderr=True)
-    assert output[0] == "hello world"
+    assert output[0] == "hello world\n"
 
     await container.delete(force=True)
 
 
 @pytest.mark.asyncio
 async def test_get_archive(docker, testing_images):
+    skip_windows()
+
     config = {
-        "Cmd": ["ash", "-c", "echo 'test' > /tmp/foo.txt"],
-        "Image": "alpine:latest",
+        "Cmd": [
+            "python",
+            "-c",
+            "with open('tmp/foo.txt', 'w') as f: f.write('test\\n')",
+        ],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -229,7 +250,8 @@ async def test_get_archive(docker, testing_images):
         config=config, name="aiodocker-testing-get-archive"
     )
     await container.start()
-    tar_archive = await container.get_archive("/tmp/foo.txt")
+    await asyncio.sleep(1)
+    tar_archive = await container.get_archive("tmp/foo.txt")
 
     assert tar_archive is not None
     assert len(tar_archive.members) == 1
@@ -239,9 +261,33 @@ async def test_get_archive(docker, testing_images):
 
 
 @pytest.mark.asyncio
-async def test_port(docker, testing_images, redis_container):
-    port = await redis_container.port(6379)
-    assert port
+@pytest.mark.skipif(sys.platform == "win32",
+                    reason="Port is not exposed on Windows by some reason")
+async def test_port(docker, testing_images):
+    config = {
+        "Cmd": [
+            "python",
+            "-c",
+            "import socket\n"
+            "s=socket.socket()\n"
+            "s.bind(('0.0.0.0', 5678))\n"
+            "s.listen()\n"
+            "while True: s.accept()",
+        ],
+        "Image": "python:latest",
+        "ExposedPorts": {"5678/tcp": {}},
+        "PublishAllPorts": True,
+    }
+    container = await docker.containers.create_or_replace(
+        config=config, name="aiodocker-testing-temp"
+    )
+    await container.start()
+
+    try:
+        port = await container.port(5678)
+        assert port
+    finally:
+        await container.delete(force=True)
 
 
 @pytest.mark.asyncio
@@ -249,7 +295,7 @@ async def test_events(docker, testing_images, event_loop):
     subscriber = docker.events.subscribe()
 
     # Do some stuffs to generate events.
-    config = {"Cmd": ["/bin/ash"], "Image": "alpine:latest"}
+    config = {"Cmd": ["python"], "Image": "python:latest"}
     container = await docker.containers.create_or_replace(
         config=config, name="aiodocker-testing-temp"
     )
@@ -269,6 +315,13 @@ async def test_events(docker, testing_images, event_loop):
         except asyncio.CancelledError:
             break
 
-    assert events_occurred == ["create", "start", "kill", "die", "destroy"]
+    # 'kill' event may be omitted
+    assert events_occurred == [
+        "create",
+        "start",
+        "kill",
+        "die",
+        "destroy",
+    ] or events_occurred == ["create", "start", "die", "destroy"]
 
     await docker.events.stop()

@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import ssl
+import sys
 from pathlib import Path
 
 import aiohttp
@@ -70,6 +71,9 @@ class Docker:
                 if sockpath.is_socket():
                     docker_host = "unix://" + str(sockpath)
                     break
+        if docker_host is None and sys.platform == "win32":
+            if Path("\\\\.\\pipe\\docker_engine").exists():
+                docker_host = "npipe:////./pipe/docker_engine"
         self.docker_host = docker_host
 
         assert _rx_version.search(api_version) is not None, "Invalid API version format"
@@ -82,6 +86,10 @@ class Docker:
             )
 
         if connector is None:
+            UNIX_PRE = "unix://"
+            UNIX_PRE_LEN = len(UNIX_PRE)
+            WIN_PRE = "npipe://"
+            WIN_PRE_LEN = len(WIN_PRE)
             if _rx_tcp_schemes.search(docker_host):
                 if os.environ.get("DOCKER_TLS_VERIFY", "0") == "1":
                     ssl_context = self._docker_machine_ssl_context()
@@ -90,10 +98,16 @@ class Docker:
                     ssl_context = None
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 self.docker_host = docker_host
-            elif docker_host.startswith("unix://"):
-                connector = aiohttp.UnixConnector(docker_host[7:])
+            elif docker_host.startswith(UNIX_PRE):
+                connector = aiohttp.UnixConnector(docker_host[UNIX_PRE_LEN:])
                 # dummy hostname for URL composition
-                self.docker_host = "unix://localhost"
+                self.docker_host = UNIX_PRE + "localhost"
+            elif docker_host.startswith(WIN_PRE):
+                connector = aiohttp.NamedPipeConnector(
+                    docker_host[WIN_PRE_LEN:].replace("/", "\\")
+                )
+                # dummy hostname for URL composition
+                self.docker_host = WIN_PRE + "localhost"
             else:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector

@@ -1,4 +1,5 @@
 import os
+import sys
 from io import BytesIO
 
 import pytest
@@ -7,8 +8,15 @@ from aiodocker import utils
 from aiodocker.exceptions import DockerError
 
 
+def skip_windows():
+    if sys.platform == "win32":
+        # replaced xfail with skip for sake of tests speed
+        pytest.skip("image operation fails on Windows")
+
+
 @pytest.mark.asyncio
 async def test_build_from_remote_file(docker, random_name, requires_api_version):
+    skip_windows()
 
     requires_api_version(
         "v1.28",
@@ -31,6 +39,8 @@ async def test_build_from_remote_file(docker, random_name, requires_api_version)
 
 @pytest.mark.asyncio
 async def test_build_from_remote_tar(docker, random_name):
+    skip_windows()
+
     remote = (
         "https://github.com/aio-libs/aiodocker/"
         "raw/master/tests/docker/docker_context.tar"
@@ -46,21 +56,21 @@ async def test_build_from_remote_tar(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_history(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     history = await docker.images.history(name=name)
     assert history
 
 
 @pytest.mark.asyncio
 async def test_list_images(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     images = await docker.images.list(filter=name)
     assert len(images) == 1
 
 
 @pytest.mark.asyncio
 async def test_tag_image(docker, random_name):
-    name = "alpine:latest"
+    name = "python:latest"
     repository = random_name()
     await docker.images.tag(name=name, repo=repository, tag="1.0")
     await docker.images.tag(name=name, repo=repository, tag="2.0")
@@ -70,7 +80,7 @@ async def test_tag_image(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_push_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
     await docker.images.push(name=repository)
@@ -78,7 +88,7 @@ async def test_push_image(docker):
 
 @pytest.mark.asyncio
 async def test_delete_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     repository = "localhost:5000/image"
     await docker.images.tag(name=name, repo=repository)
     assert await docker.images.inspect(repository)
@@ -97,7 +107,7 @@ async def test_not_existing_image(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_pull_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     image = await docker.images.inspect(name=name)
     assert image
 
@@ -111,9 +121,7 @@ async def test_build_from_tar(docker, random_name):
     name = "{}:latest".format(random_name())
     dockerfile = """
     # Shared Volume
-    FROM alpine:latest
-    VOLUME /data
-    CMD ["/bin/sh"]
+    FROM python:latest
     """
     f = BytesIO(dockerfile.encode("utf-8"))
     tar_obj = utils.mktar_from_dockerfile(f)
@@ -125,13 +133,15 @@ async def test_build_from_tar(docker, random_name):
 
 @pytest.mark.asyncio
 async def test_export_image(docker):
-    name = "alpine:latest"
+    name = "python:latest"
     exported_image = await docker.images.export_image(name=name)
     assert exported_image
 
 
 @pytest.mark.asyncio
 async def test_import_image(docker):
+    skip_windows()
+
     async def file_sender(file_name=None):
         with open(file_name, "rb") as f:
             chunk = f.read(2 ** 16)
@@ -155,7 +165,9 @@ async def test_import_image(docker):
 
 @pytest.mark.asyncio
 async def test_pups_image_auth(docker):
-    name = "alpine:latest"
+    skip_windows()
+
+    name = "python:latest"
     await docker.images.pull(from_image=name)
     repository = "localhost:5001/image:latest"
     image, tag = repository.rsplit(":", 1)

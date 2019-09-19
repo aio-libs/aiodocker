@@ -1,4 +1,5 @@
 import asyncio
+import sys
 import traceback
 import uuid
 from distutils.version import StrictVersion
@@ -10,7 +11,20 @@ from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 
-_api_versions = {"18.03.1": "v1.37", "17.12.1": "v1.35"}
+_api_versions = {"18.03.1": "v1.37", "17.12.1": "v1.35", "17.09.0": "v1.32"}
+
+if sys.platform == "win32":
+    if sys.version_info < (3, 7):
+        # Python 3.6 has no WindowsProactorEventLoopPolicy class
+        from asyncio import events
+
+        class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
+            _loop_factory = asyncio.ProactorEventLoop
+
+    else:
+        WindowsProactorEventLoopPolicy = asyncio.WindowsProactorEventLoopPolicy
+
+    asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
 
 
 def _random_name():
@@ -53,11 +67,9 @@ def testing_images():
     async def _pull():
         docker = Docker()
         required_images = [
-            "alpine:latest",
-            "redis:latest",
-            "redis:3.0.2",
-            "redis:4.0",
-            "python:3.6.1-alpine",
+            "python:latest",
+            "python:3.6.1",
+            "python:3.7.4",
         ]
         for img in required_images:
             try:
@@ -100,6 +112,8 @@ def requires_api_version(docker):
 
 @pytest.fixture
 def swarm(event_loop, docker):
+    if sys.platform == "win32":
+        pytest.skip("swarm commands dont work on Windows")
     assert event_loop.run_until_complete(docker.swarm.init())
     yield docker
     assert event_loop.run_until_complete(docker.swarm.leave(force=True))
@@ -109,8 +123,8 @@ def swarm(event_loop, docker):
 def shell_container(event_loop, docker):
     container = None
     config = {
-        "Cmd": ["/bin/ash"],
-        "Image": "alpine:latest",
+        "Cmd": ["python"],
+        "Image": "python:latest",
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -122,29 +136,6 @@ def shell_container(event_loop, docker):
         nonlocal container
         container = await docker.containers.create_or_replace(
             config=config, name="aiodocker-testing-shell"
-        )
-        await container.start()
-
-    event_loop.run_until_complete(_spawn())
-
-    yield container
-
-    async def _delete():
-        nonlocal container
-        await container.delete(force=True)
-
-    event_loop.run_until_complete(_delete())
-
-
-@pytest.fixture
-def redis_container(event_loop, docker):
-    container = None
-    config = {"Image": "redis:latest", "PublishAllPorts": True}
-
-    async def _spawn():
-        nonlocal container
-        container = await docker.containers.create_or_replace(
-            config=config, name="aiodocker-testing-redis"
         )
         await container.start()
 
