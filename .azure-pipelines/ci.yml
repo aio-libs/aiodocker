@@ -80,7 +80,7 @@ stages:
       displayName: 'Lint'
 
     - script: |
-        python -m pytest -vvx
+        python -m pytest -vv
       displayName: 'Run tests'
       env:
         DOCKER_VERSION: '$(docker)'
