@@ -113,18 +113,6 @@ class DockerContainer:
         )
         return await multiplexed_result(response, follow, is_tty=is_tty)
 
-    async def copy(self, resource, **kwargs):
-        # TODO: this is deprecated, use get_archive instead
-        request = json.dumps({"Resource": resource}, sort_keys=True).encode("utf-8")
-        data = await self.docker._query(
-            "containers/{self._id}/copy".format(self=self),
-            method="POST",
-            data=request,
-            headers={"content-type": "application/json"},
-            params=kwargs,
-        )
-        return data
-
     async def get_archive(self, path: str) -> tarfile.TarFile:
         response = await self.docker._query(
             "containers/{self._id}/archive".format(self=self),
