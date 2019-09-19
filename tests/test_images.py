@@ -11,7 +11,8 @@ from aiodocker.exceptions import DockerError
 
 def skip_windows():
     if sys.platform == "win32":
-        pytest.xfail("image operation fails on Windows")
+        # replaced xfail with skip for sake of tests speed
+        pytest.skip("image operation fails on Windows")
 
 
 @pytest.mark.asyncio
