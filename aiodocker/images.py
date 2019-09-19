@@ -77,10 +77,10 @@ class DockerImages(object):
                 )
             # TODO: assert registry == repo?
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
-        response = await self.docker._query(
+        async with self.docker._query(
             "images/create", "POST", params=params, headers=headers
-        )
-        return await json_stream_result(response, stream=stream)
+        ) as response:
+            return await json_stream_result(response, stream=stream)
 
     async def push(
         self,
@@ -105,13 +105,13 @@ class DockerImages(object):
                     "when auth information is provided"
                 )
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
-        response = await self.docker._query(
+        async with self.docker._query(
             "images/{name}/push".format(name=name),
             "POST",
             params=params,
             headers=headers,
-        )
-        return await json_stream_result(response, stream=stream)
+        ) as response:
+            return await json_stream_result(response, stream=stream)
 
     async def tag(self, name: str, repo: str, *, tag: str = None) -> bool:
         """
@@ -126,13 +126,13 @@ class DockerImages(object):
         if tag:
             params["tag"] = tag
 
-        await self.docker._query(
+        async with self.docker._query(
             "images/{name}/tag".format(name=name),
             "POST",
             params=params,
             headers={"content-type": "application/json"},
-        )
-        return True
+        ):
+            return True
 
     async def delete(
         self, name: str, *, force: bool = False, noprune: bool = False
@@ -151,10 +151,10 @@ class DockerImages(object):
             List of deleted images
         """
         params = {"force": force, "noprune": noprune}
-        response = await self.docker._query_json(
+        async with self.docker._query_json(
             "images/{name}".format(name=name), "DELETE", params=params
-        )
-        return response
+        ) as response:
+            return response
 
     async def build(
         self,
@@ -230,15 +230,15 @@ class DockerImages(object):
         if labels:
             params.update({"labels": json.dumps(labels)})
 
-        response = await self.docker._query(
+        async with self.docker._query(
             "build",
             "POST",
             params=clean_map(params),
             headers=headers,
             data=local_context,
-        )
+        ) as response:
 
-        return await json_stream_result(response, stream=stream)
+            return await json_stream_result(response, stream=stream)
 
     async def export_image(self, name: str):
         """
@@ -250,10 +250,10 @@ class DockerImages(object):
         Returns:
             Streamreader of tarball image
         """
-        response = await self.docker._query(
+        async with self.docker._query(
             "images/{name}/get".format(name=name), "GET"
-        )
-        return response.content
+        ) as response:
+            return response.content
 
     async def import_image(self, data, stream: bool = False):
         """
@@ -266,7 +266,7 @@ class DockerImages(object):
             Tarball of the image
         """
         headers = {"Content-Type": "application/x-tar"}
-        response = await self.docker._query_chunked_post(
+        async with self.docker._query_chunked_post(
             "images/load", "POST", data=data, headers=headers
-        )
-        return await json_stream_result(response, stream=stream)
+        ) as response:
+            return await json_stream_result(response, stream=stream)

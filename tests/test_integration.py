@@ -261,8 +261,9 @@ async def test_get_archive(docker, testing_images):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(sys.platform == "win32",
-                    reason="Port is not exposed on Windows by some reason")
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Port is not exposed on Windows by some reason"
+)
 async def test_port(docker, testing_images):
     config = {
         "Cmd": [

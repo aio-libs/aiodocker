@@ -108,10 +108,10 @@ class DockerContainer:
         inspect_info = await self.show()
         is_tty = inspect_info["Config"]["Tty"]
 
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}/logs".format(self=self), method="GET", params=params
-        )
-        return await multiplexed_result(response, follow, is_tty=is_tty)
+        ) as response:
+            return await multiplexed_result(response, follow, is_tty=is_tty)
 
     async def copy(self, resource, **kwargs):
         # TODO: this is deprecated, use get_archive instead
