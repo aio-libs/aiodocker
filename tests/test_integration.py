@@ -14,6 +14,13 @@ from async_timeout import timeout
 from aiodocker.docker import Docker
 
 
+def skip_windows():
+    if sys.platform == "win32":
+        # replaced xfail with skip for sake of tests speed
+        pytest.skip("image operation fails on Windows")
+
+
+
 @pytest.mark.asyncio
 async def test_autodetect_host(monkeypatch):
     docker = Docker()
@@ -181,6 +188,8 @@ async def test_wait_timeout(docker, testing_images, shell_container):
 
 @pytest.mark.asyncio
 async def test_put_archive(docker, testing_images):
+    skip_windows()
+
     config = {
         "Cmd": ["python", "-c", "print(open('tmp/bar/foo.txt').read())"],
         "Image": "python:latest",
@@ -222,6 +231,8 @@ async def test_put_archive(docker, testing_images):
 
 @pytest.mark.asyncio
 async def test_get_archive(docker, testing_images):
+    skip_windows()
+
     config = {
         "Cmd": [
             "python",
