@@ -115,6 +115,8 @@ def requires_api_version(docker):
 
 @pytest.fixture
 def swarm(event_loop, docker):
+    if sys.platform == "win32":
+        pytest.skip("swarm commands dont work on Windows")
     assert event_loop.run_until_complete(docker.swarm.init())
     yield docker
     assert event_loop.run_until_complete(docker.swarm.leave(force=True))
