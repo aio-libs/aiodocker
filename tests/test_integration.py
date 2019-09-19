@@ -20,7 +20,6 @@ def skip_windows():
         pytest.skip("image operation fails on Windows")
 
 
-
 @pytest.mark.asyncio
 async def test_autodetect_host(monkeypatch):
     docker = Docker()
@@ -130,7 +129,7 @@ async def test_container_lifecycles(docker, testing_images):
 @pytest.mark.asyncio
 @pytest.mark.skipif(
     sys.platform in ["darwin", "win32"],
-    reason="Docker for Mac and Windows has a bug with websocket"
+    reason="Docker for Mac and Windows has a bug with websocket",
 )
 async def test_stdio_stdin(docker, testing_images, shell_container):
     # echo of the input.
