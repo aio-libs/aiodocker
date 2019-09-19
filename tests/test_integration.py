@@ -136,14 +136,14 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
         with timeout(2):
             while True:
                 output += await ws.receive_bytes()
-                if b"print('hello world\\n')\r\n" in output:
+                if b"print('hello world\\n')" in output:
                     found = True
                     break
     except asyncio.TimeoutError:
         pass
     await ws.close()
     if not found:
-        found = b"print('hello world\\n')\r\n" in output
+        found = b"print('hello world\\n')" in output
     assert found, output
 
     # cross-check with container logs.
