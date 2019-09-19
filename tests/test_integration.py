@@ -165,7 +165,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
         output = "".join(log)
         output.strip()
         found = "hello world" in output.split("\r\n")
-    assert found
+    assert found, output
 
 
 @pytest.mark.asyncio
