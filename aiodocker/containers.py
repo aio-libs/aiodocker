@@ -4,7 +4,7 @@ import tarfile
 from .exceptions import DockerContainerError, DockerError
 from .jsonstream import json_stream_result
 from .logs import DockerLog
-from .multiplexed import multiplexed_result
+from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .utils import identical, parse_result
 
 
@@ -98,40 +98,56 @@ class DockerContainer:
         )
         self.logs = DockerLog(docker, self)
 
-    async def log(self, *, stdout=False, stderr=False, follow=False, **kwargs):
+    def log(self, *, stdout=False, stderr=False, follow=False, **kwargs):
         if stdout is False and stderr is False:
             raise TypeError("Need one of stdout or stderr")
 
         params = {"stdout": stdout, "stderr": stderr, "follow": follow}
         params.update(kwargs)
 
+        cm = self.docker._query(
+            "containers/{self._id}/logs".format(self=self), method="GET", params=params
+        )
+
+        if follow:
+            return self._logs_stream(cm)
+        else:
+            return self._logs_list(cm)
+
+    async def _logs_stream(self, cm):
         inspect_info = await self.show()
         is_tty = inspect_info["Config"]["Tty"]
 
-        async with self.docker._query(
-            "containers/{self._id}/logs".format(self=self), method="GET", params=params
-        ) as response:
-            return await multiplexed_result(response, follow, is_tty=is_tty)
+        async with cm as response:
+            async for item in multiplexed_result_stream(response, is_tty=is_tty):
+                yield item
+
+    async def _logs_list(self, cm):
+        inspect_info = await self.show()
+        is_tty = inspect_info["Config"]["Tty"]
+
+        async with cm as response:
+            return await multiplexed_result_list(response, is_tty=is_tty)
 
     async def get_archive(self, path: str) -> tarfile.TarFile:
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}/archive".format(self=self),
             method="GET",
             params={"path": path},
-        )
-        data = await parse_result(response)
-        return data
+        ) as response:
+            data = await parse_result(response)
+            return data
 
     async def put_archive(self, path, data):
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}/archive".format(self=self),
             method="PUT",
             data=data,
             headers={"content-type": "application/json"},
             params={"path": path},
-        )
-        data = await parse_result(response)
-        return data
+        ) as response:
+            data = await parse_result(response)
+            return data
 
     async def show(self, **kwargs):
         data = await self.docker._query_json(
@@ -141,40 +157,36 @@ class DockerContainer:
         return data
 
     async def stop(self, **kwargs):
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}/stop".format(self=self), method="POST", params=kwargs
-        )
-        await response.release()
-        return
+        ):
+            pass
 
     async def start(self, **kwargs):
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}/start".format(self=self),
             method="POST",
             headers={"content-type": "application/json"},
             data=kwargs,
-        )
-        await response.release()
-        return
+        ):
+            pass
 
     async def restart(self, timeout=None):
         params = {}
         if timeout is not None:
             params["t"] = timeout
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}/restart".format(self=self),
             method="POST",
             params=params,
-        )
-        await response.release()
-        return
+        ):
+            pass
 
     async def kill(self, **kwargs):
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}/kill".format(self=self), method="POST", params=kwargs
-        )
-        await response.release()
-        return
+        ):
+            pass
 
     async def wait(self, *, timeout=None, **kwargs):
         data = await self.docker._query_json(
@@ -186,10 +198,10 @@ class DockerContainer:
         return data
 
     async def delete(self, **kwargs):
-        response = await self.docker._query(
+        async with self.docker._query(
             "containers/{self._id}".format(self=self), method="DELETE", params=kwargs
-        )
-        await response.release()
+        ):
+            pass
 
     async def websocket(self, **params):
         path = "containers/{self._id}/attach/ws".format(self=self)
@@ -220,10 +232,10 @@ class DockerContainer:
 
     async def stats(self, *, stream=True):
         if stream:
-            response = await self.docker._query(
+            async with self.docker._query(
                 "containers/{self._id}/stats".format(self=self), params={"stream": "1"}
-            )
-            return await json_stream_result(response)
+            ) as response:
+                return await json_stream_result(response)
         else:
             data = await self.docker._query_json(
                 "containers/{self._id}/stats".format(self=self), params={"stream": "0"}

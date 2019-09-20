@@ -151,10 +151,9 @@ class DockerImages(object):
             List of deleted images
         """
         params = {"force": force, "noprune": noprune}
-        async with self.docker._query_json(
+        return await self.docker._query_json(
             "images/{name}".format(name=name), "DELETE", params=params
-        ) as response:
-            return response
+        )
 
     async def build(
         self,

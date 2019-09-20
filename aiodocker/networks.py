@@ -33,11 +33,10 @@ class DockerNetwork:
         return data
 
     async def delete(self):
-        response = await self.docker._query(
+        async with self.docker._query(
             "networks/{self.id}".format(self=self), method="DELETE"
-        )
-        await response.release()
-        return
+        ):
+            pass
 
     async def connect(self, config):
         config = json.dumps(config, sort_keys=True).encode("utf-8")

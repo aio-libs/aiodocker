@@ -217,7 +217,7 @@ class Docker:
             data = await parse_result(response)
             return data
 
-    async def _query_chunked_post(
+    def _query_chunked_post(
         self, path, method="POST", *, params=None, data=None, headers=None, timeout=None
     ):
         """
@@ -227,7 +227,7 @@ class Docker:
             headers = {}
         if headers and "content-type" not in headers:
             headers["content-type"] = "application/octet-stream"
-        response = await self._query(
+        return self._query(
             path,
             method,
             params=params,
@@ -236,7 +236,6 @@ class Docker:
             timeout=timeout,
             chunked=True,
         )
-        return response
 
     async def _websocket(self, path, **params):
         if not params:

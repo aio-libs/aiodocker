@@ -1,7 +1,7 @@
 import json
 from typing import Any, AsyncIterator, List, Mapping, MutableMapping, Optional, Union
 
-from .multiplexed import multiplexed_result
+from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .utils import (
     clean_filters,
     clean_map,
@@ -161,10 +161,10 @@ class DockerServices(object):
             True if successful
         """
 
-        await self.docker._query(
+        async with self.docker._query(
             "services/{service_id}".format(service_id=service_id), method="DELETE"
-        )
-        return True
+        ):
+            return True
 
     async def inspect(self, service_id: str) -> Mapping[str, Any]:
         """
@@ -182,7 +182,7 @@ class DockerServices(object):
         )
         return response
 
-    async def logs(
+    def logs(
         self,
         service_id: str,
         *,
@@ -224,10 +224,21 @@ class DockerServices(object):
             "timestamps": timestamps,
             "tail": tail,
         }
-
-        response = await self.docker._query(
+        cm = self.docker._query(
             "services/{service_id}/logs".format(service_id=service_id),
             method="GET",
             params=params,
         )
-        return await multiplexed_result(response, follow, is_tty=is_tty)
+        if follow:
+            return self._logs_stream(cm, is_tty)
+        else:
+            return self._logs_list(cm, is_tty)
+
+    async def _logs_stream(self, cm, is_tty):
+        async with cm as response:
+            async for item in multiplexed_result_stream(response, is_tty=is_tty):
+                yield item
+
+    async def _logs_list(self, cm, is_tty):
+        async with cm as response:
+            return await multiplexed_result_list(response, is_tty=is_tty)
