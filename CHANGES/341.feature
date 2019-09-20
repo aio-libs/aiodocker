@@ -1,0 +1,1 @@
+Always close response after processing, make `.logs(..., follow=True)` async iterator.
