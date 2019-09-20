@@ -147,7 +147,7 @@ class Docker:
             "{self.docker_host}/{self.api_version}/{path}".format(self=self, path=path)
         )
 
-    async def _query(
+    def _query(
         self,
         path,
         method="GET",
@@ -162,6 +162,19 @@ class Docker:
         Get the response object by performing the HTTP request.
         The caller is responsible to finalize the response object.
         """
+        return _AsyncCM(
+            self._do_query(
+                path=path,
+                method=method,
+                params=params,
+                data=data,
+                headers=headers,
+                timeout=timeout,
+                chunked=chunked,
+            )
+        )
+
+    async def _do_query(self, path, method, *, params, data, headers, timeout, chunked):
         url = self._canonicalize_url(path)
         if headers and "content-type" not in headers:
             headers["content-type"] = "application/json"
@@ -198,13 +211,13 @@ class Docker:
         headers["content-type"] = "application/json"
         if not isinstance(data, (str, bytes)):
             data = json.dumps(data)
-        response = await self._query(
+        async with self._query(
             path, method, params=params, data=data, headers=headers, timeout=timeout
-        )
-        data = await parse_result(response)
-        return data
+        ) as response:
+            data = await parse_result(response)
+            return data
 
-    async def _query_chunked_post(
+    def _query_chunked_post(
         self, path, method="POST", *, params=None, data=None, headers=None, timeout=None
     ):
         """
@@ -214,7 +227,7 @@ class Docker:
             headers = {}
         if headers and "content-type" not in headers:
             headers["content-type"] = "application/octet-stream"
-        response = await self._query(
+        return self._query(
             path,
             method,
             params=params,
@@ -223,7 +236,6 @@ class Docker:
             timeout=timeout,
             chunked=True,
         )
-        return response
 
     async def _websocket(self, path, **params):
         if not params:
@@ -258,3 +270,19 @@ class Docker:
             certfile=certs_path / "cert.pem", keyfile=certs_path / "key.pem"
         )
         return context
+
+
+class _AsyncCM:
+    __slots__ = ("_coro", "_resp")
+
+    def __init__(self, coro):
+        self._coro = coro
+        self._resp = None
+
+    async def __aenter__(self):
+        resp = await self._coro
+        self._resp = resp
+        return await resp.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return await self._resp.__aexit__(exc_type, exc_val, exc_tb)

@@ -53,19 +53,19 @@ class DockerEvents:
             # Otherwise after 5 minutes the client
             # will close the connection
             # http://aiohttp.readthedocs.io/en/stable/client_reference.html#aiohttp.ClientSession.request
-            response = await self.docker._query(
+            async with self.docker._query(
                 "events", method="GET", params=params, timeout=0
-            )
-            self.json_stream = await json_stream_result(
-                response, self._transform_event, human_bool(params["stream"])
-            )
-            try:
-                async for data in self.json_stream:
-                    await self.channel.publish(data)
-            finally:
-                if self.json_stream is not None:
-                    await self.json_stream._close()
-                self.json_stream = None
+            ) as response:
+                self.json_stream = await json_stream_result(
+                    response, self._transform_event, human_bool(params["stream"])
+                )
+                try:
+                    async for data in self.json_stream:
+                        await self.channel.publish(data)
+                finally:
+                    if self.json_stream is not None:
+                        await self.json_stream._close()
+                    self.json_stream = None
         finally:
             # signal termination to subscribers
             await self.channel.publish(None)

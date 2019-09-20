@@ -88,9 +88,10 @@ class DockerSwarm(object):
             "DataPathAddr": data_path_addr,
         }
 
-        await self.docker._query("swarm/join", method="POST", data=clean_map(data))
-
-        return True
+        async with self.docker._query(
+            "swarm/join", method="POST", data=clean_map(data)
+        ):
+            return True
 
     async def leave(self, *, force: bool = False) -> bool:
         """
@@ -102,6 +103,5 @@ class DockerSwarm(object):
 
         params = {"force": force}
 
-        await self.docker._query("swarm/leave", method="POST", params=params)
-
-        return True
+        async with self.docker._query("swarm/leave", method="POST", params=params):
+            return True

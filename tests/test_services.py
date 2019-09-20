@@ -105,15 +105,15 @@ async def test_logs_services_stream(swarm):
                 if status == "complete":
                     break
 
-    stream = await swarm.services.logs(service_id, stdout=True, follow=True)
-
     # the service printed 10 `Hello Python`
     # let's check for them
     count = 0
     try:
         with timeout(2):
             while True:
-                async for log in stream:
+                async for log in swarm.services.logs(
+                    service_id, stdout=True, follow=True
+                ):
                     if "Hello Python\n" in log:
                         count += 1
     except asyncio.TimeoutError:

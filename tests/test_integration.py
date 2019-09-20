@@ -159,9 +159,8 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
     try:
         # collect the logs for at most 2 secs until we see the output.
-        stream = await shell_container.log(stdout=True, follow=True)
         with timeout(2):
-            async for s in stream:
+            async for s in shell_container.log(stdout=True, follow=True):
                 log.append(s)
                 if "hello world\r\n" in s:
                     found = True
@@ -261,8 +260,9 @@ async def test_get_archive(docker, testing_images):
 
 
 @pytest.mark.asyncio
-@pytest.mark.skipif(sys.platform == "win32",
-                    reason="Port is not exposed on Windows by some reason")
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="Port is not exposed on Windows by some reason"
+)
 async def test_port(docker, testing_images):
     config = {
         "Cmd": [

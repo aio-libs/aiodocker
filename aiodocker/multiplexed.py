@@ -69,15 +69,21 @@ class MultiplexedResult:
         await self._response.release()
 
 
-async def multiplexed_result(response, follow=False, is_tty=False, encoding="utf-8"):
+async def multiplexed_result_stream(response, is_tty=False, encoding="utf-8"):
 
     # if is_tty is True you get a raw output
     log_stream = MultiplexedResult(response, raw=is_tty)
 
-    if follow:
-        return _DecodeHelper(log_stream, encoding=encoding)
-    else:
-        d = []
-        async for piece in _DecodeHelper(log_stream, encoding=encoding):
-            d.append(piece)
-        return d
+    async for item in _DecodeHelper(log_stream, encoding=encoding):
+        yield item
+
+
+async def multiplexed_result_list(response, is_tty=False, encoding="utf-8"):
+
+    # if is_tty is True you get a raw output
+    log_stream = MultiplexedResult(response, raw=is_tty)
+
+    d = []
+    async for piece in _DecodeHelper(log_stream, encoding=encoding):
+        d.append(piece)
+    return d

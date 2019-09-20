@@ -66,11 +66,7 @@ def testing_images():
 
     async def _pull():
         docker = Docker()
-        required_images = [
-            "python:latest",
-            "python:3.6.1",
-            "python:3.7.4",
-        ]
+        required_images = ["python:latest", "python:3.6.1", "python:3.7.4"]
         for img in required_images:
             try:
                 await docker.images.inspect(img)
