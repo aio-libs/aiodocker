@@ -14,7 +14,7 @@ stages:
   displayName: "Upload on PyPI"
   jobs:
   - job: upload
-    poll:
+    pool:
       vmImage: "ubuntu-latest"
 
     steps:
