@@ -40,4 +40,4 @@ stages:
           pythonUploadServiceConnection: pypi
 
       - script: |
-          ls dist
+          python -m twine upload -r "pypi" --config-file $(PYPIRC_PATH) dist/*.whl
