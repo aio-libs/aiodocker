@@ -14,4 +14,4 @@ pr:
 stages:
 - stage: test
   displayName: "Run tests"
-  template: tests-template.yml
+  - template: tests-template.yml
