@@ -66,6 +66,7 @@ jobs:
 
   - script: |
       python -m pytest -vv
+      python -m coverage xml
     displayName: 'Run tests'
     env:
       DOCKER_VERSION: '$(docker)'
