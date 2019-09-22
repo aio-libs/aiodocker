@@ -1,1 +1,0 @@
-Add ability to get a Docker network by name or ID.

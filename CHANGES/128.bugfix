@@ -1,1 +1,0 @@
-Fix: if container.start() fails user won't get the id of the container
