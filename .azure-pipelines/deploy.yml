@@ -1,0 +1,11 @@
+trigger:
+  branches:
+    include:
+    - refs/tags/*
+pr: none
+
+stages:
+- stage: test
+  displayName: "Run tests"
+  jobs:
+    - template: tests-template.yml
