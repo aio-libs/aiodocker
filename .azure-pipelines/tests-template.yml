@@ -1,3 +1,6 @@
+parameters:
+  codecov.token: ''
+
 jobs:
 - job: test
   displayName: " "

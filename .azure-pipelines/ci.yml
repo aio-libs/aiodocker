@@ -11,8 +11,13 @@ pr:
     include:
     - master
 
+variables:
+- group: codecov
+
 stages:
 - stage: test
   displayName: "Run tests"
   jobs:
-    - template: tests-template.yml
+  - template: tests-template.yml
+    parameters:
+      codecov.token: '$(codecov.token)'

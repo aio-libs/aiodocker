@@ -4,11 +4,16 @@ trigger:
     - refs/tags/*
 pr: none
 
+variables:
+- group: codecov
+
 stages:
 - stage: test
   displayName: "Run tests"
   jobs:
   - template: tests-template.yml
+    parameters:
+      codecov.token: '$(codecov.token)'
 
 - stage: deploy
   displayName: "Upload on PyPI"
