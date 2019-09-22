@@ -74,5 +74,3 @@ jobs:
   - script: |
       python -m codecov -f coverage.xml -X gcov
     displayName: 'Upload coverage reports'
-    env:
-      CODECOV_TOKEN: '$(codecov.token)'
