@@ -32,4 +32,12 @@ stages:
 
       - script: |
           python setup.py sdist bdist_wheel
-        siplayName: "Make dists"
+        displayName: "Make dists"
+
+      - task: TwineAuthenticate@1
+        displayName: "Twine Authenticate"
+        inputs:
+          pythonUploadServiceConnection: pypi
+
+      - script: |
+          ls dist
