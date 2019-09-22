@@ -8,4 +8,28 @@ stages:
 - stage: test
   displayName: "Run tests"
   jobs:
-    - template: tests-template.yml
+  - template: tests-template.yml
+
+- stage: deploy
+  displayName: "Upload on PyPI"
+  jobs:
+  - job: upload
+    poll:
+      vmImage: "ubuntu-latest"
+
+    steps:
+      - checkout: self
+        clean: true
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: '3.7'
+        displayName: "Use Python 3.7"
+
+      - script: |
+          pip install setuptools twine wheel
+        displayName: "Instll tools"
+
+      - script: |
+          python setup.py sdist bdist_wheel
+        siplayName: "Make dists"
