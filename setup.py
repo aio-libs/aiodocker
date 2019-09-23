@@ -25,6 +25,7 @@ setup(
     author="Paul Tagliamonte",
     author_email="paultag@debian.org",
     long_description=long_description,
+    long_description_content_type="text/x-rst",
     description="Docker API client for asyncio",
     license="Apache 2",
     classifiers=[
