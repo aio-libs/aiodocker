@@ -55,7 +55,7 @@ jobs:
     condition: and(succeeded(), eq(variables['registry'], '1'))
 
   - script: |
-      pip install -U pip
+      pip install -U pip setuptools twine
       pip install -r requirements/test.txt
     displayName: 'Install dependencies'
 
