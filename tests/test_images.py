@@ -87,6 +87,15 @@ async def test_push_image(docker):
 
 
 @pytest.mark.asyncio
+async def test_push_image_stream(docker):
+    name = "python:latest"
+    repository = "localhost:5000/image"
+    await docker.images.tag(name=name, repo=repository)
+    async for item in docker.images.push(name=repository, stream=True):
+        pass
+
+
+@pytest.mark.asyncio
 async def test_delete_image(docker):
     name = "python:latest"
     repository = "localhost:5000/image"
@@ -113,7 +122,17 @@ async def test_pull_image(docker):
 
     with pytest.warns(DeprecationWarning):
         image = await docker.images.get(name=name)
-        assert image
+        assert "Architecture" in image
+
+
+@pytest.mark.asyncio
+async def test_pull_image_stream(docker):
+    name = "python:latest"
+    image = await docker.images.inspect(name=name)
+    assert image
+
+    async for item in docker.images.pull(name, stream=True):
+        pass
 
 
 @pytest.mark.asyncio
@@ -132,10 +151,30 @@ async def test_build_from_tar(docker, random_name):
 
 
 @pytest.mark.asyncio
+async def test_build_from_tar_stream(docker, random_name):
+    name = "{}:latest".format(random_name())
+    dockerfile = """
+    # Shared Volume
+    FROM python:latest
+    """
+    f = BytesIO(dockerfile.encode("utf-8"))
+    tar_obj = utils.mktar_from_dockerfile(f)
+    async for item in docker.images.build(
+        fileobj=tar_obj, encoding="gzip", tag=name, stream=True
+    ):
+        pass
+    tar_obj.close()
+    image = await docker.images.inspect(name=name)
+    assert image
+
+
+@pytest.mark.asyncio
 async def test_export_image(docker):
     name = "python:latest"
-    exported_image = await docker.images.export_image(name=name)
-    assert exported_image
+    async with docker.images.export_image(name=name) as exported_image:
+        assert exported_image
+        async for chunk in exported_image.iter_chunks():
+            pass
 
 
 @pytest.mark.asyncio

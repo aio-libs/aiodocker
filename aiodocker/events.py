@@ -4,8 +4,7 @@ import warnings
 from collections import ChainMap
 
 from .channel import Channel
-from .jsonstream import json_stream_result
-from .utils import human_bool
+from .jsonstream import json_stream_stream
 
 
 class DockerEvents:
@@ -56,9 +55,7 @@ class DockerEvents:
             async with self.docker._query(
                 "events", method="GET", params=params, timeout=0
             ) as response:
-                self.json_stream = await json_stream_result(
-                    response, self._transform_event, human_bool(params["stream"])
-                )
+                self.json_stream = json_stream_stream(response, self._transform_event)
                 try:
                     async for data in self.json_stream:
                         await self.channel.publish(data)
