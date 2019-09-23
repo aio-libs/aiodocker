@@ -118,7 +118,7 @@ async def test_container_stats_list(docker):
         response = await container.wait()
         assert response["StatusCode"] == 0
         stats = await container.stats(stream=False)
-        assert 'cpu_stats' in stats[0]
+        assert "cpu_stats" in stats[0]
     finally:
         await container.delete(force=True)
 
@@ -136,7 +136,7 @@ async def test_container_stats_stream(docker):
         assert response["StatusCode"] == 0
         count = 0
         async for stat in container.stats():
-            assert 'cpu_stats' in stat
+            assert "cpu_stats" in stat
             count += 1
             if count > 3:
                 break

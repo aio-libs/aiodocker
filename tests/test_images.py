@@ -122,7 +122,7 @@ async def test_pull_image(docker):
 
     with pytest.warns(DeprecationWarning):
         image = await docker.images.get(name=name)
-        assert 'Architecture' in image
+        assert "Architecture" in image
 
 
 @pytest.mark.asyncio
@@ -145,6 +145,24 @@ async def test_build_from_tar(docker, random_name):
     f = BytesIO(dockerfile.encode("utf-8"))
     tar_obj = utils.mktar_from_dockerfile(f)
     await docker.images.build(fileobj=tar_obj, encoding="gzip", tag=name)
+    tar_obj.close()
+    image = await docker.images.inspect(name=name)
+    assert image
+
+
+@pytest.mark.asyncio
+async def test_build_from_tar_stream(docker, random_name):
+    name = "{}:latest".format(random_name())
+    dockerfile = """
+    # Shared Volume
+    FROM python:latest
+    """
+    f = BytesIO(dockerfile.encode("utf-8"))
+    tar_obj = utils.mktar_from_dockerfile(f)
+    async for item in docker.images.build(
+        fileobj=tar_obj, encoding="gzip", tag=name, stream=True
+    ):
+        pass
     tar_obj.close()
     image = await docker.images.inspect(name=name)
     assert image
