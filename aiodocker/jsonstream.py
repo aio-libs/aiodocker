@@ -43,11 +43,13 @@ class _JsonStreamResult:
         self._response.close()
 
 
-async def json_stream_result(response, transform=None, stream=True):
+def json_stream_stream(response, transform=None):
     json_stream = _JsonStreamResult(response, transform)
+    return json_stream
 
-    if stream:
-        return json_stream
+
+async def json_stream_list(response, transform=None):
+    json_stream = _JsonStreamResult(response, transform)
 
     data = []
     async for obj in json_stream:

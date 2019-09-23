@@ -2,7 +2,7 @@ import json
 import warnings
 from typing import BinaryIO, List, Mapping, MutableMapping, Optional, Union
 
-from .jsonstream import json_stream_result
+from .jsonstream import json_stream_list, json_stream_stream
 from .utils import clean_map, compose_auth_header
 
 
@@ -42,7 +42,7 @@ class DockerImages(object):
         )
         return response
 
-    async def pull(
+    def pull(
         self,
         from_image: str,
         *,
@@ -77,12 +77,25 @@ class DockerImages(object):
                 )
             # TODO: assert registry == repo?
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
-        async with self.docker._query(
-            "images/create", "POST", params=params, headers=headers
-        ) as response:
-            return await json_stream_result(response, stream=stream)
+        cm = self.docker._query("images/create", "POST", params=params, headers=headers)
+        return self._handle_response(cm, stream)
 
-    async def push(
+    def _handle_response(self, cm, stream):
+        if stream:
+            return self._handle_stream(cm)
+        else:
+            return self._handle_list(cm)
+
+    async def _handle_stream(self, cm):
+        async with cm as response:
+            for item in json_stream_stream(response):
+                yield item
+
+    async def _handle_list(self, cm):
+        async with cm as response:
+            return await json_stream_list(response)
+
+    def push(
         self,
         name: str,
         *,
@@ -105,13 +118,13 @@ class DockerImages(object):
                     "when auth information is provided"
                 )
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
-        async with self.docker._query(
+        cm = self.docker._query(
             "images/{name}/push".format(name=name),
             "POST",
             params=params,
             headers=headers,
-        ) as response:
-            return await json_stream_result(response, stream=stream)
+        )
+        return self._handle_response(cm, stream)
 
     async def tag(self, name: str, repo: str, *, tag: str = None) -> bool:
         """
@@ -155,7 +168,7 @@ class DockerImages(object):
             "images/{name}".format(name=name), "DELETE", params=params
         )
 
-    async def build(
+    def build(
         self,
         *,
         remote: str = None,
@@ -229,17 +242,16 @@ class DockerImages(object):
         if labels:
             params.update({"labels": json.dumps(labels)})
 
-        async with self.docker._query(
+        cm = self.docker._query(
             "build",
             "POST",
             params=clean_map(params),
             headers=headers,
             data=local_context,
-        ) as response:
+        )
+        return self._handle_response(cm, stream)
 
-            return await json_stream_result(response, stream=stream)
-
-    async def export_image(self, name: str):
+    def export_image(self, name: str):
         """
         Get a tarball of an image by name or id.
 
@@ -249,12 +261,11 @@ class DockerImages(object):
         Returns:
             Streamreader of tarball image
         """
-        async with self.docker._query(
-            "images/{name}/get".format(name=name), "GET"
-        ) as response:
-            return response.content
+        return _ExportCM(
+            self.docker._query("images/{name}/get".format(name=name), "GET")
+        )
 
-    async def import_image(self, data, stream: bool = False):
+    def import_image(self, data, stream: bool = False):
         """
         Import tarball of image to docker.
 
@@ -265,7 +276,19 @@ class DockerImages(object):
             Tarball of the image
         """
         headers = {"Content-Type": "application/x-tar"}
-        async with self.docker._query_chunked_post(
+        cm = self.docker._query_chunked_post(
             "images/load", "POST", data=data, headers=headers
-        ) as response:
-            return await json_stream_result(response, stream=stream)
+        )
+        return self._handle_response(cm, stream)
+
+
+class _ExportCM:
+    def __init__(self, cm):
+        self._cm = cm
+
+    async def __aenter__(self):
+        resp = await self._cm.__aenter__()
+        return resp.content
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return await self._cm.__aexit__(exc_type, exc_val, exc_tb)

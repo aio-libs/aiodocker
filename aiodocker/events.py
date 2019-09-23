@@ -4,7 +4,7 @@ import warnings
 from collections import ChainMap
 
 from .channel import Channel
-from .jsonstream import json_stream_result
+from .jsonstream import json_stream_stream
 from .utils import human_bool
 
 
@@ -48,6 +48,7 @@ class DockerEvents:
             return
         forced_params = {"stream": True}
         params = ChainMap(forced_params, params)
+        stream = human_bool(params["stream"])
         try:
             # timeout has to be set to 0, None is not passed
             # Otherwise after 5 minutes the client
@@ -56,9 +57,7 @@ class DockerEvents:
             async with self.docker._query(
                 "events", method="GET", params=params, timeout=0
             ) as response:
-                self.json_stream = await json_stream_result(
-                    response, self._transform_event, human_bool(params["stream"])
-                )
+                self.json_stream = json_stream_stream(response, self._transform_event)
                 try:
                     async for data in self.json_stream:
                         await self.channel.publish(data)

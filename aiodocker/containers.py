@@ -2,7 +2,7 @@ import json
 import tarfile
 
 from .exceptions import DockerContainerError, DockerError
-from .jsonstream import json_stream_result
+from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .utils import identical, parse_result
@@ -231,16 +231,23 @@ class DockerContainer:
         return h_ports
 
     async def stats(self, *, stream=True):
+        cm = self.docker._query(
+            "containers/{self._id}/stats".format(self=self),
+            params={"stream": "1" if stream else "0"},
+        )
         if stream:
-            async with self.docker._query(
-                "containers/{self._id}/stats".format(self=self), params={"stream": "1"}
-            ) as response:
-                return await json_stream_result(response)
+            return self._stats_stream(cm)
         else:
-            data = await self.docker._query_json(
-                "containers/{self._id}/stats".format(self=self), params={"stream": "0"}
-            )
-            return data
+            return self._stats_list(cm)
+
+    async def _stats_stream(self, cm):
+        async with cm as response:
+            async for item in json_stream_stream(response):
+                yield item
+
+    async def _stats_list(self, cm):
+        async with cm as response:
+            return await json_stream_list(response)
 
     def __getitem__(self, key):
         return self._container[key]

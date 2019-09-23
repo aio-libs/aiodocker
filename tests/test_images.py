@@ -134,8 +134,10 @@ async def test_build_from_tar(docker, random_name):
 @pytest.mark.asyncio
 async def test_export_image(docker):
     name = "python:latest"
-    exported_image = await docker.images.export_image(name=name)
-    assert exported_image
+    async with docker.images.export_image(name=name) as exported_image:
+        assert exported_image
+        async for chunk in exported_image.iter_chunks():
+            pass
 
 
 @pytest.mark.asyncio
