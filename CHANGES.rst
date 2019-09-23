@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.16.0 (2019-09-23)
+===================
+
+Bugfixes
+--------
+
+- Fix streaming mode for pull, push, build, stats and events. (#344)
+
+
 0.15.0 (2019-09-22)
 ===================
 
