@@ -87,6 +87,15 @@ async def test_push_image(docker):
 
 
 @pytest.mark.asyncio
+async def test_push_image_stream(docker):
+    name = "python:latest"
+    repository = "localhost:5000/image"
+    await docker.images.tag(name=name, repo=repository)
+    async for item in docker.images.push(name=repository, stream=True):
+        pass
+
+
+@pytest.mark.asyncio
 async def test_delete_image(docker):
     name = "python:latest"
     repository = "localhost:5000/image"
@@ -114,6 +123,16 @@ async def test_pull_image(docker):
     with pytest.warns(DeprecationWarning):
         image = await docker.images.get(name=name)
         assert image
+
+
+@pytest.mark.asyncio
+async def test_pull_image_stream(docker):
+    name = "python:latest"
+    image = await docker.images.inspect(name=name)
+    assert image
+
+    async for item in docker.images.pull(name, stream=True):
+        pass
 
 
 @pytest.mark.asyncio

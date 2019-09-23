@@ -88,7 +88,7 @@ class DockerImages(object):
 
     async def _handle_stream(self, cm):
         async with cm as response:
-            for item in json_stream_stream(response):
+            async for item in json_stream_stream(response):
                 yield item
 
     async def _handle_list(self, cm):
