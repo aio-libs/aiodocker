@@ -122,7 +122,7 @@ async def test_pull_image(docker):
 
     with pytest.warns(DeprecationWarning):
         image = await docker.images.get(name=name)
-        assert image
+        assert 'Architecture' in image
 
 
 @pytest.mark.asyncio

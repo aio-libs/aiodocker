@@ -230,7 +230,7 @@ class DockerContainer:
 
         return h_ports
 
-    async def stats(self, *, stream=True):
+    def stats(self, *, stream=True):
         cm = self.docker._query(
             "containers/{self._id}/stats".format(self=self),
             params={"stream": "1" if stream else "0"},
