@@ -5,7 +5,6 @@ from collections import ChainMap
 
 from .channel import Channel
 from .jsonstream import json_stream_stream
-from .utils import human_bool
 
 
 class DockerEvents:
@@ -48,7 +47,6 @@ class DockerEvents:
             return
         forced_params = {"stream": True}
         params = ChainMap(forced_params, params)
-        stream = human_bool(params["stream"])
         try:
             # timeout has to be set to 0, None is not passed
             # Otherwise after 5 minutes the client
