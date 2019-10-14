@@ -38,7 +38,7 @@ stages:
         architecture: 'x64'
 
     - script: |
-        pip install --user -U pip setuptools twine wheel
+        pip install -U pip setuptools twine wheel
       displayName: 'Upgrade tooling'
 
     - script: |
