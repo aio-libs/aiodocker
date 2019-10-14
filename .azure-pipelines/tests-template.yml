@@ -56,6 +56,9 @@ jobs:
 
   - script: |
       pip install -U pip setuptools twine wheel
+    displayName: 'Upgrade tooling'
+
+  - script: |
       pip install -r requirements/test.txt
     displayName: 'Install dependencies'
 
@@ -73,10 +76,13 @@ jobs:
 
   - script: |
       python -m pytest -vv
-      python -m coverage xml
     displayName: 'Run tests'
     env:
       DOCKER_VERSION: '$(docker)'
+
+  - script: |
+      python -m coverage xml
+    displayName: 'Generate coverage report'
 
   - script: |
       python -m codecov -f coverage.xml -X gcov
