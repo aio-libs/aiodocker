@@ -12,6 +12,7 @@ Jason Kraus
 Joongi Kim
 Joshua Chung
 Julien Kmec
+Konstantin Valetov
 Martin Koppehel
 Nikolay Novik
 Paul Tagliamonte
