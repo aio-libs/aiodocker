@@ -15,9 +15,7 @@ variables:
 - group: codecov
 
 stages:
-- stage: test
-  displayName: "Run tests"
-  jobs:
-  - template: tests-template.yml
-    parameters:
-      codecov.token: '$(codecov.token)'
+- template: lint-stage.yml
+- template: test-stage.yml
+  parameters:
+    codecov.token: '$(codecov.token)'
