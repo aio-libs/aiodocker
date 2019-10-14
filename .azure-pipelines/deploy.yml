@@ -11,7 +11,7 @@ stages:
 - stage: test
   displayName: "Run tests"
   jobs:
-  - template: tests-template.yml
+  - template: test-stage.yml
     parameters:
       codecov.token: '$(codecov.token)'
 
