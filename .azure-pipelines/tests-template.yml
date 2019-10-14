@@ -60,7 +60,11 @@ jobs:
     displayName: 'Install dependencies'
 
   - script: |
-      python setup.py check -rms
+      python setup.py sdist bdist_wheel
+    displayName: 'Generate dists'
+
+  - script: |
+      twine check dist/*
     displayName: 'Check metadata'
 
   - script: |
