@@ -55,7 +55,7 @@ jobs:
     condition: and(succeeded(), eq(variables['registry'], '1'))
 
   - script: |
-      pip install -U pip setuptools twine wheel
+      pip install --user -U pip setuptools twine wheel
     displayName: 'Upgrade tooling'
 
   - script: |
