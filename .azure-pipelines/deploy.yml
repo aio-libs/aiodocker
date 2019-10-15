@@ -6,6 +6,14 @@ pr: none
 
 variables:
 - group: codecov
+- group: twine
+
+resources:
+  repositories:
+  - repository: templates
+    type: github
+    name: aio-libs/azure-pipelines
+    endpoint: aio-libs
 
 stages:
 - template: lint-stage.yml
@@ -13,8 +21,7 @@ stages:
   parameters:
     codecov.token: '$(codecov.token)'
 
-- stage: deploy
-  displayName: "Upload on PyPI"
+- stage: dist
   jobs:
   - job: upload
     pool:
@@ -30,18 +37,13 @@ stages:
         displayName: "Use Python 3.7"
 
       - script: |
-          pip install setuptools twine wheel
-        displayName: "Instll tools"
+          pip install -U setuptools twine wheel
+        displayName: "Install tools"
 
       - script: |
           python setup.py sdist bdist_wheel
         displayName: "Make dists"
 
-      - task: TwineAuthenticate@1
-        displayName: "Twine Authenticate"
-        inputs:
-          pythonUploadServiceConnection: pypi
+      - template: templates/step-store-dist.yml@templates
 
-      - script: |
-          python -m twine upload -r "pypi" --config-file $(PYPIRC_PATH) --disable-progress-bar dist/*.whl
-        displayName: "Upload to PyPI"
+- template: templates/stage-publish.yml@templates
