@@ -36,7 +36,7 @@ stages:
       
     pool:
       vmImage: $[ variables['image'] ]
-    timeoutInMinutes: 10
+    timeoutInMinutes: 15
 
     steps:
     - checkout: self
@@ -58,7 +58,7 @@ stages:
       condition: and(succeeded(), eq(variables['registry'], '1'))
 
     - script: |
-        pip install -r requirements/test.txt
+        pip install -r requirements/test.txt pytest-azurepipelines
       displayName: 'Install dependencies'
 
     - script: |
