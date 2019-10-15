@@ -63,7 +63,7 @@ stages:
       displayName: 'Install dependencies'
 
     - script: |
-        python -m pytest -vv
+        python -m pytest -vv --durations=10
       displayName: 'Run tests'
       env:
         DOCKER_VERSION: '$(docker)'
