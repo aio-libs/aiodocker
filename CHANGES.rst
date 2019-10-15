@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.17.0 (2019-10-15)
+===================
+
+Bugfixes
+--------
+
+- Fixed an issue when the entire tar archive was stored in RAM while building the image. (#352)
+
+
 0.16.0 (2019-09-23)
 ===================
 

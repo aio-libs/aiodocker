@@ -1,1 +1,0 @@
-Fixed an issue when the entire tar archive was stored in RAM while building the image.
