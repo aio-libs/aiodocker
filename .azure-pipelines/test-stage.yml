@@ -37,6 +37,8 @@ stages:
     pool:
       vmImage: $[ variables['image'] ]
 
+    timeoutInMinutes: 30
+
     steps:
     - checkout: self
       clean: true
@@ -57,11 +59,11 @@ stages:
       condition: and(succeeded(), eq(variables['registry'], '1'))
 
     - script: |
-        pip install -r requirements/test.txt
+        pip install -r requirements/test.txt pytest-azurepipelines
       displayName: 'Install dependencies'
 
     - script: |
-        python -m pytest -vv
+        python -m pytest -vv --durations=10
       displayName: 'Run tests'
       env:
         DOCKER_VERSION: '$(docker)'
