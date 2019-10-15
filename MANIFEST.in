@@ -1,9 +1,15 @@
 include LICENSE
 include README.rst
 include CHANGES.rst
-include requirements/base.txt
-include requirements/test.txt
+include CONTRIBUTORS.txt
+include Makefile
+include tox.ini
+include test.sh
+include pyproject.toml
+include RELEASE_PROCEDURE.rst
 graft aiodocker
 graft examples
 graft tests
+graft docs
+graft requirements
 global-exclude *.pyc
