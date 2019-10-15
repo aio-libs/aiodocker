@@ -1,6 +1,15 @@
+import io
 import json
 import warnings
-from typing import BinaryIO, List, Mapping, MutableMapping, Optional, Union
+from typing import (
+    AsyncIterator,
+    BinaryIO,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Union,
+)
 
 from .jsonstream import json_stream_list, json_stream_stream
 from .utils import clean_map, compose_auth_header
@@ -168,6 +177,13 @@ class DockerImages(object):
             "images/{name}".format(name=name), "DELETE", params=params
         )
 
+    @staticmethod
+    async def _stream(fileobj: BinaryIO) -> AsyncIterator[bytes]:
+        chunk = fileobj.read(io.DEFAULT_BUFFER_SIZE)
+        while chunk:
+            yield chunk
+            chunk = fileobj.read(io.DEFAULT_BUFFER_SIZE)
+
     def build(
         self,
         *,
@@ -201,9 +217,6 @@ class DockerImages(object):
             labels: arbitrary key/value labels to set on the image
             fileobj: a tar archive compressed or not
         """
-
-        local_context = None
-
         headers = {}
 
         params = {
@@ -229,8 +242,9 @@ class DockerImages(object):
         if remote is None and fileobj is None:
             raise ValueError("Either remote or fileobj needs to be provided.")
 
+        data = None
         if fileobj:
-            local_context = fileobj.read()
+            data = self._stream(fileobj)
             headers["content-type"] = "application/x-tar"
 
         if fileobj and encoding:
@@ -247,7 +261,7 @@ class DockerImages(object):
             "POST",
             params=clean_map(params),
             headers=headers,
-            data=local_context,
+            data=data,
         )
         return self._handle_response(cm, stream)
 
