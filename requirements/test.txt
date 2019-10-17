@@ -3,7 +3,7 @@ pytest==5.2.1
 pytest-cov==2.8.1
 pytest-asyncio==0.10.0
 flake8==3.7.8
-mypy==0.730
+mypy==0.740
 black==19.3b0
 isort==4.3.21
 -r ci.txt
