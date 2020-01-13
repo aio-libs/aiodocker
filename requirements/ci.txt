@@ -1,5 +1,5 @@
 codecov==2.0.15
-docutils==0.15.2
+docutils==0.16
 tox==3.14.2
 tox-travis==0.12
 pygments==2.5.2
