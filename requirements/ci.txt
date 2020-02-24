@@ -5,4 +5,4 @@ tox-travis==0.12
 pygments==2.5.2
 aiohttp==3.6.2
 yarl==1.4.2
-multidict==4.7.2
+multidict==4.7.5
