@@ -1,4 +1,4 @@
-codecov==2.0.15
+codecov==2.0.16
 docutils==0.16
 tox==3.14.5
 tox-travis==0.12
