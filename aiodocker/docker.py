@@ -93,6 +93,7 @@ class Docker:
                 "Either DOCKER_HOST or local sockets are not available."
             )
 
+        self._connection_info = docker_host
         if connector is None:
             UNIX_PRE = "unix://"
             UNIX_PRE_LEN = len(UNIX_PRE)
@@ -198,6 +199,16 @@ class Docker:
             )
         except asyncio.TimeoutError:
             raise
+        except aiohttp.ClientConnectionError as exc:
+            raise DockerError(
+                900,
+                {
+                    "message": (
+                        f"Cannot connect to Docker Engine via {self._connection_info} "
+                        f"[{exc.os_error.strerror}]"
+                    )
+                },
+            )
         if (response.status // 100) in [4, 5]:
             what = await response.read()
             content_type = response.headers.get("content-type", "")
