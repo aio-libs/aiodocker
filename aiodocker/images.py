@@ -257,11 +257,7 @@ class DockerImages(object):
             params.update({"labels": json.dumps(labels)})
 
         cm = self.docker._query(
-            "build",
-            "POST",
-            params=clean_map(params),
-            headers=headers,
-            data=data,
+            "build", "POST", params=clean_map(params), headers=headers, data=data,
         )
         return self._handle_response(cm, stream)
 
