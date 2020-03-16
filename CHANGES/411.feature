@@ -1,0 +1,1 @@
+Improve the error text message if cannot connect to docker engine.
