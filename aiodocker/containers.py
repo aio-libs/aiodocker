@@ -206,10 +206,12 @@ class DockerContainer:
         ):
             pass
 
-    async def websocket(self, **params):
+    async def attach(self, **params):
         path = "containers/{self._id}/attach/ws".format(self=self)
         ws = await self.docker._websocket(path, **params)
         return ws
+
+    websocket = attach
 
     async def port(self, private_port):
         if "NetworkSettings" not in self._container:
