@@ -1,11 +1,14 @@
 import json
 import tarfile
+import shlex
+from typing import Mapping, Optional, Sequence, Union
 
 from .exceptions import DockerContainerError, DockerError
 from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .utils import identical, parse_result
+from .execs import Exec
 
 
 class DockerContainers(object):
@@ -248,6 +251,46 @@ class DockerContainer:
     async def _stats_list(self, cm):
         async with cm as response:
             return await json_stream_list(response)
+
+    async def exec_create(
+        self,
+        cmd: Union[str, Sequence[str]],
+        stdout: bool = True,
+        stderr: bool = True,
+        stdin: bool = False,
+        tty: bool = False,
+        privileged: bool = False,
+        user: str = "",  # root by default
+        environment: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
+        workdir: Optional[str] = None,
+        detach_keys: Optional[str] = None,
+    ):
+        if isinstance(cmd, str):
+            cmd = shlex.split(cmd)
+        if isinstance(environment, Mapping):
+            environment = [f"{key}={value}" for key, value in environment.items()]
+        else:
+            environment = list(environment)
+        data = {
+            'Container': self._id,
+            'User': user,
+            'Privileged': privileged,
+            'Tty': tty,
+            'AttachStdin': stdin,
+            'AttachStdout': stdout,
+            'AttachStderr': stderr,
+            'Cmd': cmd,
+            'Env': environment,
+        }
+
+        if workdir is not None:
+            data['WorkingDir'] = workdir
+
+        if detach_keys:
+            data['detachKeys'] = detach_keys
+
+        data = await self.docker._query_json(f'/containers/{{self._id}}/exec')
+        return Exec(data["Id"])
 
     def __getitem__(self, key):
         return self._container[key]
