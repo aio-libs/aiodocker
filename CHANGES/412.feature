@@ -1,0 +1,1 @@
+Rename `websocket()` to `attach()`
