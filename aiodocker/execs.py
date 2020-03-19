@@ -1,16 +1,23 @@
 import json
 import struct
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast, overload
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast, overload, AsyncIterator
 
 import aiohttp
 from aiohttp import FlowControlDataQueue
 from aiohttp.http_websocket import WebSocketWriter
 from typing_extensions import Literal
 from yarl import URL
+import sys
 
 
 if TYPE_CHECKING:
     from .docker import Docker
+
+
+if sys.version_info >= (3, 7):
+    from contextlib import asynccontextmanager
+else:
+    from async_generator import asynccontextmanager
 
 
 # When a Tty is allocated for an "exec" operation, the stdout and stderr are streamed
@@ -148,43 +155,44 @@ class Exec:
         else:
             return self._start_attached(timeout, tty)
 
+    @asynccontextmanager
     async def _start_attached(
         self, timeout: aiohttp.ClientTimeout = None, tty: bool = False,
-    ) -> aiohttp.ClientWebSocketResponse:
+    ) -> AsyncIterator[aiohttp.ClientWebSocketResponse]:
         body = json.dumps({"Detach": False, "Tty": tty})
-        resp = await self.docker._do_query(
+        async with self.docker._query(
             f"exec/{self._id}/start",
             method="POST",
             params=None,
             data=body,
-            headers={"Connection": "Upgrade", "Upgrade": "tcp",},
+            headers={"Connection": "Upgrade", "Upgrade": "tcp"},
             timeout=timeout,
             chunked=False,
             read_until_eof=False,
-        )
+        ) as resp:
 
-        conn = resp.connection
-        # resp._closed = True  # hijack response
-        transport = conn.transport
-        protocol = conn.protocol
-        loop = resp._loop
+            conn = resp.connection
+            # resp._closed = True  # hijack response
+            transport = conn.transport
+            protocol = conn.protocol
+            loop = resp._loop
 
-        reader: FlowControlDataQueue[aiohttp.WSMessage] = FlowControlDataQueue(
-            protocol, limit=2 ** 16, loop=loop
-        )
-        writer = ExecWriter(transport)
-        protocol.set_parser(ExecReader(reader, tty=tty), reader)
-        return aiohttp.ClientWebSocketResponse(
-            reader,
-            cast(WebSocketWriter, writer),
-            None,  # protocol
-            resp,
-            timeout,
-            True,  # autoclose
-            False,  # autoping
-            loop,
-            receive_timeout=10,
-        )
+            reader: FlowControlDataQueue[aiohttp.WSMessage] = FlowControlDataQueue(
+                protocol, limit=2 ** 16, loop=loop
+            )
+            writer = ExecWriter(transport)
+            protocol.set_parser(ExecReader(reader, tty=tty), reader)
+            yield aiohttp.ClientWebSocketResponse(
+                reader,
+                cast(WebSocketWriter, writer),
+                None,  # protocol
+                resp,
+                timeout,
+                True,  # autoclose
+                False,  # autoping
+                loop,
+                receive_timeout=10,
+            )
 
     async def _start_detached(
         self, timeout: aiohttp.ClientTimeout = None, tty: bool = False,

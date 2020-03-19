@@ -19,6 +19,7 @@ long_description = open("README.rst").read() + open("CHANGES.rst").read()
 requirements = [
     "aiohttp>=3.6",
     "typing_extensions>=3.6.5",
+    'async_generator>=1.10; python_version<"3.7"'
 ]
 
 

@@ -23,7 +23,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .utils import httpize, parse_result
+from .utils import _AsyncCM, httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
@@ -321,19 +321,3 @@ class Docker:
             certfile=certs_path / "cert.pem", keyfile=certs_path / "key.pem"
         )
         return context
-
-
-class _AsyncCM:
-    __slots__ = ("_coro", "_resp")
-
-    def __init__(self, coro):
-        self._coro = coro
-        self._resp = None
-
-    async def __aenter__(self):
-        resp = await self._coro
-        self._resp = resp
-        return await resp.__aenter__()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        return await self._resp.__aexit__(exc_type, exc_val, exc_tb)
