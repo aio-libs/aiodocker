@@ -41,19 +41,18 @@ async def test_exec_start_stream(shell_container, detach, tty, stderr):
     execute = await shell_container.exec(
         stdout=True, stderr=True, stdin=True, tty=tty, cmd=cmd
     )
-    resp = await execute.start(detach=detach, tty=tty)
     if detach:
+        resp = await execute.start(detach=detach, tty=tty)
         assert isinstance(resp, bytes)
         assert resp == b""
     else:
-        assert isinstance(resp, ClientWebSocketResponse)
-        hello = b"Hello"
-        await resp.send_bytes(hello)
-        msg = await resp.receive()
-        assert msg.data == hello
-        # We can't use sys.stdout.fileno() and sys.stderr.fileno() in the test because
-        # pytest changes that so it can capture output.
-        assert msg.extra == (STDOUT if tty or not stderr else STDERR)
+        async with execute.start(detach=detach, tty=tty) as resp:
+            assert isinstance(resp, ClientWebSocketResponse)
+            hello = b"Hello"
+            await resp.send_bytes(hello)
+            msg = await resp.receive()
+            assert msg.data == hello
+            assert msg.extra == (STDOUT if tty or not stderr else STDERR)
 
 
 @pytest.mark.asyncio

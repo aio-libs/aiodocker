@@ -40,11 +40,9 @@ class ExecReader:
         self.header_fmt = struct.Struct(">BxxxL")
 
     def feed_eof(self):
-        breakpoint()
         self.queue.feed_eof()
 
     def feed_data(self, data):
-        breakpoint()
         if self._exc:
             return True, data
 
@@ -163,11 +161,10 @@ class Exec:
         async with self.docker._query(
             f"exec/{self._id}/start",
             method="POST",
-            params=None,
             data=body,
             headers={"Connection": "Upgrade", "Upgrade": "tcp"},
             timeout=timeout,
-            chunked=False,
+            chunked=True,
             read_until_eof=False,
         ) as resp:
 
