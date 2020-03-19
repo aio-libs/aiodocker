@@ -1,14 +1,14 @@
 import json
-import tarfile
 import shlex
+import tarfile
 from typing import Mapping, Optional, Sequence, Union
 
 from .exceptions import DockerContainerError, DockerError
+from .execs import Exec
 from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .utils import identical, parse_result
-from .execs import Exec
 
 
 class DockerContainers(object):
@@ -254,7 +254,7 @@ class DockerContainer:
         async with cm as response:
             return await json_stream_list(response)
 
-    async def exec_create(
+    async def exec(
         self,
         cmd: Union[str, Sequence[str]],
         stdout: bool = True,
@@ -269,30 +269,36 @@ class DockerContainer:
     ):
         if isinstance(cmd, str):
             cmd = shlex.split(cmd)
-        if isinstance(environment, Mapping):
+        if environment is None:
+            pass
+        elif isinstance(environment, Mapping):
             environment = [f"{key}={value}" for key, value in environment.items()]
         else:
             environment = list(environment)
         data = {
-            'Container': self._id,
-            'User': user,
-            'Privileged': privileged,
-            'Tty': tty,
-            'AttachStdin': stdin,
-            'AttachStdout': stdout,
-            'AttachStderr': stderr,
-            'Cmd': cmd,
-            'Env': environment,
+            "Container": self._id,
+            "Privileged": privileged,
+            "Tty": tty,
+            "AttachStdin": stdin,
+            "AttachStdout": stdout,
+            "AttachStderr": stderr,
+            "Cmd": cmd,
+            "Env": environment,
         }
 
         if workdir is not None:
-            data['WorkingDir'] = workdir
+            data["WorkingDir"] = workdir
 
         if detach_keys:
-            data['detachKeys'] = detach_keys
+            data["detachKeys"] = detach_keys
 
-        data = await self.docker._query_json(f'/containers/{{self._id}}/exec')
-        return Exec(data["Id"])
+        if user:
+            data["User"] = user
+
+        data = await self.docker._query_json(
+            f"containers/{self._id}/exec", method="POST", data=data
+        )
+        return Exec(self.docker, data["Id"])
 
     def __getitem__(self, key):
         return self._container[key]
