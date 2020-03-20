@@ -17,5 +17,6 @@ Konstantin Valetov
 Martin Koppehel
 Nikolay Novik
 Paul Tagliamonte
+Roy Reznik
 Tianon Gravi
 Travis DePrato

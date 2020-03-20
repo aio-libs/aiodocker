@@ -63,9 +63,7 @@ class Docker:
         api_version="v1.35",
     ):
 
-        docker_host = url  # rename
-        if docker_host is None:
-            docker_host = os.environ.get("DOCKER_HOST", None)
+        docker_host = url or os.getenv("DOCKER_HOST")
         if docker_host is None:
             for sockpath in _sock_search_paths:
                 if sockpath.is_socket():
@@ -120,9 +118,7 @@ class Docker:
             else:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector
-        if session is None:
-            session = aiohttp.ClientSession(connector=self.connector)
-        self.session = session
+        self.session = session or aiohttp.ClientSession(connector=self.connector)
 
         self.events = DockerEvents(self)
         self.containers = DockerContainers(self)

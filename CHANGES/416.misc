@@ -1,0 +1,1 @@
+Change the 'if' statements inside the docker.py file to be 'or' statements
