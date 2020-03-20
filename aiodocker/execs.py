@@ -203,23 +203,6 @@ class _ExecParser:
             return True, b""
 
 
-class _ExecWriter:
-    def __init__(self, transport):
-        self.transport = transport
-
-    async def send(self, message, *args, **kwargs):
-        if isinstance(message, str):
-            message = message.encode("utf-8")
-        self.transport.write(message)
-
-    def write_eof(self):
-        self.transport.write_eof()
-
-    async def close(self, code=1000, message=b""):
-        self.write_eof()
-        return None
-
-
 class ExecStream:
     def __init__(
         self,
