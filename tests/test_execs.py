@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from aiodocker.execs import ExecStream
+from aiodocker.execs import Stream
 
 
 @pytest.mark.asyncio
@@ -46,7 +46,7 @@ async def test_exec_start_stream(shell_container, detach, tty, stderr):
         assert resp == b""
     else:
         async with execute.start(detach=detach, tty=tty) as resp:
-            assert isinstance(resp, ExecStream)
+            assert isinstance(resp, Stream)
             hello = b"Hello"
             await resp.write_in(hello)
             fileno, data = await resp.read_out()
