@@ -91,6 +91,10 @@ class DockerContainers(object):
         data.update(kwargs)
         return DockerContainer(self.docker, **data)
 
+    def exec(self, exec_id: str) -> Exec:
+        """Return Exec instance for already created exec object."""
+        return Exec(self.docker, exec_id)
+
 
 class DockerContainer:
     def __init__(self, docker, **kwargs):

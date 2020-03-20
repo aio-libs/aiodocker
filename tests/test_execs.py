@@ -1,9 +1,8 @@
 import asyncio
 
 import pytest
-from aiohttp import ClientWebSocketResponse
 
-from aiodocker.execs import STDERR, STDOUT
+from aiodocker.execs import ExecStream
 
 
 @pytest.mark.asyncio
@@ -12,7 +11,7 @@ async def test_exec_attached(shell_container):
         stdout=True, stderr=True, stdin=True, tty=True, cmd=["echo", "Hello"],
     )
     async with execute.start(detach=False, tty=True) as resp:
-        assert await resp.receive_bytes() == b"Hello\r\n"
+        assert await resp.read_out() == (1, b"Hello\r\n")
 
 
 @pytest.mark.asyncio
@@ -47,12 +46,12 @@ async def test_exec_start_stream(shell_container, detach, tty, stderr):
         assert resp == b""
     else:
         async with execute.start(detach=detach, tty=tty) as resp:
-            assert isinstance(resp, ClientWebSocketResponse)
+            assert isinstance(resp, ExecStream)
             hello = b"Hello"
-            await resp.send_bytes(hello)
-            msg = await resp.receive()
-            assert msg.data == hello
-            assert msg.extra == (STDOUT if tty or not stderr else STDERR)
+            await resp.write_in(hello)
+            fileno, data = await resp.read_out()
+            assert data == hello
+            assert fileno == (1 if tty or not stderr else 2)
 
 
 @pytest.mark.asyncio
