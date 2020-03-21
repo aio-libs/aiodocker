@@ -2,7 +2,7 @@ import json
 from typing import TYPE_CHECKING, Any, Dict, Optional, overload
 
 import aiohttp
-from typing_extensions import Literal
+from typing_extensions import Literal, Tuple
 from yarl import URL
 
 from .stream import Stream
@@ -22,16 +22,19 @@ if TYPE_CHECKING:
 
 
 class Exec:
-    def __init__(self, docker: "Docker", id: str) -> None:
+    def __init__(self, docker: "Docker", id: str, tty: Optional[bool]) -> None:
         self.docker = docker
         self._id = id
+        self._tty = tty
 
     @property
     def id(self) -> str:
         return self._id
 
     async def inspect(self) -> Dict[str, Any]:
-        return await self.docker._query_json(f"exec/{self._id}/json")
+        ret = await self.docker._query_json(f"exec/{self._id}/json")
+        self._tty = ret["ProcessConfig"]["tty"]
+        return ret
 
     async def resize(self, *, h: Optional[int] = None, w: Optional[int] = None) -> None:
         url = URL(f"exec/{self._id}/resize").with_query(h=h, w=w)
@@ -40,27 +43,17 @@ class Exec:
 
     @overload
     def start(
-        self,
-        *,
-        timeout: aiohttp.ClientTimeout = None,
-        detach: Literal[False],
-        tty: bool = False,
-    ) -> "Stream":
+        self, *, timeout: aiohttp.ClientTimeout = None, detach: Literal[False],
+    ) -> Stream:
         pass
 
     @overload  # noqa
     async def start(
-        self,
-        *,
-        timeout: aiohttp.ClientTimeout = None,
-        detach: Literal[True],
-        tty: bool = False,
+        self, *, timeout: aiohttp.ClientTimeout = None, detach: Literal[True],
     ) -> bytes:
         pass
 
-    def start(  # noqa
-        self, *, timeout=None, detach=False, tty=False,
-    ):
+    def start(self, *, timeout=None, detach=False):  # noqa
         """
         Start this exec instance.
         Args:
@@ -79,13 +72,27 @@ class Exec:
             from stdout or 2 if from stderr.
         """
         if detach:
-            return self._start_detached(timeout, tty)
+            return self._start_detached(timeout, self._tty)
         else:
-            return Stream(self.docker, self._id, tty, timeout)
+
+            async def setup() -> Tuple[URL, bytes]:
+                if self._tty is None:
+                    await self.inspect()  # should restore tty
+                assert self._tty is not None
+                return (
+                    URL(f"exec/{self._id}/start"),
+                    json.dumps({"Detach": False, "Tty": self._tty}).encode("utf8"),
+                    self._tty,
+                )
+
+            return Stream(self.docker, setup, timeout)
 
     async def _start_detached(
         self, timeout: aiohttp.ClientTimeout = None, tty: bool = False,
     ) -> bytes:
+        if self._tty is None:
+            await self.inspect()  # should restore tty
+        assert self._tty is not None
         async with self.docker._query(
             f"exec/{self._id}/start",
             method="POST",

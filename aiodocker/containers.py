@@ -1,13 +1,17 @@
 import json
 import shlex
 import tarfile
-from typing import Mapping, Optional, Sequence, Union
+from typing import Mapping, Optional, Sequence, Tuple, Union
+
+from multidict import MultiDict
+from yarl import URL
 
 from .exceptions import DockerContainerError, DockerError
 from .execs import Exec
 from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
+from .stream import Stream
 from .utils import identical, parse_result
 
 
@@ -93,7 +97,7 @@ class DockerContainers(object):
 
     def exec(self, exec_id: str) -> Exec:
         """Return Exec instance for already created exec object."""
-        return Exec(self.docker, exec_id)
+        return Exec(self.docker, exec_id, None)
 
 
 class DockerContainer:
@@ -210,12 +214,42 @@ class DockerContainer:
         ):
             pass
 
-    async def attach(self, **params):
+    async def websocket(self, **params):
+        if not params:
+            params = {"stdin": True, "stdout": True, "stderr": True, "stream": True}
         path = "containers/{self._id}/attach/ws".format(self=self)
         ws = await self.docker._websocket(path, **params)
         return ws
 
-    websocket = attach
+    def attach(
+        self,
+        *,
+        stdout: bool = False,
+        stderr: bool = False,
+        stdin: bool = False,
+        detach_keys: Optional[str] = None,
+        logs: bool = False,
+    ) -> Stream:
+        async def setup() -> Tuple[URL, bytes]:
+            params = MultiDict()
+            if detach_keys:
+                params.add("detachKeys", detach_keys)
+            if logs:
+                params.add("logs", int(logs))
+            if stdin:
+                params.add("stdin", int(stdin))
+            if stdout:
+                params.add("stdout", int(stdout))
+            if stderr:
+                params.add("stderr", int(stderr))
+            inspect_info = await self.show()
+            return (
+                URL(f"containers/{self._id}/attach").with_query(params),
+                None,
+                inspect_info["Config"]["Tty"],
+            )
+
+        return Stream(self.docker, setup, None)
 
     async def port(self, private_port):
         if "NetworkSettings" not in self._container:
@@ -302,7 +336,12 @@ class DockerContainer:
         data = await self.docker._query_json(
             f"containers/{self._id}/exec", method="POST", data=data
         )
-        return Exec(self.docker, data["Id"])
+        return Exec(self.docker, data["Id"], tty=tty)
+
+    async def resize(self, *, h: int, w: int) -> None:
+        url = URL(f"containers/{self._id}/resize").with_query(h=h, w=w)
+        async with self.docker._query(url, method="POST") as resp:
+            resp
 
     def __getitem__(self, key):
         return self._container[key]

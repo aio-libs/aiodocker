@@ -142,3 +142,8 @@ async def test_container_stats_stream(docker):
                 break
     finally:
         await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_resize(shell_container):
+    await shell_container.resize(w=120, h=10)

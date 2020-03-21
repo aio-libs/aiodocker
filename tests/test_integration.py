@@ -175,6 +175,43 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     assert found, output
 
 
+# @pytest.mark.asyncio
+# async def test_attach_nontty(docker, testing_images, shell_container_detached):
+#     # echo of the input.
+#     async with shell_container_detached.attach(
+#         stdin=True, stdout=True, stderr=True
+#     ) as stream:
+#         await stream.write_in(b"print('hello world\\n')\n")
+#         fileno, data = await stream.read_out()
+#         assert fileno == 1
+#         assert data == b""
+
+
+# @pytest.mark.asyncio
+# async def test_attach_tty(docker, testing_images, make_container):
+#     # echo of the input.
+#     # print(shell_container_detached_tty._id)
+#     # breakpoint()
+#     config = {
+#         "Cmd": ["python"],
+#         "Image": "python:latest",
+#         "AttachStdin": False,
+#         "AttachStdout": False,
+#         "AttachStderr": False,
+#         "Tty": True,
+#         "OpenStdin": True,
+#         "StdinOnce": True,
+#     }
+
+#     container = await make_container(config, name="aiodocker-testing-attach-tty")
+
+#     async with container.attach(stdin=True, stdout=True, stderr=True) as stream:
+#         await stream.write_in(b"print('hello world\\n')\n")
+#         fileno, data = await stream.read_out()
+#         assert fileno == 1
+#         assert data == b""
+
+
 @pytest.mark.asyncio
 async def test_wait_timeout(docker, testing_images, shell_container):
     t1 = datetime.datetime.now()
@@ -223,13 +260,12 @@ async def test_put_archive(docker, testing_images):
     await container.wait(timeout=5)
 
     output = await container.log(stdout=True, stderr=True)
-    assert output[0] == "hello world\n"
-
+    assert output[0] == "hello world\n", output
     await container.delete(force=True)
 
 
 @pytest.mark.asyncio
-async def test_get_archive(docker, testing_images):
+async def test_get_archive(testing_images, make_container):
     skip_windows()
 
     config = {
@@ -246,7 +282,7 @@ async def test_get_archive(docker, testing_images):
         "OpenStdin": False,
     }
 
-    container = await docker.containers.create_or_replace(
+    container = await make_container(
         config=config, name="aiodocker-testing-get-archive"
     )
     await container.start()
@@ -257,7 +293,6 @@ async def test_get_archive(docker, testing_images):
     assert len(tar_archive.members) == 1
     foo_file = tar_archive.extractfile("foo.txt")
     assert foo_file.read() == b"test\n"
-    await container.delete(force=True)
 
 
 @pytest.mark.asyncio

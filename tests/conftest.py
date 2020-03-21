@@ -4,6 +4,7 @@ import traceback
 import uuid
 from distutils.version import StrictVersion
 from os import environ as ENV
+from typing import Any, Dict
 
 import pytest
 
@@ -116,8 +117,27 @@ def swarm(event_loop, docker):
 
 
 @pytest.fixture
-def shell_container(event_loop, docker):
+def make_container(event_loop, docker):
     container = None
+
+    async def _spawn(config: Dict[str, Any], name=None):
+        nonlocal container
+        container = await docker.containers.create_or_replace(config=config, name=name)
+        await container.start()
+        return container
+
+    yield _spawn
+
+    async def _delete():
+        nonlocal container
+        if container is not None:
+            await container.delete(force=True)
+
+    event_loop.run_until_complete(_delete())
+
+
+@pytest.fixture
+async def shell_container(event_loop, docker, make_container):
     config = {
         "Cmd": ["python"],
         "Image": "python:latest",
@@ -128,19 +148,4 @@ def shell_container(event_loop, docker):
         "OpenStdin": True,
     }
 
-    async def _spawn():
-        nonlocal container
-        container = await docker.containers.create_or_replace(
-            config=config, name="aiodocker-testing-shell"
-        )
-        await container.start()
-
-    event_loop.run_until_complete(_spawn())
-
-    yield container
-
-    async def _delete():
-        nonlocal container
-        await container.delete(force=True)
-
-    event_loop.run_until_complete(_delete())
+    return await make_container(config, name="aiodocker-testing-shell")

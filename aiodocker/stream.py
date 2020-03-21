@@ -1,71 +1,28 @@
-import json
 import struct
 import warnings
 from collections import namedtuple
 from types import TracebackType
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Tuple, Type
 
 import aiohttp
+from yarl import URL
 
-
-Message = namedtuple("Message", "stream data")
 
 if TYPE_CHECKING:
     from .docker import Docker
 
-
-class _ExecParser:
-    def __init__(self, queue, tty=False):
-        self.queue = queue
-        self.tty = tty
-        self._exc = None
-        self.header_fmt = struct.Struct(">BxxxL")
-
-    def feed_eof(self):
-        self.queue.feed_eof()
-
-    def feed_data(self, data):
-        if self._exc:
-            return True, data
-
-        try:
-            if self.tty:
-                msg = Message(1, data)  # stdout
-                self.queue.feed_data(msg, len(data))
-            else:
-                while data:
-                    # Parse the header
-                    if len(data) < self.header_fmt.size:
-                        raise IOError("Not enough data was received to parse header.")
-                    fileno, msglen = self.header_fmt.unpack(
-                        data[: self.header_fmt.size]
-                    )
-                    msg_and_header = self.header_fmt.size + msglen
-                    if len(data) < msg_and_header:
-                        raise IOError(
-                            "Not enough data was received to contain the payload."
-                        )
-                    msg = Message(fileno, data[self.header_fmt.size : msg_and_header],)
-                    self.queue.feed_data(msg, msglen)
-                    data = data[msg_and_header:]
-            return False, b""
-        except Exception as exc:
-            self._exc = exc
-            self.queue.set_exception(exc)
-            return True, b""
+Message = namedtuple("Message", "stream data")
 
 
 class Stream:
     def __init__(
         self,
         docker: "Docker",
-        exec_id: str,
-        tty: bool,
+        setup: Callable[[], Awaitable[Tuple[URL, bytes, bool]]],
         timeout: Optional[aiohttp.ClientTimeout],
     ) -> None:
-        self._id = exec_id
+        self._setup = setup
         self.docker = docker
-        self._tty = tty
         self._resp = None
         self._closed = False
         self._timeout = timeout
@@ -74,27 +31,32 @@ class Stream:
     async def _init(self) -> None:
         if self._resp is not None:
             return
-        body = json.dumps({"Detach": False, "Tty": self._tty})
+        url, body, tty = await self._setup()
+        timeout = self._timeout
+        if timeout is None:
+            # total timeout doesn't make sense for streaming
+            timeout = aiohttp.ClientTimeout()
         self._resp = resp = await self.docker._do_query(
-            f"exec/{self._id}/start",
+            url,
             method="POST",
             data=body,
             params=None,
             headers={"Connection": "Upgrade", "Upgrade": "tcp"},
-            timeout=self._timeout,
+            timeout=timeout,
             chunked=True,
             read_until_eof=False,
         )
+        await resp.read()  # skip empty body
 
         conn = resp.connection
-        # resp._closed = True  # hijack response
         protocol = conn.protocol
         loop = resp._loop
 
         queue: aiohttp.FlowControlDataQueue[Message] = aiohttp.FlowControlDataQueue(
             protocol, limit=2 ** 16, loop=loop
         )
-        protocol.set_parser(_ExecParser(queue, tty=self._tty), queue)
+        protocol.set_parser(_ExecParser(queue, tty=tty), queue)
+        protocol.force_close()
         self._queue = queue
 
     async def read_out(self) -> Message:
@@ -136,4 +98,38 @@ class Stream:
         if self._resp is not None:
             return
         if not self._closed:
-            warnings.warn("Unclosed ExecStream")
+            warnings.warn("Unclosed ExecStream", ResourceWarning)
+
+
+class _ExecParser:
+    def __init__(self, queue, tty=False):
+        self.queue = queue
+        self.tty = tty
+        self.header_fmt = struct.Struct(">BxxxL")
+        self._buf = bytearray()
+
+    def feed_eof(self):
+        self.queue.feed_eof()
+
+    def feed_data(self, data):
+        if self.tty:
+            msg = Message(1, data)  # stdout
+            self.queue.feed_data(msg, len(data))
+        else:
+            self._buf.extend(data)
+            while self._buf:
+                # Parse the header
+                if len(self._buf) < self.header_fmt.size:
+                    return False, ""
+                fileno, msglen = self.header_fmt.unpack(
+                    self._buf[: self.header_fmt.size]
+                )
+                msg_and_header = self.header_fmt.size + msglen
+                if len(self._buf) < msg_and_header:
+                    return False, ""
+                msg = Message(
+                    fileno, bytes(self._buf[self.header_fmt.size : msg_and_header])
+                )
+                self.queue.feed_data(msg, msglen)
+                del self._buf[:msg_and_header]
+        return False, b""
