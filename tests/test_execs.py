@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 import pytest
 from async_timeout import timeout
@@ -42,6 +43,10 @@ async def test_exec_attached(shell_container, stderr):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="TTY session in Windows generates too complex ANSI escape sequences",
+)
 async def test_exec_attached_tty(shell_container):
     execute = await shell_container.exec(
         stdout=True, stderr=True, stdin=True, tty=True, cmd=["python", "-q"],
