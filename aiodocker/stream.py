@@ -43,7 +43,7 @@ class Stream:
             params=None,
             headers={"Connection": "Upgrade", "Upgrade": "tcp"},
             timeout=timeout,
-            chunked=True,
+            chunked=None,
             read_until_eof=False,
         )
         await resp.read()  # skip empty body
