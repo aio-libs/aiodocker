@@ -93,13 +93,13 @@ async def test_connect_with_connector(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_container_lifecycles(docker, testing_images):
+async def test_container_lifecycles(docker, image_name):
     containers = await docker.containers.list(all=True)
     orig_count = len(containers)
 
     config = {
         "Cmd": ["python"],
-        "Image": "python:latest",
+        "Image": image_name,
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -188,13 +188,13 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
 
 # @pytest.mark.asyncio
-# async def test_attach_tty(docker, testing_images, make_container):
+# async def test_attach_tty(docker, image_name, make_container):
 #     # echo of the input.
 #     # print(shell_container_detached_tty._id)
 #     # breakpoint()
 #     config = {
 #         "Cmd": ["python"],
-#         "Image": "python:latest",
+#         "Image": image_name,
 #         "AttachStdin": False,
 #         "AttachStdout": False,
 #         "AttachStderr": False,
@@ -223,12 +223,12 @@ async def test_wait_timeout(docker, testing_images, shell_container):
 
 
 @pytest.mark.asyncio
-async def test_put_archive(docker, testing_images):
+async def test_put_archive(docker, image_name):
     skip_windows()
 
     config = {
         "Cmd": ["python", "-c", "print(open('tmp/bar/foo.txt').read())"],
-        "Image": "python:latest",
+        "Image": image_name,
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -265,7 +265,7 @@ async def test_put_archive(docker, testing_images):
 
 
 @pytest.mark.asyncio
-async def test_get_archive(testing_images, make_container):
+async def test_get_archive(image_name, make_container):
     skip_windows()
 
     config = {
@@ -274,7 +274,7 @@ async def test_get_archive(testing_images, make_container):
             "-c",
             "with open('tmp/foo.txt', 'w') as f: f.write('test\\n')",
         ],
-        "Image": "python:latest",
+        "Image": image_name,
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -299,7 +299,7 @@ async def test_get_archive(testing_images, make_container):
 @pytest.mark.skipif(
     sys.platform == "win32", reason="Port is not exposed on Windows by some reason"
 )
-async def test_port(docker, testing_images):
+async def test_port(docker, image_name):
     config = {
         "Cmd": [
             "python",
@@ -310,7 +310,7 @@ async def test_port(docker, testing_images):
             "s.listen()\n"
             "while True: s.accept()",
         ],
-        "Image": "python:latest",
+        "Image": image_name,
         "ExposedPorts": {"5678/tcp": {}},
         "PublishAllPorts": True,
     }
@@ -327,11 +327,11 @@ async def test_port(docker, testing_images):
 
 
 @pytest.mark.asyncio
-async def test_events(docker, testing_images, event_loop):
+async def test_events(docker, image_name, event_loop):
     subscriber = docker.events.subscribe()
 
     # Do some stuffs to generate events.
-    config = {"Cmd": ["python"], "Image": "python:latest"}
+    config = {"Cmd": ["python"], "Image": image_name}
     container = await docker.containers.create_or_replace(
         config=config, name="aiodocker-testing-temp"
     )

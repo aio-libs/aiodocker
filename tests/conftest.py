@@ -61,13 +61,23 @@ def random_name():
 
 
 @pytest.fixture(scope="session")
-def testing_images():
+def image_name() -> str:
+    if sys.platform == 'win32':
+        return "python:latest"
+    else:
+        return "python:alpine"
+
+
+@pytest.fixture(scope="session")
+def testing_images(image_name: str) -> None:
     # Prepare a small Linux image shared by most test cases.
     event_loop = asyncio.get_event_loop()
 
     async def _pull():
         docker = Docker()
-        required_images = ["python:latest", "python:3.6.1", "python:3.7.4"]
+        required_images = [image_name]
+        if image_name != "python:latest":
+            required_images.append("python:latest")
         for img in required_images:
             try:
                 await docker.images.inspect(img)
@@ -137,10 +147,10 @@ def make_container(event_loop, docker):
 
 
 @pytest.fixture
-async def shell_container(event_loop, docker, make_container):
+async def shell_container(event_loop, docker, make_container, image_name):
     config = {
         "Cmd": ["python"],
-        "Image": "python:latest",
+        "Image": image_name,
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
