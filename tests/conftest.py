@@ -62,7 +62,7 @@ def random_name():
 
 @pytest.fixture(scope="session")
 def image_name() -> str:
-    if sys.platform == 'win32':
+    if sys.platform == "win32":
         return "python:latest"
     else:
         return "python:alpine"

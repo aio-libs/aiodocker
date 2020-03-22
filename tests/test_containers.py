@@ -25,7 +25,11 @@ async def _validate_hello(container):
 async def test_run_existing_container(docker, image_name):
     await docker.pull(image_name)
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": image_name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     await _validate_hello(container)
@@ -45,7 +49,11 @@ async def test_run_container_with_missing_image(docker, image_name):
 
     # should automatically pull the image
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": image_name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     await _validate_hello(container)
@@ -110,7 +118,11 @@ async def test_restart(docker, image_name):
 @pytest.mark.asyncio
 async def test_container_stats_list(docker, image_name):
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": image_name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     try:
@@ -126,7 +138,11 @@ async def test_container_stats_list(docker, image_name):
 @pytest.mark.asyncio
 async def test_container_stats_stream(docker, image_name):
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": image_name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     try:
