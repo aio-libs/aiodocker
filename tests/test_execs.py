@@ -8,7 +8,11 @@ from aiodocker.execs import Stream
 @pytest.mark.asyncio
 async def test_exec_attached(shell_container):
     execute = await shell_container.exec(
-        stdout=True, stderr=True, stdin=True, tty=True, cmd=["echo", "Hello"],
+        stdout=True,
+        stderr=True,
+        stdin=True,
+        tty=True,
+        cmd=["python", "-c", "print('Hello')"],
     )
     async with execute.start(detach=False) as stream:
         assert await stream.read_out() == (1, b"Hello\r\n")
@@ -21,7 +25,7 @@ async def test_exec_detached(shell_container):
         stderr=True,
         stdin=False,
         tty=False,
-        cmd=["sh", "-c", "echo Hello"],
+        cmd=["python", "-c", "print('Hello')"],
     )
     assert await execute.start(detach=True) == b""
 
