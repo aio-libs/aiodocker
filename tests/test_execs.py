@@ -1,61 +1,84 @@
 import asyncio
 
 import pytest
+from async_timeout import timeout
 
 from aiodocker.execs import Stream
 
 
+async def expect_prompt(stream: Stream) -> str:
+    try:
+        inp = []
+        ret = []
+        async with timeout(3):
+            while not ret or not ret[-1].endswith(b">>>"):
+                msg = await stream.read_out()
+                inp.append(msg.data)
+                assert msg.stream == 1
+                lines = [line.strip() for line in msg.data.splitlines()]
+                lines = [line if b"\x1b[K" not in line else b"" for line in lines]
+                lines = [line for line in lines if line]
+                ret.extend(lines)
+            return b"\n".join(ret)
+    except asyncio.TimeoutError:
+        raise AssertionError(f"[Timeout] {ret} {inp}")
+
+
 @pytest.mark.asyncio
-async def test_exec_attached(shell_container):
+@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: "stderr={}".format(x))
+async def test_exec_attached(shell_container, stderr):
+    if stderr:
+        cmd = ["python", "-c", "import sys;print('Hello', file=sys.stderr)"]
+    else:
+        cmd = ["python", "-c", "print('Hello')"]
+
     execute = await shell_container.exec(
-        stdout=True,
-        stderr=True,
-        stdin=True,
-        tty=True,
-        cmd=["python", "-c", "print('Hello')"],
+        stdout=True, stderr=True, stdin=True, tty=False, cmd=cmd,
     )
     async with execute.start(detach=False) as stream:
-        assert await stream.read_out() == (1, b"Hello\r\n")
+        msg = await stream.read_out()
+        assert msg.stream == 2 if stderr else 1
+        assert msg.data.strip() == b"Hello"
 
 
 @pytest.mark.asyncio
-async def test_exec_detached(shell_container):
+async def test_exec_attached_tty(shell_container):
     execute = await shell_container.exec(
-        stdout=True,
-        stderr=True,
-        stdin=False,
-        tty=False,
-        cmd=["python", "-c", "print('Hello')"],
+        stdout=True, stderr=True, stdin=True, tty=True, cmd=["python", "-q"],
     )
-    assert await execute.start(detach=True) == b""
+    async with execute.start(detach=False) as stream:
+        await execute.resize(w=80, h=25)
+
+        assert await expect_prompt(stream) == b">>>"
+
+        await stream.write_in(b"import sys\n")
+        assert await expect_prompt(stream) == b"import sys\n>>>"
+
+        await stream.write_in(b"print('stdout')\n")
+        assert await expect_prompt(stream) == b"print('stdout')\nstdout\n>>>"
+
+        await stream.write_in(b"print('stderr', file=sys.stderr)\n")
+        assert (
+            await expect_prompt(stream)
+            == b"print('stderr', file=sys.stderr)\nstderr\n>>>"
+        )
+
+        await stream.write_in(b"exit()\n")
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("detach", [True, False], ids=lambda x: "detach={}".format(x))
 @pytest.mark.parametrize("tty", [True, False], ids=lambda x: "tty={}".format(x))
 @pytest.mark.parametrize("stderr", [True, False], ids=lambda x: "stderr={}".format(x))
-async def test_exec_start_stream(shell_container, detach, tty, stderr):
-    if detach:
-        cmd = ["python", "-c", "print('Hello\n')"]
-    else:
-        cmd = ["cat"]
+async def test_exec_detached(shell_container, tty, stderr):
     if stderr:
-        cmd = ["sh", "-c", " ".join(cmd) + " >&2"]
-    execute = await shell_container.exec(
-        stdout=True, stderr=True, stdin=True, tty=tty, cmd=cmd
-    )
-    if detach:
-        resp = await execute.start(detach=detach)
-        assert isinstance(resp, bytes)
-        assert resp == b""
+        cmd = ["python", "-c", "import sys;print('Hello', file=sys.stderr)"]
     else:
-        async with execute.start(detach=detach) as stream:
-            assert isinstance(stream, Stream)
-            hello = b"Hello"
-            await stream.write_in(hello)
-            fileno, data = await stream.read_out()
-            assert data == hello
-            assert fileno == (1 if tty or not stderr else 2)
+        cmd = ["python", "-c", "print('Hello')"]
+
+    execute = await shell_container.exec(
+        stdout=True, stderr=True, stdin=False, tty=tty, cmd=cmd,
+    )
+    assert await execute.start(detach=True) == b""
 
 
 @pytest.mark.asyncio

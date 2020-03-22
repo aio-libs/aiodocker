@@ -36,7 +36,7 @@ async def test_run_existing_container(docker):
 async def test_run_container_with_missing_image(docker):
     name = "python:latest"
     try:
-        await docker.images.delete(name)
+        await docker.images.delete(name, force=True)
     except DockerError as e:
         if e.status == 404:
             pass  # already missing, pass
@@ -55,7 +55,7 @@ async def test_run_container_with_missing_image(docker):
 async def test_run_failing_start_container(docker):
     name = "python:latest"
     try:
-        await docker.images.delete(name)
+        await docker.images.delete(name, force=True)
     except DockerError as e:
         if e.status == 404:
             pass  # already missing, pass

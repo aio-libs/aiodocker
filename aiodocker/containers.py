@@ -326,12 +326,18 @@ class DockerContainer:
 
         if workdir is not None:
             data["WorkingDir"] = workdir
+        else:
+            data["WorkingDir"] = ""
 
         if detach_keys:
             data["detachKeys"] = detach_keys
+        else:
+            data["detachKeys"] = ""
 
         if user:
             data["User"] = user
+        else:
+            data["User"] = ""
 
         data = await self.docker._query_json(
             f"containers/{self._id}/exec", method="POST", data=data
