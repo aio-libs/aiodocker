@@ -222,7 +222,7 @@ async def test_attach_nontty(docker, image_name, make_container, stderr):
     async with container.attach(stdin=False, stdout=True, stderr=True) as stream:
         fileno, data = await stream.read_out()
         assert fileno == 2 if stderr else 1
-        assert data == b"Hello\n"
+        assert data.strip() == b"Hello"
 
 
 @pytest.mark.asyncio
