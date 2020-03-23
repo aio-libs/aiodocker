@@ -104,7 +104,7 @@ def docker(event_loop, testing_images):
     kwargs = {}
     version = os.environ.get("DOCKER_VERSION")
     if version:
-        for k, v in API_VERSIONS:
+        for k, v in API_VERSIONS.items():
             if version.startswith(k):
                 kwargs["api_version"] = v
                 break
