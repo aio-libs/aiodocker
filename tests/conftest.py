@@ -2,8 +2,8 @@ import asyncio
 import sys
 import traceback
 import uuid
+import os
 from distutils.version import StrictVersion
-from os import environ as ENV
 from typing import Any, Dict
 
 import pytest
@@ -12,13 +12,14 @@ from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 
-_api_versions = {
-    "17.06": "1.30",
-    "17.12": "1.35",
-    "18.02": "1.36",
-    "18.03": "1.37",
-    "18.06": "1.38",
-    "18.09": "1.39",
+API_VERSIONS = {
+    "17.06": "v1.30",
+    "17.09": "v1.32",
+    "17.12": "v1.35",
+    "18.02": "v1.36",
+    "18.03": "v1.37",
+    "18.06": "v1.38",
+    "18.09": "v1.39",
 }
 
 
@@ -46,7 +47,7 @@ def random_name():
 
     # If some test cases have used randomly-named temporary images,
     # we need to clean up them!
-    if ENV.get("CI", "") == "true":
+    if os.environ.get("CI", "") == "true":
         # But inside the CI server, we don't need clean up!
         return
     event_loop = asyncio.get_event_loop()
@@ -101,8 +102,14 @@ def testing_images(image_name: str) -> None:
 @pytest.fixture
 def docker(event_loop, testing_images):
     kwargs = {}
-    if "DOCKER_VERSION" in ENV:
-        kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
+    version = os.environ.get("DOCKER_VERSION")
+    if version:
+        for k, v in API_VERSIONS:
+            if version.startswith(k):
+                kwargs["api_version"] = v
+                break
+        else:
+            raise RuntimeError(f"Cannot find docker API version for {version}")
 
     async def _make_docker():
         return Docker(**kwargs)

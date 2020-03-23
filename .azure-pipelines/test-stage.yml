@@ -67,6 +67,7 @@ stages:
       displayName: 'Run tests'
       env:
         DOCKER_VERSION: '$(docker)'
+        CI: true
 
     - script: |
         python -m coverage xml
