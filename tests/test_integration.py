@@ -227,6 +227,7 @@ async def test_attach_nontty(docker, image_name, make_container, stderr):
 
 @pytest.mark.asyncio
 async def test_attach_tty(docker, image_name, make_container):
+    skip_windows()
     config = {
         "Cmd": ["python", "-q"],
         "Image": image_name,
