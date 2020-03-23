@@ -1,9 +1,10 @@
 import asyncio
+import os
 import sys
 import traceback
 import uuid
 from distutils.version import StrictVersion
-from os import environ as ENV
+from typing import Any, Dict
 
 import pytest
 
@@ -11,7 +12,16 @@ from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 
-_api_versions = {"18.03.1": "v1.37", "17.12.1": "v1.35", "17.09.0": "v1.32"}
+API_VERSIONS = {
+    "17.06": "v1.30",
+    "17.09": "v1.32",
+    "17.12": "v1.35",
+    "18.02": "v1.36",
+    "18.03": "v1.37",
+    "18.06": "v1.38",
+    "18.09": "v1.39",
+}
+
 
 if sys.platform == "win32":
     if sys.version_info < (3, 7):
@@ -37,7 +47,7 @@ def random_name():
 
     # If some test cases have used randomly-named temporary images,
     # we need to clean up them!
-    if ENV.get("CI", "") == "true":
+    if os.environ.get("CI", "") == "true":
         # But inside the CI server, we don't need clean up!
         return
     event_loop = asyncio.get_event_loop()
@@ -60,13 +70,23 @@ def random_name():
 
 
 @pytest.fixture(scope="session")
-def testing_images():
+def image_name() -> str:
+    if sys.platform == "win32":
+        return "python:latest"
+    else:
+        return "python:alpine"
+
+
+@pytest.fixture(scope="session")
+def testing_images(image_name: str) -> None:
     # Prepare a small Linux image shared by most test cases.
     event_loop = asyncio.get_event_loop()
 
     async def _pull():
         docker = Docker()
-        required_images = ["python:latest", "python:3.6.1", "python:3.7.4"]
+        required_images = [image_name]
+        if image_name != "python:latest":
+            required_images.append("python:latest")
         for img in required_images:
             try:
                 await docker.images.inspect(img)
@@ -82,8 +102,14 @@ def testing_images():
 @pytest.fixture
 def docker(event_loop, testing_images):
     kwargs = {}
-    if "DOCKER_VERSION" in ENV:
-        kwargs["api_version"] = _api_versions[ENV["DOCKER_VERSION"]]
+    version = os.environ.get("DOCKER_VERSION")
+    if version:
+        for k, v in API_VERSIONS.items():
+            if version.startswith(k):
+                kwargs["api_version"] = v
+                break
+        else:
+            raise RuntimeError(f"Cannot find docker API version for {version}")
 
     async def _make_docker():
         return Docker(**kwargs)
@@ -116,11 +142,30 @@ def swarm(event_loop, docker):
 
 
 @pytest.fixture
-def shell_container(event_loop, docker):
+def make_container(event_loop, docker):
     container = None
+
+    async def _spawn(config: Dict[str, Any], name=None):
+        nonlocal container
+        container = await docker.containers.create_or_replace(config=config, name=name)
+        await container.start()
+        return container
+
+    yield _spawn
+
+    async def _delete():
+        nonlocal container
+        if container is not None:
+            await container.delete(force=True)
+
+    event_loop.run_until_complete(_delete())
+
+
+@pytest.fixture
+async def shell_container(event_loop, docker, make_container, image_name):
     config = {
         "Cmd": ["python"],
-        "Image": "python:latest",
+        "Image": image_name,
         "AttachStdin": False,
         "AttachStdout": False,
         "AttachStderr": False,
@@ -128,19 +173,4 @@ def shell_container(event_loop, docker):
         "OpenStdin": True,
     }
 
-    async def _spawn():
-        nonlocal container
-        container = await docker.containers.create_or_replace(
-            config=config, name="aiodocker-testing-shell"
-        )
-        await container.start()
-
-    event_loop.run_until_complete(_spawn())
-
-    yield container
-
-    async def _delete():
-        nonlocal container
-        await container.delete(force=True)
-
-    event_loop.run_until_complete(_delete())
+    return await make_container(config, name="aiodocker-testing-shell")

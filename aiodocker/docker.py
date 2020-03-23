@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 import aiohttp
+from multidict import CIMultiDict
 from yarl import URL
 
 # Sub-API classes
@@ -22,7 +23,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .utils import httpize, parse_result
+from .utils import _AsyncCM, httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
@@ -166,6 +167,7 @@ class Docker:
         headers=None,
         timeout=None,
         chunked=None,
+        read_until_eof=True,
     ):
         """
         Get the response object by performing the HTTP request.
@@ -180,22 +182,29 @@ class Docker:
                 headers=headers,
                 timeout=timeout,
                 chunked=chunked,
+                read_until_eof=read_until_eof,
             )
         )
 
-    async def _do_query(self, path, method, *, params, data, headers, timeout, chunked):
+    async def _do_query(
+        self, path, method, *, params, data, headers, timeout, chunked, read_until_eof
+    ):
         url = self._canonicalize_url(path)
-        if headers and "content-type" not in headers:
-            headers["content-type"] = "application/json"
+        if headers:
+            headers = CIMultiDict(headers)
+            if "Content-Type" not in headers:
+                headers["Content-Type"] = "application/json"
         try:
+            real_params = httpize(params)
             response = await self.session.request(
                 method,
                 url,
-                params=httpize(params),
+                params=real_params,
                 headers=headers,
                 data=data,
                 timeout=timeout,
                 chunked=chunked,
+                read_until_eof=read_until_eof,
             )
         except asyncio.TimeoutError:
             raise
@@ -220,24 +229,46 @@ class Docker:
         return response
 
     async def _query_json(
-        self, path, method="GET", *, params=None, data=None, headers=None, timeout=None
+        self,
+        path,
+        method="GET",
+        *,
+        params=None,
+        data=None,
+        headers=None,
+        timeout=None,
+        read_until_eof=True,
     ):
         """
         A shorthand of _query() that treats the input as JSON.
         """
         if headers is None:
             headers = {}
-        headers["content-type"] = "application/json"
+        headers["Content-Type"] = "application/json"
         if not isinstance(data, (str, bytes)):
             data = json.dumps(data)
         async with self._query(
-            path, method, params=params, data=data, headers=headers, timeout=timeout
+            path,
+            method,
+            params=params,
+            data=data,
+            headers=headers,
+            timeout=timeout,
+            read_until_eof=read_until_eof,
         ) as response:
             data = await parse_result(response)
             return data
 
     def _query_chunked_post(
-        self, path, method="POST", *, params=None, data=None, headers=None, timeout=None
+        self,
+        path,
+        method="POST",
+        *,
+        params=None,
+        data=None,
+        headers=None,
+        timeout=None,
+        read_until_eof=True,
     ):
         """
         A shorthand for uploading data by chunks
@@ -254,6 +285,7 @@ class Docker:
             headers=headers,
             timeout=timeout,
             chunked=True,
+            read_until_eof=read_until_eof,
         )
 
     async def _websocket(self, path, **params):
@@ -289,19 +321,3 @@ class Docker:
             certfile=certs_path / "cert.pem", keyfile=certs_path / "key.pem"
         )
         return context
-
-
-class _AsyncCM:
-    __slots__ = ("_coro", "_resp")
-
-    def __init__(self, coro):
-        self._coro = coro
-        self._resp = None
-
-    async def __aenter__(self):
-        resp = await self._coro
-        self._resp = resp
-        return await resp.__aenter__()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        return await self._resp.__aexit__(exc_type, exc_val, exc_tb)

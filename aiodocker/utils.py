@@ -296,3 +296,19 @@ def compose_auth_header(
         raise TypeError("auth must be base64 encoded string/bytes or a dictionary")
     auth = base64.b64encode(auth_json).decode("ascii")
     return auth
+
+
+class _AsyncCM:
+    __slots__ = ("_coro", "_resp")
+
+    def __init__(self, coro):
+        self._coro = coro
+        self._resp = None
+
+    async def __aenter__(self):
+        resp = await self._coro
+        self._resp = resp
+        return await resp.__aenter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return await self._resp.__aexit__(exc_type, exc_val, exc_tb)

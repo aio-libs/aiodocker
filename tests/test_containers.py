@@ -22,43 +22,52 @@ async def _validate_hello(container):
 
 
 @pytest.mark.asyncio
-async def test_run_existing_container(docker):
-    name = "python:latest"
-    await docker.pull(name)
+async def test_run_existing_container(docker, image_name):
+    await docker.pull(image_name)
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     await _validate_hello(container)
 
 
 @pytest.mark.asyncio
-async def test_run_container_with_missing_image(docker):
-    name = "python:latest"
+async def test_run_container_with_missing_image(docker, image_name):
     try:
-        await docker.images.delete(name)
+        await docker.images.delete(image_name)
     except DockerError as e:
         if e.status == 404:
             pass  # already missing, pass
+        elif e.status == 409:
+            await docker.images.delete(image_name, force=True)
         else:
             raise
 
     # should automatically pull the image
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     await _validate_hello(container)
 
 
 @pytest.mark.asyncio
-async def test_run_failing_start_container(docker):
-    name = "python:latest"
+async def test_run_failing_start_container(docker, image_name):
     try:
-        await docker.images.delete(name)
+        await docker.images.delete(image_name)
     except DockerError as e:
         if e.status == 404:
             pass  # already missing, pass
+        elif e.status == 409:
+            await docker.images.delete(image_name, force=True)
         else:
             raise
 
@@ -68,7 +77,7 @@ async def test_run_failing_start_container(docker):
                 # we want to raise an error
                 # `executable file not found`
                 "Cmd": ["pytohon", "-c" "print('hello')"],
-                "Image": name,
+                "Image": image_name,
             }
         )
 
@@ -81,12 +90,12 @@ async def test_run_failing_start_container(docker):
 
 
 @pytest.mark.asyncio
-async def test_restart(docker):
+async def test_restart(docker, image_name):
     # sleep for 10 min to emulate hanging container
     container = await docker.containers.run(
         config={
             "Cmd": ["python", "-c", "import time;time.sleep(600)"],
-            "Image": "python:latest",
+            "Image": image_name,
         }
     )
     try:
@@ -107,10 +116,13 @@ async def test_restart(docker):
 
 
 @pytest.mark.asyncio
-async def test_container_stats_list(docker):
-    name = "python:latest"
+async def test_container_stats_list(docker, image_name):
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     try:
@@ -124,10 +136,13 @@ async def test_container_stats_list(docker):
 
 
 @pytest.mark.asyncio
-async def test_container_stats_stream(docker):
-    name = "python:latest"
+async def test_container_stats_stream(docker, image_name):
     container = await docker.containers.run(
-        config={"Cmd": ["-c", "print('hello')"], "Entrypoint": "python", "Image": name}
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": "python",
+            "Image": image_name,
+        }
     )
 
     try:
@@ -142,3 +157,8 @@ async def test_container_stats_stream(docker):
                 break
     finally:
         await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_resize(shell_container):
+    await shell_container.resize(w=120, h=10)
