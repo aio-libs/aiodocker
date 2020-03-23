@@ -13,6 +13,25 @@ from async_timeout import timeout
 
 import aiodocker
 from aiodocker.docker import Docker
+from aiodocker.execs import Stream
+
+
+async def expect_prompt(stream: Stream) -> str:
+    try:
+        inp = []
+        ret = []
+        async with timeout(3):
+            while not ret or not ret[-1].endswith(b">>>"):
+                msg = await stream.read_out()
+                inp.append(msg.data)
+                assert msg.stream == 1
+                lines = [line.strip() for line in msg.data.splitlines()]
+                lines = [line if b"\x1b[K" not in line else b"" for line in lines]
+                lines = [line for line in lines if line]
+                ret.extend(lines)
+            return b"\n".join(ret)
+    except asyncio.TimeoutError:
+        raise AssertionError(f"[Timeout] {ret} {inp}")
 
 
 def skip_windows():
@@ -175,41 +194,71 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     assert found, output
 
 
-# @pytest.mark.asyncio
-# async def test_attach_nontty(docker, testing_images, shell_container_detached):
-#     # echo of the input.
-#     async with shell_container_detached.attach(
-#         stdin=True, stdout=True, stderr=True
-#     ) as stream:
-#         await stream.write_in(b"print('hello world\\n')\n")
-#         fileno, data = await stream.read_out()
-#         assert fileno == 1
-#         assert data == b""
+@pytest.mark.asyncio
+@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: "stderr={}".format(x))
+async def test_attach_nontty(docker, image_name, make_container, stderr):
+    if stderr:
+        cmd = [
+            "python",
+            "-c",
+            "import sys, time; time.sleep(3); print('Hello', file=sys.stderr)",
+        ]
+    else:
+        cmd = ["python", "-c", "import time; time.sleep(3); print('Hello')"]
+
+    config = {
+        "Cmd": cmd,
+        "Image": image_name,
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": False,
+        "OpenStdin": False,
+        "StdinOnce": False,
+    }
+
+    container = await make_container(config, name="aiodocker-testing-attach-nontty")
+
+    async with container.attach(stdin=False, stdout=True, stderr=True) as stream:
+        fileno, data = await stream.read_out()
+        assert fileno == 2 if stderr else 1
+        assert data == b"Hello\n"
 
 
-# @pytest.mark.asyncio
-# async def test_attach_tty(docker, image_name, make_container):
-#     # echo of the input.
-#     # print(shell_container_detached_tty._id)
-#     # breakpoint()
-#     config = {
-#         "Cmd": ["python"],
-#         "Image": image_name,
-#         "AttachStdin": False,
-#         "AttachStdout": False,
-#         "AttachStderr": False,
-#         "Tty": True,
-#         "OpenStdin": True,
-#         "StdinOnce": True,
-#     }
+@pytest.mark.asyncio
+async def test_attach_tty(docker, image_name, make_container):
+    config = {
+        "Cmd": ["python", "-q"],
+        "Image": image_name,
+        "AttachStdin": True,
+        "AttachStdout": True,
+        "AttachStderr": True,
+        "Tty": True,
+        "OpenStdin": True,
+        "StdinOnce": False,
+    }
 
-#     container = await make_container(config, name="aiodocker-testing-attach-tty")
+    container = await make_container(config, name="aiodocker-testing-attach-tty")
 
-#     async with container.attach(stdin=True, stdout=True, stderr=True) as stream:
-#         await stream.write_in(b"print('hello world\\n')\n")
-#         fileno, data = await stream.read_out()
-#         assert fileno == 1
-#         assert data == b""
+    async with container.attach(stdin=True, stdout=True, stderr=True) as stream:
+
+        await container.resize(w=80, h=25)
+
+        assert await expect_prompt(stream) == b">>>"
+
+        await stream.write_in(b"import sys\n")
+        assert await expect_prompt(stream) == b"import sys\n>>>"
+
+        await stream.write_in(b"print('stdout')\n")
+        assert await expect_prompt(stream) == b"print('stdout')\nstdout\n>>>"
+
+        await stream.write_in(b"print('stderr', file=sys.stderr)\n")
+        assert (
+            await expect_prompt(stream)
+            == b"print('stderr', file=sys.stderr)\nstderr\n>>>"
+        )
+
+        await stream.write_in(b"exit()\n")
 
 
 @pytest.mark.asyncio

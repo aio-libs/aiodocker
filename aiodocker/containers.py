@@ -234,14 +234,13 @@ class DockerContainer:
             params = MultiDict()
             if detach_keys:
                 params.add("detachKeys", detach_keys)
-            if logs:
-                params.add("logs", int(logs))
-            if stdin:
-                params.add("stdin", int(stdin))
-            if stdout:
-                params.add("stdout", int(stdout))
-            if stderr:
-                params.add("stderr", int(stderr))
+            else:
+                params.add("detachKeys", "")
+            params.add("logs", int(logs))
+            params.add("stdin", int(stdin))
+            params.add("stdout", int(stdout))
+            params.add("stderr", int(stderr))
+            params.add("stream", 1)
             inspect_info = await self.show()
             return (
                 URL(f"containers/{self._id}/attach").with_query(params),
@@ -346,8 +345,7 @@ class DockerContainer:
 
     async def resize(self, *, h: int, w: int) -> None:
         url = URL(f"containers/{self._id}/resize").with_query(h=h, w=w)
-        async with self.docker._query(url, method="POST") as resp:
-            resp
+        await self.docker._query_json(url, method="POST")
 
     def __getitem__(self, key):
         return self._container[key]

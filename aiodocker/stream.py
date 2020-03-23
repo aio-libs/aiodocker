@@ -1,3 +1,4 @@
+import socket
 import struct
 import warnings
 from collections import namedtuple
@@ -51,6 +52,9 @@ class Stream:
         conn = resp.connection
         protocol = conn.protocol
         loop = resp._loop
+        sock = protocol.transport.get_extra_info("socket")
+        # set TCP keepalive for vendored socket
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         queue: aiohttp.FlowControlDataQueue[Message] = aiohttp.FlowControlDataQueue(
             protocol, limit=2 ** 16, loop=loop
