@@ -1,0 +1,1 @@
+Implement auto-versioning of the docker API by default.

@@ -46,6 +46,7 @@ class Stream:
             timeout=timeout,
             chunked=None,
             read_until_eof=False,
+            versioned_api=True,
         )
         await resp.read()  # skip empty body
 

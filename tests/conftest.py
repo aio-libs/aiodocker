@@ -124,7 +124,10 @@ def docker(event_loop, testing_images):
 
 
 @pytest.fixture
-def requires_api_version(docker):
+async def requires_api_version(docker):
+    # Update version info from auto to the real value
+    await docker.version()
+
     def check(version, reason):
         if StrictVersion(docker.api_version[1:]) < StrictVersion(version[1:]):
             pytest.skip(reason)

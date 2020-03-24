@@ -61,7 +61,7 @@ class Docker:
         connector=None,
         session=None,
         ssl_context=None,
-        api_version="v1.35",
+        api_version="auto",
     ):
 
         docker_host = url  # rename
@@ -85,7 +85,8 @@ class Docker:
                     raise
         self.docker_host = docker_host
 
-        assert _rx_version.search(api_version) is not None, "Invalid API version format"
+        if api_version != "auto" and _rx_version.search(api_version) is None:
+            raise ValueError("Invalid API version format")
         self.api_version = api_version
 
         if docker_host is None:
@@ -152,10 +153,20 @@ class Docker:
         data = await self._query_json("version")
         return data
 
-    def _canonicalize_url(self, path):
-        return URL(
-            "{self.docker_host}/{self.api_version}/{path}".format(self=self, path=path)
-        )
+    def _canonicalize_url(self, path, *, versioned_api=True):
+        if versioned_api:
+            return URL(
+                "{self.docker_host}/{self.api_version}/{path}".format(
+                    self=self, path=path
+                )
+            )
+        else:
+            return URL("{self.docker_host}/{path}".format(self=self, path=path))
+
+    async def _check_version(self) -> None:
+        if self.api_version == "auto":
+            ver = await self._query_json("version", versioned_api=False)
+            self.api_version = "v" + ver["ApiVersion"]
 
     def _query(
         self,
@@ -168,6 +179,7 @@ class Docker:
         timeout=None,
         chunked=None,
         read_until_eof=True,
+        versioned_api=True,
     ):
         """
         Get the response object by performing the HTTP request.
@@ -183,13 +195,26 @@ class Docker:
                 timeout=timeout,
                 chunked=chunked,
                 read_until_eof=read_until_eof,
+                versioned_api=versioned_api,
             )
         )
 
     async def _do_query(
-        self, path, method, *, params, data, headers, timeout, chunked, read_until_eof
+        self,
+        path,
+        method,
+        *,
+        params,
+        data,
+        headers,
+        timeout,
+        chunked,
+        read_until_eof,
+        versioned_api,
     ):
-        url = self._canonicalize_url(path)
+        if versioned_api:
+            await self._check_version()
+        url = self._canonicalize_url(path, versioned_api=versioned_api)
         if headers:
             headers = CIMultiDict(headers)
             if "Content-Type" not in headers:
@@ -238,6 +263,7 @@ class Docker:
         headers=None,
         timeout=None,
         read_until_eof=True,
+        versioned_api=True,
     ):
         """
         A shorthand of _query() that treats the input as JSON.
@@ -255,6 +281,7 @@ class Docker:
             headers=headers,
             timeout=timeout,
             read_until_eof=read_until_eof,
+            versioned_api=versioned_api,
         ) as response:
             data = await parse_result(response)
             return data
@@ -269,6 +296,7 @@ class Docker:
         headers=None,
         timeout=None,
         read_until_eof=True,
+        versioned_api=True,
     ):
         """
         A shorthand for uploading data by chunks
