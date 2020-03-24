@@ -1,7 +1,7 @@
 import json
 import shlex
 import tarfile
-from typing import Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 from multidict import MultiDict
 from yarl import URL
@@ -108,6 +108,10 @@ class DockerContainer:
             "id", self._container.get("ID", self._container.get("Id"))
         )
         self.logs = DockerLog(docker, self)
+
+    @property
+    def id(self) -> str:
+        return self._id
 
     def log(self, *, stdout=False, stderr=False, follow=False, **kwargs):
         if stdout is False and stderr is False:
@@ -346,6 +350,47 @@ class DockerContainer:
     async def resize(self, *, h: int, w: int) -> None:
         url = URL(f"containers/{self._id}/resize").with_query(h=h, w=w)
         await self.docker._query_json(url, method="POST")
+
+    async def commit(
+        self,
+        *,
+        repository: Optional[str] = None,
+        tag: Optional[str] = None,
+        message: Optional[str] = None,
+        author: Optional[str] = None,
+        changes: Optional[Union[str, Sequence[str]]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        pause: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Commit a container to an image. Similar to the ``docker commit``
+        command.
+        """
+        params = {"container": self._id, "pause": pause}
+        if repository is not None:
+            params["repo"] = repository
+        if tag is not None:
+            params["tag"] = tag
+        if message is not None:
+            params["comment"] = message
+        if author is not None:
+            params["author"] = author
+        if changes is not None:
+            if not isinstance(changes, str):
+                changes = "\n".join(changes)
+            params["changes"] = changes
+
+        return await self.docker._query_json(
+            "commit", method="POST", params=params, data=config
+        )
+
+    async def pause(self) -> None:
+        async with self.docker._query(f"containers/{self._id}/pause", method="POST"):
+            pass
+
+    async def unpause(self) -> None:
+        async with self.docker._query(f"containers/{self._id}/unpause", method="POST"):
+            pass
 
     def __getitem__(self, key):
         return self._container[key]
