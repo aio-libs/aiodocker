@@ -1,7 +1,7 @@
 import json
 import shlex
 import tarfile
-from typing import Mapping, Optional, Sequence, Tuple, Union, Dict, Any
+from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 
 from multidict import MultiDict
 from yarl import URL
