@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 
 import pytest
 
@@ -166,6 +167,8 @@ async def test_resize(shell_container):
 
 @pytest.mark.asyncio
 async def test_commit(docker, image_name, shell_container):
+    if sys.platform == "win32":
+        await shell_container.pause()
     shell_container.commit()
     ret = await shell_container.commit()
     img_id = ret["Id"]
@@ -182,6 +185,8 @@ async def test_commit(docker, image_name, shell_container):
 
 @pytest.mark.asyncio
 async def test_commit_with_changes(docker, image_name, shell_container):
+    if sys.platform == "win32":
+        await shell_container.pause()
     ret = await shell_container.commit(changes=["EXPOSE 8000", 'CMD ["py"]'])
     img_id = ret["Id"]
     img = await docker.images.inspect(img_id)
@@ -189,3 +194,28 @@ async def test_commit_with_changes(docker, image_name, shell_container):
     assert "8000/tcp" in img["Config"]["ExposedPorts"]
     assert img["Config"]["Cmd"] == ["py"]
     await docker.images.delete(img_id)
+
+
+@pytest.mark.asyncio
+async def test_pause_unpause(shell_container):
+    await shell_container.pause()
+    container_info = await shell_container.show()
+    assert 'State' in container_info
+    state = container_info['State']
+    assert 'ExitCode' in state
+    assert state['ExitCode'] == 0
+    assert 'Running' in state
+    assert state['Running'] is True
+    assert 'Paused' in state
+    assert state['Paused'] is True
+
+    await shell_container.unpause()
+    container_info = await shell_container.show()
+    assert 'State' in container_info
+    state = container_info['State']
+    assert 'ExitCode' in state
+    assert state['ExitCode'] == 0
+    assert 'Running' in state
+    assert state['Running'] is True
+    assert 'Paused' in state
+    assert state['Paused'] is False

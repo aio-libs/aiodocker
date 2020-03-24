@@ -1,1 +1,1 @@
-Implement `container.commit()` method.
+Implement container commit, pause and unpause functionality.

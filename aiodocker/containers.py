@@ -384,6 +384,14 @@ class DockerContainer:
             "commit", method="POST", params=params, data=config
         )
 
+    async def pause(self) -> None:
+        async with self.docker._query(f"containers/{self._id}/pause", method="POST"):
+            pass
+
+    async def unpause(self) -> None:
+        async with self.docker._query(f"containers/{self._id}/unpause", method="POST"):
+            pass
+
     def __getitem__(self, key):
         return self._container[key]
 
