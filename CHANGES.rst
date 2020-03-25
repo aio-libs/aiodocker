@@ -12,6 +12,25 @@ Changes
 
 .. towncrier release notes start
 
+0.18.0 (2020-03-25)
+===================
+
+Features
+--------
+
+- Improve the error text message if cannot connect to docker engine. (#411)
+- Rename `websocket()` to `attach()` (#412)
+- Implement docker exec protocol. (#415)
+- Implement container commit, pause and unpause functionality. (#418)
+- Implement auto-versioning of the docker API by default. (#419)
+
+
+Bugfixes
+--------
+
+- Fix volume.delete throwing a TypeError. (#389)
+
+
 0.17.0 (2019-10-15)
 ===================
 

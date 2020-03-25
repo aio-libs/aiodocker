@@ -1,1 +1,0 @@
-Fix volume.delete throwing a TypeError.
