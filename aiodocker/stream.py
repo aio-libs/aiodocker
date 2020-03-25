@@ -78,6 +78,9 @@ class Stream:
         await self._init()
         transport = self._resp.connection.transport
         transport.write(data)
+        protocol = self._resp.connection.protocol
+        if protocol.transport is not None:
+            await protocol._drain_helper()
 
     async def close(self) -> None:
         if self._resp is not None:
