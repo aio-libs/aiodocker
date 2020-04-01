@@ -50,7 +50,6 @@ class Stream:
             read_until_eof=False,
             versioned_api=True,
         )
-        await resp.read()  # skip empty body
 
         conn = resp.connection
         if conn is None:
