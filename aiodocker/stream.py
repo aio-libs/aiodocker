@@ -53,12 +53,16 @@ class Stream:
 
         conn = resp.connection
         if conn is None:
+            # read body if present, it can contain an information
+            # about disconnection
+            body = await resp.read()
             raise DockerError(
                 500,
                 {
                     "message": (
                         "Cannot upgrade connection to vendored tcp protocol, "
                         "the docker server has closed underlying socket"
+                        f"[{body[:100]}]"
                     )
                 },
             )
