@@ -58,12 +58,13 @@ class Stream:
             body = await resp.read()
             msg = ("Cannot upgrade connection to vendored tcp protocol, "
                    "the docker server has closed underlying socket.")
+            msg += " Status code: {resp.status}."
+            msg += " Headers: {resp.headers}."
             if body:
                 if len(body) > 100:
-                    body = body[:100] + b'...'
-                    msg = msg + b" First 100 bytes of body: " + body
+                    msg = msg + " First 100 bytes of body: [{body[100]!r}]..."
                 else:
-                    msg = msg + "Body: " + body
+                    msg = msg + " Body: [{body!r}]"
             raise DockerError(
                 500,
                 {
