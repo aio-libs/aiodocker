@@ -56,8 +56,10 @@ class Stream:
             # read body if present, it can contain an information
             # about disconnection
             body = await resp.read()
-            msg = ("Cannot upgrade connection to vendored tcp protocol, "
-                   "the docker server has closed underlying socket.")
+            msg = (
+                "Cannot upgrade connection to vendored tcp protocol, "
+                "the docker server has closed underlying socket."
+            )
             msg += " Status code: {resp.status}."
             msg += " Headers: {resp.headers}."
             if body:
@@ -66,10 +68,7 @@ class Stream:
                 else:
                     msg = msg + " Body: [{body!r}]"
             raise DockerError(
-                500,
-                {
-                    "message": msg
-                },
+                500, {"message": msg},
             )
         protocol = conn.protocol
         loop = resp._loop
