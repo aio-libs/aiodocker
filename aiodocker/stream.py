@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Tuple, Type
 import aiohttp
 from yarl import URL
 
+from .exceptions import DockerError
+
 
 if TYPE_CHECKING:
     from .docker import Docker
@@ -51,6 +53,16 @@ class Stream:
         await resp.read()  # skip empty body
 
         conn = resp.connection
+        if conn is None:
+            raise DockerError(
+                500,
+                {
+                    "message": (
+                        "Cannot upgrade connection to vendored tcp protocol, "
+                        "the docker server has closed underlying socket"
+                    )
+                },
+            )
         protocol = conn.protocol
         loop = resp._loop
         sock = protocol.transport.get_extra_info("socket")
