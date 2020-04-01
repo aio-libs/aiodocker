@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.18.1 (2020-04-01)
+===================
+
+Bugfixes
+--------
+
+- Improve the errror message when connection is closed by Docker Engine on TCP hijacking. (#424)
+
+
 0.18.0 (2020-03-25)
 ===================
 
