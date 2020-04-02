@@ -60,13 +60,13 @@ class Stream:
                 "Cannot upgrade connection to vendored tcp protocol, "
                 "the docker server has closed underlying socket."
             )
-            msg += " Status code: {resp.status}."
-            msg += " Headers: {resp.headers}."
+            msg += f" Status code: {resp.status}."
+            msg += f" Headers: {resp.headers}."
             if body:
                 if len(body) > 100:
-                    msg = msg + " First 100 bytes of body: [{body[100]!r}]..."
+                    msg = msg + f" First 100 bytes of body: [{body[100]!r}]..."
                 else:
-                    msg = msg + " Body: [{body!r}]"
+                    msg = msg + f" Body: [{body!r}]"
             raise DockerError(
                 500, {"message": msg},
             )
