@@ -50,12 +50,12 @@ class Stream:
             read_until_eof=False,
             versioned_api=True,
         )
+        # read body if present, it can contain an information
+        # about disconnection
+        body = await self._resp.read()
 
         conn = resp.connection
         if conn is None:
-            # read body if present, it can contain an information
-            # about disconnection
-            body = await resp.read()
             msg = (
                 "Cannot upgrade connection to vendored tcp protocol, "
                 "the docker server has closed underlying socket."
