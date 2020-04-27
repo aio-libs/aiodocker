@@ -85,10 +85,13 @@ class Stream:
         protocol.force_close()
         self._queue = queue
 
-    async def read_out(self) -> Message:
+    async def read_out(self) -> Optional[Message]:
         """Read from stdout or stderr."""
         await self._init()
-        return await self._queue.read()
+        try:
+            return await self._queue.read()
+        except aiohttp.EofStream:
+            return None
 
     async def write_in(self, data: bytes) -> None:
         """Write into stdin."""
@@ -131,16 +134,19 @@ class Stream:
 
 
 class _ExecParser:
-    def __init__(self, queue, tty=False):
+    def __init__(self, queue, tty=False) -> None:
         self.queue = queue
         self.tty = tty
         self.header_fmt = struct.Struct(">BxxxL")
         self._buf = bytearray()
 
-    def feed_eof(self):
+    def set_exception(self, exc: BaseException) -> None:
+        self.queue.set_exception(exc)
+
+    def feed_eof(self) -> None:
         self.queue.feed_eof()
 
-    def feed_data(self, data):
+    def feed_data(self, data: bytes) -> None:
         if self.tty:
             msg = Message(1, data)  # stdout
             self.queue.feed_data(msg, len(data))

@@ -16,7 +16,7 @@ from aiodocker.docker import Docker
 from aiodocker.execs import Stream
 
 
-async def expect_prompt(stream: Stream) -> str:
+async def expect_prompt(stream: Stream) -> bytes:
     try:
         inp = []
         ret = []
