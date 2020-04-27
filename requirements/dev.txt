@@ -1,5 +1,5 @@
 -r test.txt
 -r ci.txt
 -r doc.txt
-pytest-sugar==0.9.2
+pytest-sugar==0.9.3
 towncrier==19.2.0
