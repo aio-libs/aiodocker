@@ -46,6 +46,7 @@ setup(
     url="https://github.com/aio-libs/aiodocker",
     platforms=["any"],
     packages=["aiodocker"],
+    include_package_data=True,
     python_requires=">=3.6",
     install_requires=requirements,
 )
