@@ -6,6 +6,8 @@ import re
 import ssl
 import sys
 from pathlib import Path
+from types import TracebackType
+from typing import Optional, Type
 
 import aiohttp
 from multidict import CIMultiDict
@@ -140,6 +142,17 @@ class Docker:
         # legacy aliases
         self.pull = self.images.pull
         self.push = self.images.push
+
+    async def __aenter__(self) -> 'Docker':
+        return self
+
+    async def __aexit__(
+            self,
+            exc_type: Optional[Type[BaseException]],
+            exc_val: Optional[BaseException],
+            exc_tb: Optional[TracebackType]
+    ) -> None:
+        await self.close()
 
     async def close(self):
         await self.events.stop()
