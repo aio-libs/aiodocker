@@ -2,14 +2,19 @@ import io
 import json
 import warnings
 from typing import (
+    Any,
     AsyncIterator,
     BinaryIO,
+    Dict,
     List,
     Mapping,
     MutableMapping,
     Optional,
     Union,
+    overload,
 )
+
+from typing_extensions import Literal
 
 from .jsonstream import json_stream_list, json_stream_stream
 from .utils import clean_map, compose_auth_header
@@ -51,6 +56,7 @@ class DockerImages(object):
         )
         return response
 
+    @overload
     def pull(
         self,
         from_image: str,
@@ -58,8 +64,31 @@ class DockerImages(object):
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: str = None,
         repo: str = None,
+        stream: Literal[False] = False,
+    ) -> Dict[str, Any]:
+        pass
+
+    @overload  # noqa: F811
+    def pull(
+        self,
+        from_image: str,
+        *,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: str = None,
+        repo: str = None,
+        stream: Literal[True],
+    ) -> AsyncIterator[Dict[str, Any]]:
+        pass
+
+    def pull(  # noqa: F811
+        self,
+        from_image: str,
+        *,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: str = None,
+        repo: str = None,
         stream: bool = False,
-    ) -> Mapping:
+    ) -> Any:
         """
         Similar to `docker pull`, pull an image locally
 
@@ -104,14 +133,36 @@ class DockerImages(object):
         async with cm as response:
             return await json_stream_list(response)
 
+    @overload
     def push(
         self,
         name: str,
         *,
         auth: Union[MutableMapping, str, bytes] = None,
         tag: str = None,
+        stream: Literal[False] = False,
+    ) -> Dict[str, Any]:
+        pass
+
+    @overload  # noqa: F811
+    def push(
+        self,
+        name: str,
+        *,
+        auth: Union[MutableMapping, str, bytes] = None,
+        tag: str = None,
+        stream: Literal[True] = False,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        pass
+
+    def push(  # noqa: F811
+        self,
+        name: str,
+        *,
+        auth: Union[MutableMapping, str, bytes] = None,
+        tag: str = None,
         stream: bool = False,
-    ) -> Mapping:
+    ) -> Any:
         params = {}
         headers = {
             # Anonymous push requires a dummy auth header.
@@ -184,7 +235,47 @@ class DockerImages(object):
             yield chunk
             chunk = fileobj.read(io.DEFAULT_BUFFER_SIZE)
 
+    @overload
+    async def build(
+        self,
+        *,
+        remote: str = None,
+        fileobj: BinaryIO = None,
+        path_dockerfile: str = None,
+        tag: str = None,
+        quiet: bool = False,
+        nocache: bool = False,
+        buildargs: Mapping = None,
+        pull: bool = False,
+        rm: bool = True,
+        forcerm: bool = False,
+        labels: Mapping = None,
+        stream: Literal[False] = False,
+        encoding: str = None,
+    ) -> Dict[str, Any]:
+        pass
+
+    @overload  # noqa: F811
     def build(
+        self,
+        *,
+        remote: str = None,
+        fileobj: BinaryIO = None,
+        path_dockerfile: str = None,
+        tag: str = None,
+        quiet: bool = False,
+        nocache: bool = False,
+        buildargs: Mapping = None,
+        pull: bool = False,
+        rm: bool = True,
+        forcerm: bool = False,
+        labels: Mapping = None,
+        stream: Literal[True] = False,
+        encoding: str = None,
+    ) -> AsyncIterator[Dict[str, Any]]:
+        pass
+
+    def build(  # noqa: F811
         self,
         *,
         remote: str = None,
@@ -200,7 +291,7 @@ class DockerImages(object):
         labels: Mapping = None,
         stream: bool = False,
         encoding: str = None,
-    ) -> Mapping:
+    ) -> Any:
         """
         Build an image given a remote Dockerfile
         or a file object with a Dockerfile inside

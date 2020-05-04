@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.18.7 (2020-05-04)
+===================
+
+Bugfixes
+--------
+
+- Fix some typing errors
+
+
 0.18.1 (2020-04-01)
 ===================
 

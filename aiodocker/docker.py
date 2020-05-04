@@ -143,14 +143,14 @@ class Docker:
         self.pull = self.images.pull
         self.push = self.images.push
 
-    async def __aenter__(self) -> 'Docker':
+    async def __aenter__(self) -> "Docker":
         return self
 
     async def __aexit__(
-            self,
-            exc_type: Optional[Type[BaseException]],
-            exc_val: Optional[BaseException],
-            exc_tb: Optional[TracebackType]
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         await self.close()
 
