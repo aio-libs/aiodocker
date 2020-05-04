@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.18.8 (2020-05-04)
+===================
+
+Bugfixes
+--------
+
+- Don't send ``null`` for empty BODY.
+
+
 0.18.7 (2020-05-04)
 ===================
 

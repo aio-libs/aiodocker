@@ -284,7 +284,7 @@ class Docker:
         if headers is None:
             headers = {}
         headers["Content-Type"] = "application/json"
-        if not isinstance(data, (str, bytes)):
+        if data is not None and not isinstance(data, (str, bytes)):
             data = json.dumps(data)
         async with self._query(
             path,
