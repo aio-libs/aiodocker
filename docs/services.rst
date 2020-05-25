@@ -17,14 +17,14 @@ Create a service
        "ContainerSpec": {
            "Image": "redis",
            },
-    }
+   }
 
-    async def create_service():
-        service = await docker.services.create(
-                            task_template=TaskTemplate,
-                            name="my_service"
-                            )
-        await docker.close()
+   async def create_service():
+       service = await docker.services.create(
+           task_template=TaskTemplate,
+           name="my_service"
+       )
+       await docker.close()
 
 
    if __name__ == '__main__':
