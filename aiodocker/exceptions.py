@@ -1,6 +1,6 @@
 class DockerError(Exception):
     def __init__(self, status, data, *args):
-        super().__init__(*args)
+        super().__init__(status, data, *args)
         self.status = status
         self.message = data["message"]
 
@@ -13,7 +13,7 @@ class DockerError(Exception):
 
 class DockerContainerError(DockerError):
     def __init__(self, status, data, container_id, *args):
-        super().__init__(status, data, *args)
+        super().__init__(status, data, container_id, *args)
         self.container_id = container_id
 
     def __repr__(self):
