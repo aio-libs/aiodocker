@@ -1,0 +1,1 @@
+Make `DockerError` and its derivatives to be picklable and more interop-friendly
