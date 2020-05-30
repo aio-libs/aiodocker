@@ -76,3 +76,5 @@ class DockerEvents:
                 await self.task
             except asyncio.CancelledError:
                 pass
+            finally:
+                self.task = None
