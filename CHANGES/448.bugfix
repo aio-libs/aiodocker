@@ -1,0 +1,1 @@
+Fix closing of the task fetching Docker's event stream and make it re-openable after closing
