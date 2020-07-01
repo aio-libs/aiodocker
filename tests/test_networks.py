@@ -36,4 +36,4 @@ async def test_network_delete_error(docker):
     network = await docker.networks.create({"Name": "test-delete-net"})
     assert await network.delete() is True
     with pytest.raises(aiodocker.exceptions.DockerError):
-        network.delete()
+        await network.delete()
