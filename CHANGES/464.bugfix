@@ -1,0 +1,1 @@
+Changed DockerNetwork.delete() to return True if successful
