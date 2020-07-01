@@ -30,3 +30,10 @@ async def test_networks(docker):
         network_delete_result = await network.delete()
         assert network_delete_result is True
 
+
+@pytest.mark.asyncio
+async def test_network_delete_error(docker):
+    network = await docker.networks.create({"Name": "test-delete-net"})
+    assert await network.delete() is True
+    with pytest.raises(aiodocker.exceptions.DockerError):
+        network.delete()
