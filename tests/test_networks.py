@@ -27,4 +27,6 @@ async def test_networks(docker):
     finally:
         if container is not None:
             await container.delete()
-        await network.delete()
+        network_delete_result = await network.delete()
+        assert network_delete_result is True
+
