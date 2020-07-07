@@ -12,6 +12,7 @@ Changes
 
 .. towncrier release notes start
 
+
 0.19.0 (2020-07-07)
 ===================
 
@@ -19,6 +20,7 @@ Features
 --------
 
 - Run mypy checks on the repo in the non-strict mode. (#466)
+- Add ``container.rename()`` method. (#458)
 
 
 Bugfixes
