@@ -1,8 +1,8 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, Optional, overload
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, overload
 
 import aiohttp
-from typing_extensions import Literal, Tuple
+from typing_extensions import Literal
 from yarl import URL
 
 from .stream import Stream
@@ -37,7 +37,14 @@ class Exec:
         return ret
 
     async def resize(self, *, h: Optional[int] = None, w: Optional[int] = None) -> None:
-        url = URL(f"exec/{self._id}/resize").with_query(h=h, w=w)
+        dct: Dict[str, int] = {}
+        if h is not None:
+            dct["h"] = h
+        if w is not None:
+            dct["w"] = w
+        if not dct:
+            return
+        url = URL(f"exec/{self._id}/resize").with_query(dct)
         async with self.docker._query(url, method="POST") as resp:
             resp
 
@@ -75,7 +82,7 @@ class Exec:
             return self._start_detached(timeout, self._tty)
         else:
 
-            async def setup() -> Tuple[URL, bytes]:
+            async def setup() -> Tuple[URL, bytes, bool]:
                 if self._tty is None:
                     await self.inspect()  # should restore tty
                 assert self._tty is not None

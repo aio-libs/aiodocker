@@ -1,0 +1,1 @@
+Run mypy checks on the repo in the non-strict mode.

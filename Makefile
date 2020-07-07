@@ -3,11 +3,12 @@
 lint flake: .flake
 
 .flake:
-	@flake8 aiodocker tests
+	flake8 aiodocker tests
 	if python -c "import sys; sys.exit(sys.version_info<(3,6))"; then \
 		black --check aiodocker tests setup.py; \
 	        isort --check -rc aiodocker tests setup.py; \
 	fi
+	mypy aiodocker tests
 
 fmt:
 	isort -rc aiodocker tests setup.py

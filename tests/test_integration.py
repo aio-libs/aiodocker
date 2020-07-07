@@ -6,6 +6,7 @@ import pathlib
 import sys
 import tarfile
 import time
+from typing import List
 
 import aiohttp
 import pytest
@@ -19,10 +20,12 @@ from aiodocker.execs import Stream
 async def expect_prompt(stream: Stream) -> bytes:
     try:
         inp = []
-        ret = []
+        ret: List[bytes] = []
         async with timeout(3):
             while not ret or not ret[-1].endswith(b">>>"):
                 msg = await stream.read_out()
+                if msg is None:
+                    break
                 inp.append(msg.data)
                 assert msg.stream == 1
                 lines = [line.strip() for line in msg.data.splitlines()]

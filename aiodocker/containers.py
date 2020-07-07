@@ -234,8 +234,8 @@ class DockerContainer:
         detach_keys: Optional[str] = None,
         logs: bool = False,
     ) -> Stream:
-        async def setup() -> Tuple[URL, bytes]:
-            params = MultiDict()
+        async def setup() -> Tuple[URL, Optional[bytes], bool]:
+            params: MultiDict[Union[str, int]] = MultiDict()
             if detach_keys:
                 params.add("detachKeys", detach_keys)
             else:

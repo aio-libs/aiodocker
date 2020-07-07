@@ -7,7 +7,7 @@ import ssl
 import sys
 from pathlib import Path
 from types import TracebackType
-from typing import Optional, Type
+from typing import Any, Dict, Optional, Type, Union, Mapping
 
 import aiohttp
 from multidict import CIMultiDict
@@ -59,12 +59,12 @@ _rx_tcp_schemes = re.compile(r"^(tcp|http)://")
 class Docker:
     def __init__(
         self,
-        url=None,
-        connector=None,
-        session=None,
-        ssl_context=None,
-        api_version="auto",
-    ):
+        url: Optional[str] = None,
+        connector: Optional[aiohttp.BaseConnector] = None,
+        session: Optional[aiohttp.ClientSession] = None,
+        ssl_context: Optional[ssl.SSLContext] = None,
+        api_version: str = "auto",
+    ) -> None:
 
         docker_host = url  # rename
         if docker_host is None:
@@ -79,7 +79,7 @@ class Docker:
                 if Path("\\\\.\\pipe\\docker_engine").exists():
                     docker_host = "npipe:////./pipe/docker_engine"
             except OSError as ex:
-                if ex.winerror == 231:
+                if ex.winerror == 231:  # type: ignore
                     # All pipe instances are busy
                     # but the pipe definitely exists
                     docker_host = "npipe:////./pipe/docker_engine"
@@ -154,19 +154,23 @@ class Docker:
     ) -> None:
         await self.close()
 
-    async def close(self):
+    async def close(self) -> None:
         await self.events.stop()
         await self.session.close()
 
-    async def auth(self, **credentials):
+    async def auth(self, **credentials: Any) -> Dict[str, Any]:
         response = await self._query_json("auth", "POST", data=credentials)
         return response
 
-    async def version(self):
+    async def version(self) -> Dict[str, Any]:
         data = await self._query_json("version")
         return data
 
-    def _canonicalize_url(self, path, *, versioned_api=True):
+    def _canonicalize_url(
+        self, path: Union[str, URL], *, versioned_api: bool = True
+    ) -> URL:
+        if isinstance(path, URL):
+            assert not path.is_absolute()
         if versioned_api:
             return URL(
                 "{self.docker_host}/{self.api_version}/{path}".format(
@@ -183,16 +187,16 @@ class Docker:
 
     def _query(
         self,
-        path,
-        method="GET",
+        path: Union[str, URL],
+        method: str = "GET",
         *,
-        params=None,
-        data=None,
+        params: Optional[Mapping[str, Any]] = None,
+        data: Any = None,
         headers=None,
         timeout=None,
         chunked=None,
-        read_until_eof=True,
-        versioned_api=True,
+        read_until_eof: bool = True,
+        versioned_api: bool = True,
     ):
         """
         Get the response object by performing the HTTP request.
@@ -214,16 +218,16 @@ class Docker:
 
     async def _do_query(
         self,
-        path,
-        method,
+        path: Union[str, URL],
+        method: str,
         *,
-        params,
-        data,
+        params: Optional[Mapping[str, Any]],
+        data: Any,
         headers,
         timeout,
         chunked,
-        read_until_eof,
-        versioned_api,
+        read_until_eof: bool,
+        versioned_api: bool,
     ):
         if versioned_api:
             await self._check_version()
@@ -252,7 +256,7 @@ class Docker:
                 {
                     "message": (
                         f"Cannot connect to Docker Engine via {self._connection_info} "
-                        f"[{exc.os_error.strerror}]"
+                        f"[{exc}]"
                     )
                 },
             )
@@ -268,15 +272,15 @@ class Docker:
 
     async def _query_json(
         self,
-        path,
-        method="GET",
+        path: Union[str, URL],
+        method: str = "GET",
         *,
-        params=None,
-        data=None,
+        params: Optional[Mapping[str, Any]] = None,
+        data: Any = None,
         headers=None,
         timeout=None,
-        read_until_eof=True,
-        versioned_api=True,
+        read_until_eof: bool = True,
+        versioned_api: bool = True,
     ):
         """
         A shorthand of _query() that treats the input as JSON.
@@ -301,15 +305,15 @@ class Docker:
 
     def _query_chunked_post(
         self,
-        path,
-        method="POST",
+        path: Union[str, URL],
+        method: str = "POST",
         *,
-        params=None,
-        data=None,
+        params: Optional[Mapping[str, Any]] = None,
+        data: Any = None,
         headers=None,
         timeout=None,
-        read_until_eof=True,
-        versioned_api=True,
+        read_until_eof: bool = True,
+        versioned_api: bool = True,
     ):
         """
         A shorthand for uploading data by chunks
@@ -329,7 +333,9 @@ class Docker:
             read_until_eof=read_until_eof,
         )
 
-    async def _websocket(self, path, **params):
+    async def _websocket(
+        self, path: Union[str, URL], **params: Any
+    ) -> aiohttp.ClientWebSocketResponse:
         if not params:
             params = {"stdin": True, "stdout": True, "stderr": True, "stream": True}
         url = self._canonicalize_url(path)
@@ -345,20 +351,20 @@ class Docker:
         return ws
 
     @staticmethod
-    def _docker_machine_ssl_context():
+    def _docker_machine_ssl_context() -> ssl.SSLContext:
         """
         Create a SSLContext object using DOCKER_* env vars.
         """
         context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-        context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
+        context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)  # type: ignore
         certs_path = os.environ.get("DOCKER_CERT_PATH", None)
         if certs_path is None:
             raise ValueError(
                 "Cannot create ssl context, " "DOCKER_CERT_PATH is not set!"
             )
-        certs_path = Path(certs_path)
-        context.load_verify_locations(cafile=certs_path / "ca.pem")
+        certs_path2 = Path(certs_path)
+        context.load_verify_locations(cafile=str(certs_path2 / "ca.pem"))
         context.load_cert_chain(
-            certfile=certs_path / "cert.pem", keyfile=certs_path / "key.pem"
+            certfile=str(certs_path2 / "cert.pem"), keyfile=str(certs_path2 / "key.pem")
         )
         return context
