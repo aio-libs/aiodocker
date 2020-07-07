@@ -12,6 +12,22 @@ Changes
 
 .. towncrier release notes start
 
+0.18.9 (2020-07-07)
+===================
+
+Bugfixes
+--------
+
+- Fix closing of the task fetching Docker's event stream and make it re-openable after closing (#448)
+- Fix type annotations for pull() and push() methods. (#465)
+
+
+Misc
+----
+
+- #442
+
+
 0.18.8 (2020-05-04)
 ===================
 
