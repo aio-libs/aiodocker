@@ -57,7 +57,7 @@ class DockerImages(object):
         return response
 
     @overload
-    def pull(
+    async def pull(
         self,
         from_image: str,
         *,
@@ -134,7 +134,7 @@ class DockerImages(object):
             return await json_stream_list(response)
 
     @overload
-    def push(
+    async def push(
         self,
         name: str,
         *,
