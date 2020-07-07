@@ -218,6 +218,15 @@ class DockerContainer:
         ):
             pass
 
+    async def rename(self, newname):
+        async with self.docker._query(
+            "containers/{self._id}/rename".format(self=self),
+            method="POST",
+            headers={"content-type": "application/json"},
+            params={"name": newname},
+        ):
+            pass
+
     async def websocket(self, **params):
         if not params:
             params = {"stdin": True, "stdout": True, "stderr": True, "stream": True}
