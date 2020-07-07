@@ -7,7 +7,7 @@ import ssl
 import sys
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, Optional, Type, Union, Mapping
+from typing import Any, Dict, Mapping, Optional, Type, Union
 
 import aiohttp
 from multidict import CIMultiDict
