@@ -13,26 +13,31 @@ stages:
           image: 'ubuntu-latest'
           docker: '17.12.1'
           registry: '1'
+          pytest-arg: ''
         Py37-Linux-Docker_17.12:
           python.version: '3.7'
           image: 'ubuntu-latest'
           docker: '17.12.1'
           registry: '1'
+          pytest-arg: ''
         Py36-Linux-Docker_18.03:
           python.version: '3.6'
           image: 'ubuntu-latest'
           docker: '18.03.1'
           registry: '1'
+          pytest-arg: ''
         Py37-Linux-Docker_18.03:
           python.version: '3.7'
           image: 'ubuntu-latest'
           docker: '18.03.1'
           registry: '1'
+          pytest-arg: ''
         Py37-Windows-Docker_17.09:
           python.version: '3.7'
           image: 'windows-latest'
           docker: '17.09.0'
           registry: '0'
+          pytest-arg: 'tests/test_integration.py'
       
     pool:
       vmImage: $[ variables['image'] ]
@@ -63,7 +68,7 @@ stages:
       displayName: 'Install dependencies'
 
     - script: |
-        python -m pytest -vv --durations=10
+        python -m pytest -vv --durations=10 $(pytest-arg)
       displayName: 'Run tests'
       env:
         DOCKER_VERSION: '$(docker)'
