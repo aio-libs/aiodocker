@@ -35,8 +35,8 @@ class DockerNetwork:
     async def delete(self):
         async with self.docker._query(
             "networks/{self.id}".format(self=self), method="DELETE"
-        ):
-            pass
+        ) as resp:
+            return resp.status == 204
 
     async def connect(self, config):
         config = json.dumps(config, sort_keys=True).encode("utf-8")
