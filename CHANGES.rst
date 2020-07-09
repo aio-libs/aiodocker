@@ -13,6 +13,15 @@ Changes
 .. towncrier release notes start
 
 
+0.19.1 (2020-07-09)
+===================
+
+Bugfixes
+--------
+
+- Fix type annotations for `exec.start()`, `docker.images.pull()`,
+  `docker.images.push()`. Respect default arguments again.
+
 0.19.0 (2020-07-07)
 ===================
 

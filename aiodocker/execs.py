@@ -50,7 +50,7 @@ class Exec:
 
     @overload
     def start(
-        self, *, timeout: aiohttp.ClientTimeout = None, detach: Literal[False],
+        self, *, timeout: aiohttp.ClientTimeout = None, detach: Literal[False] = False,
     ) -> Stream:
         pass
 
