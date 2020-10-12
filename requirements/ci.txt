@@ -1,6 +1,6 @@
 codecov==2.1.8
 docutils==0.16
-tox==3.19.0
+tox==3.20.1
 tox-travis==0.12
 pygments==2.6.1
 aiohttp==3.6.2
