@@ -50,13 +50,19 @@ class Exec:
 
     @overload
     def start(
-        self, *, timeout: aiohttp.ClientTimeout = None, detach: Literal[False] = False,
+        self,
+        *,
+        timeout: aiohttp.ClientTimeout = None,
+        detach: Literal[False] = False,
     ) -> Stream:
         pass
 
     @overload  # noqa
     async def start(
-        self, *, timeout: aiohttp.ClientTimeout = None, detach: Literal[True],
+        self,
+        *,
+        timeout: aiohttp.ClientTimeout = None,
+        detach: Literal[True],
     ) -> bytes:
         pass
 
@@ -95,7 +101,9 @@ class Exec:
             return Stream(self.docker, setup, timeout)
 
     async def _start_detached(
-        self, timeout: aiohttp.ClientTimeout = None, tty: bool = False,
+        self,
+        timeout: aiohttp.ClientTimeout = None,
+        tty: bool = False,
     ) -> bytes:
         if self._tty is None:
             await self.inspect()  # should restore tty

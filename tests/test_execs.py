@@ -37,7 +37,11 @@ async def test_exec_attached(shell_container, stderr):
         cmd = ["python", "-c", "print('Hello')"]
 
     execute = await shell_container.exec(
-        stdout=True, stderr=True, stdin=True, tty=False, cmd=cmd,
+        stdout=True,
+        stderr=True,
+        stdin=True,
+        tty=False,
+        cmd=cmd,
     )
     async with execute.start(detach=False) as stream:
         msg = await stream.read_out()
@@ -52,7 +56,11 @@ async def test_exec_attached(shell_container, stderr):
 )
 async def test_exec_attached_tty(shell_container):
     execute = await shell_container.exec(
-        stdout=True, stderr=True, stdin=True, tty=True, cmd=["python", "-q"],
+        stdout=True,
+        stderr=True,
+        stdin=True,
+        tty=True,
+        cmd=["python", "-q"],
     )
     async with execute.start(detach=False) as stream:
         await execute.resize(w=80, h=25)
@@ -84,7 +92,11 @@ async def test_exec_detached(shell_container, tty, stderr):
         cmd = ["python", "-c", "print('Hello')"]
 
     execute = await shell_container.exec(
-        stdout=True, stderr=True, stdin=False, tty=tty, cmd=cmd,
+        stdout=True,
+        stderr=True,
+        stdin=False,
+        tty=tty,
+        cmd=cmd,
     )
     assert await execute.start(detach=True) == b""
 
@@ -92,7 +104,11 @@ async def test_exec_detached(shell_container, tty, stderr):
 @pytest.mark.asyncio
 async def test_exec_resize(shell_container):
     execute = await shell_container.exec(
-        stdout=True, stderr=True, stdin=True, tty=True, cmd=["python"],
+        stdout=True,
+        stderr=True,
+        stdin=True,
+        tty=True,
+        cmd=["python"],
     )
     await execute.start(detach=True)
     await execute.resize(w=120, h=10)
@@ -127,7 +143,11 @@ async def test_exec_inspect(shell_container):
 @pytest.mark.asyncio
 async def test_exec_restore_tty_attached(docker, shell_container):
     exec1 = await shell_container.exec(
-        stdout=True, stderr=True, stdin=True, tty=True, cmd=["python"],
+        stdout=True,
+        stderr=True,
+        stdin=True,
+        tty=True,
+        cmd=["python"],
     )
 
     exec2 = docker.containers.exec(exec1.id)
@@ -139,7 +159,11 @@ async def test_exec_restore_tty_attached(docker, shell_container):
 @pytest.mark.asyncio
 async def test_exec_restore_tty_detached(docker, shell_container):
     exec1 = await shell_container.exec(
-        stdout=True, stderr=True, stdin=True, tty=True, cmd=["python"],
+        stdout=True,
+        stderr=True,
+        stdin=True,
+        tty=True,
+        cmd=["python"],
     )
 
     exec2 = docker.containers.exec(exec1.id)
