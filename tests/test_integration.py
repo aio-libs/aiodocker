@@ -409,12 +409,16 @@ async def test_events(docker, image_name, event_loop):
             break
 
     # 'kill' event may be omitted
-    assert events_occurred == [
-        "create",
-        "start",
-        "kill",
-        "die",
-        "destroy",
-    ] or events_occurred == ["create", "start", "die", "destroy"]
+    assert (
+        events_occurred
+        == [
+            "create",
+            "start",
+            "kill",
+            "die",
+            "destroy",
+        ]
+        or events_occurred == ["create", "start", "die", "destroy"]
+    )
 
     await docker.events.stop()

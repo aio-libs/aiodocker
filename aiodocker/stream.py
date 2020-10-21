@@ -69,7 +69,8 @@ class Stream:
                 else:
                     msg = msg + f" Body: [{body!r}]"
             raise DockerError(
-                500, {"message": msg},
+                500,
+                {"message": msg},
             )
         protocol = conn.protocol
         loop = resp._loop

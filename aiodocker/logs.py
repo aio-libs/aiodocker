@@ -8,8 +8,8 @@ from .channel import Channel, ChannelSubscriber
 
 
 if TYPE_CHECKING:
-    from .docker import Docker
     from .containers import DockerContainer
+    from .docker import Docker
 
 
 class DockerLog:
