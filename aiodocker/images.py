@@ -330,9 +330,6 @@ class DockerImages(object):
         if fileobj and not encoding:
             raise ValueError("You need to specify an encoding")
 
-        if remote is None and fileobj is None:
-            raise ValueError("Either remote or fileobj needs to be provided.")
-
         data = None
         if fileobj:
             data = self._stream(fileobj)
