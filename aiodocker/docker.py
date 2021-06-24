@@ -14,6 +14,7 @@ from multidict import CIMultiDict
 from yarl import URL
 
 # Sub-API classes
+from .configs import DockerConfigs
 from .containers import DockerContainer, DockerContainers
 from .events import DockerEvents
 from .exceptions import DockerError
@@ -21,6 +22,7 @@ from .images import DockerImages
 from .logs import DockerLog
 from .networks import DockerNetwork, DockerNetworks
 from .nodes import DockerSwarmNodes
+from .secrets import DockerSecrets
 from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
@@ -38,6 +40,8 @@ __all__ = (
     "DockerImages",
     "DockerLog",
     "DockerSwarm",
+    "DockerConfigs",
+    "DockerSecrets",
     "DockerServices",
     "DockerTasks",
     "DockerVolumes",
@@ -132,6 +136,8 @@ class Docker:
         self.containers = DockerContainers(self)
         self.swarm = DockerSwarm(self)
         self.services = DockerServices(self)
+        self.configs = DockerConfigs(self)
+        self.secrets = DockerSecrets(self)
         self.tasks = DockerTasks(self)
         self.images = DockerImages(self)
         self.volumes = DockerVolumes(self)
