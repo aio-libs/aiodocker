@@ -1,12 +1,8 @@
 import json
+from base64 import b64encode
 from typing import Any, List, Mapping
 
-from .utils import (
-    clean_filters,
-    clean_map,
-)
-
-from base64 import b64encode
+from .utils import clean_filters, clean_map
 
 
 class DockerConfigs(object):
@@ -55,7 +51,7 @@ class DockerConfigs(object):
         """
 
         b64_data = None
-        if data:
+        if data is not None:
             b64_data = data if b64 else b64encode(data.encode()).decode()
 
         headers = None
@@ -134,17 +130,17 @@ class DockerConfigs(object):
         spec = inspect_config["Spec"]
 
         b64_data = None
-        if data:
+        if data is not None:
             b64_data = data if b64 else b64encode(data.encode()).decode()
             spec["Data"] = b64_data
 
-        if name:
+        if name is not None:
             spec["Name"] = name
 
-        if labels:
+        if labels is not None:
             spec["Labels"] = labels
 
-        if templating:
+        if templating is not None:
             spec["Templating"] = templating
 
         params = {"version": version}
