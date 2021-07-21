@@ -56,19 +56,28 @@ class DockerContainers(object):
         )
         return DockerContainer(self.docker, id=data["Id"])
 
-    async def run(self, config, *, name=None):
+    async def run(
+        self,
+        config,
+        *,
+        name: Optional[str] = None,
+        auth: Optional[Union[Mapping, str, bytes]] = None,
+    ):
         """
         Create and start a container.
 
         If container.start() will raise an error the exception will contain
         a `container_id` attribute with the id of the container.
+
+        Use `auth` for specifying credentials for pulling absent image from
+        a private registry.
         """
         try:
             container = await self.create(config, name=name)
         except DockerError as err:
-            # image not find, try pull it
+            # image not fount, try pulling it
             if err.status == 404 and "Image" in config:
-                await self.docker.pull(config["Image"])
+                await self.docker.pull(config["Image"], auth=auth)
                 container = await self.create(config, name=name)
             else:
                 raise err
