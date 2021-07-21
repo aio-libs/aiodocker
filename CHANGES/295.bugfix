@@ -1,0 +1,1 @@
+Accept auth parameter by `run()` method; it allows auto-pulling absent image from private storages.
