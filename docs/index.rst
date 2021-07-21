@@ -122,8 +122,10 @@ It's *Apache 2* licensed and freely available.
    :maxdepth: 2
 
    client
+   configs
    containers
    images
+   secrets
    services
    swarm
    volumes
