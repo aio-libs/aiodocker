@@ -109,15 +109,15 @@ class Stream:
             await protocol._drain_helper()
 
     async def close(self) -> None:
-        if self._resp is not None:
+        if self._resp is None:
             return
         if self._closed:
             return
-        assert self._resp is not None
         self._closed = True
         transport = self._resp.connection.transport
-        transport.write_eof()
-        await self._resp.close()
+        if transport.can_write_eof():
+            transport.write_eof()
+        self._resp.close()
 
     async def __aenter__(self) -> "Stream":
         await self._init()
