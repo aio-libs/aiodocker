@@ -60,8 +60,8 @@ class DockerContainers(object):
         self,
         config,
         *,
-        name: Optional[str] = None,
         auth: Optional[Union[Mapping, str, bytes]] = None,
+        name: Optional[str] = None,
     ):
         """
         Create and start a container.
