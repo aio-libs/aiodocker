@@ -12,6 +12,16 @@ Changes
 
 .. towncrier release notes start
 
+0.20.0 (2021-07-21)
+===================
+
+Bugfixes
+--------
+
+- Accept auth parameter by `run()` method; it allows auto-pulling absent image from private storages. (#295)
+- Fix passing of JSON params. (#543)
+- Fix issue with unclosed response object in attach/exec. (#604)
+
 
 0.19.1 (2020-07-09)
 ===================
