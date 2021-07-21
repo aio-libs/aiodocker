@@ -60,8 +60,8 @@ class DockerContainers(object):
         self,
         config,
         *,
-        name=None,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        name: Optional[str] = None,
+        auth: Optional[Union[Mapping, str, bytes]] = None,
     ):
         """
         Create and start a container.
@@ -75,7 +75,7 @@ class DockerContainers(object):
         try:
             container = await self.create(config, name=name)
         except DockerError as err:
-            # image not find, try pull it
+            # image not fount, try pulling it
             if err.status == 404 and "Image" in config:
                 await self.docker.pull(config["Image"], auth=auth)
                 container = await self.create(config, name=name)
