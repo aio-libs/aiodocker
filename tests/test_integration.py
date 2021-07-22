@@ -3,6 +3,7 @@ import datetime
 import io
 import os
 import pathlib
+import ssl
 import sys
 import tarfile
 import time
@@ -68,6 +69,17 @@ async def test_ssl_context(monkeypatch):
     monkeypatch.setenv("DOCKER_TLS_VERIFY", "1")
     monkeypatch.setenv("DOCKER_CERT_PATH", str(cert_dir))
     docker = Docker()
+    assert docker.connector._ssl
+    await docker.close()
+    with pytest.raises(TypeError):
+        docker = Docker(ssl_context="bad ssl context")
+    ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    ssl_ctx.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
+    ssl_ctx.load_verify_locations(cafile=str(cert_dir / "ca.pem"))
+    ssl_ctx.load_cert_chain(
+        certfile=str(cert_dir / "cert.pem"), keyfile=str(cert_dir / "key.pem")
+    )
+    docker = Docker(ssl_context=ssl_ctx)
     assert docker.connector._ssl
     await docker.close()
 
