@@ -12,6 +12,16 @@ Changes
 
 .. towncrier release notes start
 
+0.21.0 (2021-07-23)
+===================
+
+Bugfixes
+--------
+
+- Use ssl_context passsed to Docker constructor for creating underlying connection to docker engine. (#536)
+- Fix an error when attach/exec when container stops before close connection to it. (#608)
+
+
 0.20.0 (2021-07-21)
 ===================
 
