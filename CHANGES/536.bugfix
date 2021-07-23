@@ -1,1 +1,1 @@
-Fix ssl_context not used
+Use ssl_context passsed to Docker constructor for creating underlying connection to docker engine.
