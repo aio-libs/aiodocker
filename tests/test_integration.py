@@ -229,6 +229,30 @@ async def test_attach_nontty(docker, image_name, make_container, stderr):
 
 
 @pytest.mark.asyncio
+async def test_attach_nontty_wait_for_exit(docker, image_name, make_container):
+    cmd = ["python", "-c", "import time; time.sleep(3); print('Hello')"]
+
+    config = {
+        "Cmd": cmd,
+        "Image": image_name,
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": False,
+        "OpenStdin": False,
+        "StdinOnce": False,
+    }
+
+    container = await make_container(
+        config,
+        name="aiodocker-testing-attach-nontty-wait-for-exit",
+    )
+
+    async with container.attach(stdin=False, stdout=True, stderr=True):
+        await asyncio.sleep(10)
+
+
+@pytest.mark.asyncio
 async def test_attach_tty(docker, image_name, make_container):
     skip_windows()
     config = {

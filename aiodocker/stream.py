@@ -115,7 +115,7 @@ class Stream:
             return
         self._closed = True
         transport = self._resp.connection.transport
-        if transport.can_write_eof():
+        if transport and transport.can_write_eof():
             transport.write_eof()
         self._resp.close()
 
