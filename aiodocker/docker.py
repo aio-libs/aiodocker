@@ -109,8 +109,9 @@ class Docker:
             WIN_PRE_LEN = len(WIN_PRE)
             if _rx_tcp_schemes.search(docker_host):
                 if os.environ.get("DOCKER_TLS_VERIFY", "0") == "1":
-                    ssl_context = self._docker_machine_ssl_context()
-                    docker_host = _rx_tcp_schemes.sub("https://", docker_host)
+                    if ssl_context is None:
+                        ssl_context = self._docker_machine_ssl_context()
+                        docker_host = _rx_tcp_schemes.sub("https://", docker_host)
                 else:
                     ssl_context = None
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
