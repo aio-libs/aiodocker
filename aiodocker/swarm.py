@@ -11,8 +11,11 @@ class DockerSwarm(object):
         self,
         *,
         advertise_addr: str = None,
+        data_path_port: int = None,
+        default_addr_pool: list = None,
         listen_addr: str = "0.0.0.0:2377",
         force_new_cluster: bool = False,
+        subnet_size: int = 24,
         swarm_spec: Mapping = None,
     ) -> str:
         """
@@ -21,6 +24,9 @@ class DockerSwarm(object):
         Args:
             ListenAddr: listen address used for inter-manager communication
             AdvertiseAddr: address advertised to other nodes.
+            DataPathPort: address or interface to use for data path traffic
+            DefaultAddrPool: default subnet pools for global scope networks
+            SubnetSize: subnet size of the networks created from the default subnet pool
             ForceNewCluster: Force creation of a new swarm.
             SwarmSpec: User modifiable swarm configuration.
 
@@ -30,8 +36,11 @@ class DockerSwarm(object):
 
         data = {
             "AdvertiseAddr": advertise_addr,
+            "DataPathPort": data_path_port,
+            "DefaultAddrPool": default_addr_pool,
             "ListenAddr": listen_addr,
             "ForceNewCluster": force_new_cluster,
+            "SubnetSize": subnet_size,
             "Spec": swarm_spec,
         }
 
