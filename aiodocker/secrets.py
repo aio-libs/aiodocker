@@ -1,6 +1,6 @@
 import json
 from base64 import b64encode
-from typing import Any, List, Mapping
+from typing import Any, List, Mapping, Optional
 
 from .utils import clean_filters, clean_map
 
@@ -33,7 +33,7 @@ class DockerSecrets(object):
         data: str,
         *,
         b64: bool = False,
-        labels: List = None,
+        labels: Optional[Mapping[str, str]] = None,
         driver: Mapping = None,
         templating: Mapping = None,
     ) -> Mapping[str, Any]:
@@ -111,7 +111,7 @@ class DockerSecrets(object):
         name: str = None,
         data: str = None,
         b64: bool = False,
-        labels: List = None,
+        labels: Optional[Mapping[str, str]] = None,
         driver: Mapping = None,
         templating: Mapping = None,
     ) -> bool:
