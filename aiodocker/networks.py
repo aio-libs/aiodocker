@@ -1,6 +1,7 @@
 import json
-from .utils import clean_filters
 from typing import Any, Dict, List, Mapping
+
+from .utils import clean_filters
 
 
 class DockerNetworks:
