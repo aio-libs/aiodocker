@@ -24,7 +24,7 @@ class DockerNetworks:
             scope=["swarm"|"global"|"local"]
             type=["custom"|"builtin"]
         """
-        params = {"filters": clean_filters(filters)}
+        params = {} if filters is None else {"filters": clean_filters(filters)}
 
         data = await self.docker._query_json("networks", params=params)
         return data
