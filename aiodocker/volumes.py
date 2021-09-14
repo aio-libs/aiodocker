@@ -8,6 +8,18 @@ class DockerVolumes:
         self.docker = docker
 
     async def list(self, *, filters=None):
+        """
+        Return a list of volumes
+
+        Args:
+            filters: a dict with a list of filters
+
+        Available filters:
+            dangling=<boolean>
+            driver=<volume-driver-name>
+            label=<key> or label=<key>:<value>
+            name=<volume-name>
+        """
         params = {} if filters is None else {"filters": clean_filters(filters)}
 
         data = await self.docker._query_json("volumes", params=params)
