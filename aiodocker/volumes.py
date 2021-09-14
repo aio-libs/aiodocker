@@ -1,13 +1,23 @@
 import json
 
+from .utils import clean_filters
+
 
 class DockerVolumes:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self):
-        data = await self.docker._query_json("volumes")
+    async def list(self, *, filters=None):
+        params = {} if filters is None else {"filters": clean_filters(filters)}
+
+        data = await self.docker._query_json("volumes", params=params)
         return data
+
+    async def get(self, id):
+        data = await self.docker._query_json(
+            "networks/{id}".format(id=id), method="GET"
+        )
+        return DockerVolume(self.docker, data["Name"])
 
     async def create(self, config):
         config = json.dumps(config, sort_keys=True).encode("utf-8")
