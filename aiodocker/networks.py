@@ -1,12 +1,30 @@
 import json
+from .utils import clean_filters
 
 
 class DockerNetworks:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self):
-        data = await self.docker._query_json("networks")
+    async def list(self, *, filters=None):
+        """
+        Return a list of networks
+
+        Args:
+            filters: a dict with a list of filters
+
+        Available filters:
+            dangling=<boolean>
+            driver=<driver-name>
+            id=<network-id>
+            label=<key> or label=<key>=<value> of a network label.
+            name=<network-name>
+            scope=["swarm"|"global"|"local"]
+            type=["custom"|"builtin"]
+        """
+        params = {"filters": clean_filters(filters)}
+
+        data = await self.docker._query_json("networks", params=params)
         return data
 
     async def create(self, config):
