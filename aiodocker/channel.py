@@ -19,9 +19,9 @@ class Channel:
     def __init__(self):
         self.queues = []
 
-    async def publish(self, obj):
+    async def publish(self, obj) -> None:
         for el in self.queues:
             await el.put(obj)
 
-    def subscribe(self):
+    def subscribe(self) -> ChannelSubscriber:
         return ChannelSubscriber(self)

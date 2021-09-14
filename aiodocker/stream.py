@@ -21,7 +21,7 @@ class Stream:
     def __init__(
         self,
         docker: "Docker",
-        setup: Callable[[], Awaitable[Tuple[URL, bytes, bool]]],
+        setup: Callable[[], Awaitable[Tuple[URL, Optional[bytes], bool]]],
         timeout: Optional[aiohttp.ClientTimeout],
     ) -> None:
         self._setup = setup
@@ -52,6 +52,7 @@ class Stream:
         )
         # read body if present, it can contain an information
         # about disconnection
+        assert self._resp is not None
         body = await self._resp.read()
 
         conn = resp.connection
@@ -68,7 +69,8 @@ class Stream:
                 else:
                     msg = msg + f" Body: [{body!r}]"
             raise DockerError(
-                500, {"message": msg},
+                500,
+                {"message": msg},
             )
         protocol = conn.protocol
         loop = resp._loop
@@ -89,6 +91,7 @@ class Stream:
         """Read from stdout or stderr."""
         await self._init()
         try:
+            assert self._queue is not None
             return await self._queue.read()
         except aiohttp.EofStream:
             return None
@@ -98,6 +101,7 @@ class Stream:
         if self._closed:
             raise RuntimeError("Cannot write to closed transport")
         await self._init()
+        assert self._resp is not None
         transport = self._resp.connection.transport
         transport.write(data)
         protocol = self._resp.connection.protocol
@@ -105,14 +109,15 @@ class Stream:
             await protocol._drain_helper()
 
     async def close(self) -> None:
-        if self._resp is not None:
+        if self._resp is None:
             return
         if self._closed:
             return
         self._closed = True
         transport = self._resp.connection.transport
-        transport.write_eof()
-        await self._resp.close()
+        if transport and transport.can_write_eof():
+            transport.write_eof()
+        self._resp.close()
 
     async def __aenter__(self) -> "Stream":
         await self._init()
@@ -146,7 +151,7 @@ class _ExecParser:
     def feed_eof(self) -> None:
         self.queue.feed_eof()
 
-    def feed_data(self, data: bytes) -> None:
+    def feed_data(self, data: bytes) -> Tuple[bool, bytes]:
         if self.tty:
             msg = Message(1, data)  # stdout
             self.queue.feed_data(msg, len(data))
@@ -155,13 +160,13 @@ class _ExecParser:
             while self._buf:
                 # Parse the header
                 if len(self._buf) < self.header_fmt.size:
-                    return False, ""
+                    return False, b""
                 fileno, msglen = self.header_fmt.unpack(
                     self._buf[: self.header_fmt.size]
                 )
                 msg_and_header = self.header_fmt.size + msglen
                 if len(self._buf) < msg_and_header:
-                    return False, ""
+                    return False, b""
                 msg = Message(
                     fileno, bytes(self._buf[self.header_fmt.size : msg_and_header])
                 )

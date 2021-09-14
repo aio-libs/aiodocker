@@ -57,7 +57,7 @@ class DockerImages(object):
         return response
 
     @overload
-    def pull(
+    async def pull(
         self,
         from_image: str,
         *,
@@ -134,7 +134,7 @@ class DockerImages(object):
             return await json_stream_list(response)
 
     @overload
-    def push(
+    async def push(
         self,
         name: str,
         *,
@@ -151,7 +151,7 @@ class DockerImages(object):
         *,
         auth: Union[MutableMapping, str, bytes] = None,
         tag: str = None,
-        stream: Literal[True] = False,
+        stream: Literal[True],
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
@@ -270,7 +270,7 @@ class DockerImages(object):
         rm: bool = True,
         forcerm: bool = False,
         labels: Mapping = None,
-        stream: Literal[True] = False,
+        stream: Literal[True],
         encoding: str = None,
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
@@ -330,9 +330,6 @@ class DockerImages(object):
         if fileobj and not encoding:
             raise ValueError("You need to specify an encoding")
 
-        if remote is None and fileobj is None:
-            raise ValueError("Either remote or fileobj needs to be provided.")
-
         data = None
         if fileobj:
             data = self._stream(fileobj)
@@ -348,7 +345,11 @@ class DockerImages(object):
             params.update({"labels": json.dumps(labels)})
 
         cm = self.docker._query(
-            "build", "POST", params=clean_map(params), headers=headers, data=data,
+            "build",
+            "POST",
+            params=clean_map(params),
+            headers=headers,
+            data=data,
         )
         return self._handle_response(cm, stream)
 

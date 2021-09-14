@@ -34,7 +34,15 @@ if sys.platform == "win32":
     else:
         WindowsProactorEventLoopPolicy = asyncio.WindowsProactorEventLoopPolicy
 
-    asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
+
+@pytest.fixture
+def event_loop(request):
+    """Create an instance of the default event loop for each test case."""
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()
 
 
 def _random_name():

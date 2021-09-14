@@ -8,7 +8,7 @@ def test_events_default_task(docker):
     docker.events.subscribe()
     assert docker.events.task is not None
     loop.run_until_complete(docker.close())
-    assert docker.events.task.done()
+    assert docker.events.task is None
     assert docker.events.json_stream is None
 
 

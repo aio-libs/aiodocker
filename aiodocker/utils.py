@@ -131,7 +131,7 @@ def httpize(d: Optional[Mapping]) -> Optional[Mapping[str, Any]]:
         if isinstance(v, bool):
             v = "1" if v else "0"
         if not isinstance(v, str):
-            v = str(v)
+            v = json.dumps(v)
         converted[k] = v
     return converted
 

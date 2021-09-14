@@ -56,19 +56,28 @@ class DockerContainers(object):
         )
         return DockerContainer(self.docker, id=data["Id"])
 
-    async def run(self, config, *, name=None):
+    async def run(
+        self,
+        config,
+        *,
+        auth: Optional[Union[Mapping, str, bytes]] = None,
+        name: Optional[str] = None,
+    ):
         """
         Create and start a container.
 
         If container.start() will raise an error the exception will contain
         a `container_id` attribute with the id of the container.
+
+        Use `auth` for specifying credentials for pulling absent image from
+        a private registry.
         """
         try:
             container = await self.create(config, name=name)
         except DockerError as err:
-            # image not find, try pull it
+            # image not fount, try pulling it
             if err.status == 404 and "Image" in config:
-                await self.docker.pull(config["Image"])
+                await self.docker.pull(config["Image"], auth=auth)
                 container = await self.create(config, name=name)
             else:
                 raise err
@@ -218,6 +227,15 @@ class DockerContainer:
         ):
             pass
 
+    async def rename(self, newname):
+        async with self.docker._query(
+            "containers/{self._id}/rename".format(self=self),
+            method="POST",
+            headers={"content-type": "application/json"},
+            params={"name": newname},
+        ):
+            pass
+
     async def websocket(self, **params):
         if not params:
             params = {"stdin": True, "stdout": True, "stderr": True, "stream": True}
@@ -234,8 +252,8 @@ class DockerContainer:
         detach_keys: Optional[str] = None,
         logs: bool = False,
     ) -> Stream:
-        async def setup() -> Tuple[URL, bytes]:
-            params = MultiDict()
+        async def setup() -> Tuple[URL, Optional[bytes], bool]:
+            params: MultiDict[Union[str, int]] = MultiDict()
             if detach_keys:
                 params.add("detachKeys", detach_keys)
             else:

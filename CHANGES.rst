@@ -12,6 +12,68 @@ Changes
 
 .. towncrier release notes start
 
+0.21.0 (2021-07-23)
+===================
+
+Bugfixes
+--------
+
+- Use ssl_context passsed to Docker constructor for creating underlying connection to docker engine. (#536)
+- Fix an error when attach/exec when container stops before close connection to it. (#608)
+
+
+0.20.0 (2021-07-21)
+===================
+
+Bugfixes
+--------
+
+- Accept auth parameter by `run()` method; it allows auto-pulling absent image from private storages. (#295)
+- Fix passing of JSON params. (#543)
+- Fix issue with unclosed response object in attach/exec. (#604)
+
+
+0.19.1 (2020-07-09)
+===================
+
+Bugfixes
+--------
+
+- Fix type annotations for `exec.start()`, `docker.images.pull()`,
+  `docker.images.push()`. Respect default arguments again.
+
+0.19.0 (2020-07-07)
+===================
+
+Features
+--------
+
+- Run mypy checks on the repo in the non-strict mode. (#466)
+- Add ``container.rename()`` method. (#458)
+
+
+Bugfixes
+--------
+
+- Changed DockerNetwork.delete() to return True if successful (#464)
+
+
+0.18.9 (2020-07-07)
+===================
+
+Bugfixes
+--------
+
+- Fix closing of the task fetching Docker's event stream and make it re-openable after closing (#448)
+- Fix type annotations for pull() and push() methods. (#465)
+
+
+Misc
+----
+
+- #442
+
+
 0.18.8 (2020-05-04)
 ===================
 

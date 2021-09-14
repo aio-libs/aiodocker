@@ -3,9 +3,11 @@ import datetime
 import io
 import os
 import pathlib
+import ssl
 import sys
 import tarfile
 import time
+from typing import List
 
 import aiohttp
 import pytest
@@ -19,10 +21,12 @@ from aiodocker.execs import Stream
 async def expect_prompt(stream: Stream) -> bytes:
     try:
         inp = []
-        ret = []
+        ret: List[bytes] = []
         async with timeout(3):
             while not ret or not ret[-1].endswith(b">>>"):
                 msg = await stream.read_out()
+                if msg is None:
+                    break
                 inp.append(msg.data)
                 assert msg.stream == 1
                 lines = [line.strip() for line in msg.data.splitlines()]
@@ -65,6 +69,17 @@ async def test_ssl_context(monkeypatch):
     monkeypatch.setenv("DOCKER_TLS_VERIFY", "1")
     monkeypatch.setenv("DOCKER_CERT_PATH", str(cert_dir))
     docker = Docker()
+    assert docker.connector._ssl
+    await docker.close()
+    with pytest.raises(TypeError):
+        docker = Docker(ssl_context="bad ssl context")
+    ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    ssl_ctx.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
+    ssl_ctx.load_verify_locations(cafile=str(cert_dir / "ca.pem"))
+    ssl_ctx.load_cert_chain(
+        certfile=str(cert_dir / "cert.pem"), keyfile=str(cert_dir / "key.pem")
+    )
+    docker = Docker(ssl_context=ssl_ctx)
     assert docker.connector._ssl
     await docker.close()
 
@@ -226,6 +241,30 @@ async def test_attach_nontty(docker, image_name, make_container, stderr):
 
 
 @pytest.mark.asyncio
+async def test_attach_nontty_wait_for_exit(docker, image_name, make_container):
+    cmd = ["python", "-c", "import time; time.sleep(3); print('Hello')"]
+
+    config = {
+        "Cmd": cmd,
+        "Image": image_name,
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": False,
+        "OpenStdin": False,
+        "StdinOnce": False,
+    }
+
+    container = await make_container(
+        config,
+        name="aiodocker-testing-attach-nontty-wait-for-exit",
+    )
+
+    async with container.attach(stdin=False, stdout=True, stderr=True):
+        await asyncio.sleep(10)
+
+
+@pytest.mark.asyncio
 async def test_attach_tty(docker, image_name, make_container):
     skip_windows()
     config = {
@@ -378,6 +417,10 @@ async def test_port(docker, image_name):
 
 @pytest.mark.asyncio
 async def test_events(docker, image_name, event_loop):
+    # Сheck the stop procedure
+    docker.events.subscribe()
+    await docker.events.stop()
+
     subscriber = docker.events.subscribe()
 
     # Do some stuffs to generate events.
@@ -402,12 +445,16 @@ async def test_events(docker, image_name, event_loop):
             break
 
     # 'kill' event may be omitted
-    assert events_occurred == [
-        "create",
-        "start",
-        "kill",
-        "die",
-        "destroy",
-    ] or events_occurred == ["create", "start", "die", "destroy"]
+    assert (
+        events_occurred
+        == [
+            "create",
+            "start",
+            "kill",
+            "die",
+            "destroy",
+        ]
+        or events_occurred == ["create", "start", "die", "destroy"]
+    )
 
     await docker.events.stop()
