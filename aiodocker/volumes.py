@@ -26,9 +26,7 @@ class DockerVolumes:
         return data
 
     async def get(self, id):
-        data = await self.docker._query_json(
-            "networks/{id}".format(id=id), method="GET"
-        )
+        data = await self.docker._query_json("volumes/{id}".format(id=id), method="GET")
         return DockerVolume(self.docker, data["Name"])
 
     async def create(self, config):

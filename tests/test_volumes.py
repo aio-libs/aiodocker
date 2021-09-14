@@ -7,7 +7,8 @@ async def test_create_search_get_delete(docker):
     await docker.volumes.create(
         {"Name": name, "Labels": {"some": "label"}, "Driver": "local"}
     )
-    volumes = await docker.volumes.list(filters={"label": "some=label"})
+    volumes_response = await docker.volumes.list(filters={"label": "some=label"})
+    volumes = volumes_response["Volumes"]
     assert len(volumes) == 1
     volume_data = volumes[0]
     volume = await docker.volumes.get(volume_data["Name"])
