@@ -3,6 +3,6 @@ docutils==0.17.1
 tox==3.24.4
 tox-travis==0.12
 pygments==2.10.0
-aiohttp==3.7.4.post0
+aiohttp==3.8.0
 yarl==1.7.0
 multidict==5.2.0
