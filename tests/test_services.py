@@ -66,7 +66,7 @@ async def test_logs_services(swarm):
     filters = {"service": service_id}
 
     # wait till task status is `complete`
-    with timeout(60):
+    async with timeout(60):
         while True:
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
@@ -96,7 +96,7 @@ async def test_logs_services_stream(swarm):
     filters = {"service": service_id}
 
     # wait till task status is `complete`
-    with timeout(60):
+    async with timeout(60):
         while True:
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
@@ -109,7 +109,7 @@ async def test_logs_services_stream(swarm):
     # let's check for them
     count = 0
     try:
-        with timeout(2):
+        async with timeout(2):
             while True:
                 async for log in swarm.services.logs(
                     service_id, stdout=True, follow=True
