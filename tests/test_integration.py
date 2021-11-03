@@ -175,7 +175,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     try:
         # collect the websocket outputs for at most 2 secs until we see the
         # output.
-        with timeout(2):
+        async with timeout(2):
             while True:
                 output += await ws.receive_bytes()
                 if b"print('hello world\\n')" in output:
@@ -194,7 +194,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
     try:
         # collect the logs for at most 2 secs until we see the output.
-        with timeout(2):
+        async with timeout(2):
             async for s in shell_container.log(stdout=True, follow=True):
                 log.append(s)
                 if "hello world\r\n" in s:
@@ -434,7 +434,7 @@ async def test_events(docker, image_name, event_loop):
     events_occurred = []
     while True:
         try:
-            with timeout(0.2):
+            async with timeout(0.2):
                 event = await subscriber.get()
             if event["Actor"]["ID"] == container._id:
                 events_occurred.append(event["Action"])
