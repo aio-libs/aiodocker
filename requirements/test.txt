@@ -4,5 +4,5 @@ pytest-asyncio==0.16.0
 flake8==4.0.1
 mypy==0.910
 black==21.10b0
-isort==5.10.0
+isort==5.10.1
 -r ci.txt
