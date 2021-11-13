@@ -191,6 +191,7 @@ class DockerImages(object):
         Tag the given image so that it becomes part of a repository.
 
         Args:
+            name: name/id of the image to be tagged
             repo: the repository to tag in
             tag: the name for the new tag
         """
