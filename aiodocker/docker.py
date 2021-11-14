@@ -243,6 +243,8 @@ class Docker:
             headers = CIMultiDict(headers)
             if "Content-Type" not in headers:
                 headers["Content-Type"] = "application/json"
+        if timeout is None:
+            timeout = self.session.timeout
         try:
             real_params = httpize(params)
             response = await self.session.request(
