@@ -2,7 +2,6 @@ import io
 import json
 import warnings
 from typing import (
-    IO,
     Any,
     AsyncIterator,
     Dict,
@@ -14,6 +13,7 @@ from typing import (
     overload,
 )
 
+from _typeshed import SupportsRead
 from typing_extensions import Literal
 
 from .jsonstream import json_stream_list, json_stream_stream
@@ -230,7 +230,7 @@ class DockerImages(object):
         )
 
     @staticmethod
-    async def _stream(fileobj: IO[bytes]) -> AsyncIterator[bytes]:
+    async def _stream(fileobj: SupportsRead[bytes]) -> AsyncIterator[bytes]:
         chunk = fileobj.read(io.DEFAULT_BUFFER_SIZE)
         while chunk:
             yield chunk
@@ -241,7 +241,7 @@ class DockerImages(object):
         self,
         *,
         remote: str = None,
-        fileobj: IO[bytes] = None,
+        fileobj: SupportsRead[bytes] = None,
         path_dockerfile: str = None,
         tag: str = None,
         quiet: bool = False,
@@ -261,7 +261,7 @@ class DockerImages(object):
         self,
         *,
         remote: str = None,
-        fileobj: IO[bytes] = None,
+        fileobj: SupportsRead[bytes] = None,
         path_dockerfile: str = None,
         tag: str = None,
         quiet: bool = False,
@@ -280,7 +280,7 @@ class DockerImages(object):
         self,
         *,
         remote: str = None,
-        fileobj: IO[bytes] = None,
+        fileobj: SupportsRead[bytes] = None,
         path_dockerfile: str = None,
         tag: str = None,
         quiet: bool = False,
