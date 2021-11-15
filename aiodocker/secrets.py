@@ -5,7 +5,7 @@ from typing import Any, List, Mapping, Optional
 from .utils import clean_filters, clean_map
 
 
-class DockerSecrets(object):
+class DockerSecrets:
     def __init__(self, docker):
         self.docker = docker
 
@@ -82,9 +82,7 @@ class DockerSecrets(object):
             a dict with info about a secret
         """
 
-        response = await self.docker._query_json(
-            "secrets/{secret_id}".format(secret_id=secret_id), method="GET"
-        )
+        response = await self.docker._query_json(f"secrets/{secret_id}", method="GET")
         return response
 
     async def delete(self, secret_id: str) -> bool:
@@ -98,9 +96,7 @@ class DockerSecrets(object):
             True if successful
         """
 
-        async with self.docker._query(
-            "secrets/{secret_id}".format(secret_id=secret_id), method="DELETE"
-        ):
+        async with self.docker._query(f"secrets/{secret_id}", method="DELETE"):
             return True
 
     async def update(
@@ -155,7 +151,7 @@ class DockerSecrets(object):
         request_data = json.dumps(clean_map(spec))
 
         await self.docker._query_json(
-            "secrets/{secret_id}/update".format(secret_id=secret_id),
+            f"secrets/{secret_id}/update",
             method="POST",
             data=request_data,
             params=params,

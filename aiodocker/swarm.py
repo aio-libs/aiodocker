@@ -3,7 +3,7 @@ from typing import Iterable, Mapping
 from .utils import clean_map
 
 
-class DockerSwarm(object):
+class DockerSwarm:
     def __init__(self, docker) -> None:
         self.docker = docker
 

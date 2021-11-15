@@ -1,7 +1,7 @@
 from typing import Mapping
 
 
-class DockerSystem(object):
+class DockerSystem:
     def __init__(self, docker) -> None:
         self.docker = docker
 

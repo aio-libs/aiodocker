@@ -11,7 +11,7 @@ from .utils import (
 )
 
 
-class DockerServices(object):
+class DockerServices:
     def __init__(self, docker):
         self.docker = docker
 
@@ -143,7 +143,7 @@ class DockerServices(object):
         data = json.dumps(clean_map(spec))
 
         await self.docker._query_json(
-            "services/{service_id}/update".format(service_id=service_id),
+            f"services/{service_id}/update",
             method="POST",
             data=data,
             params=params,
@@ -161,9 +161,7 @@ class DockerServices(object):
             True if successful
         """
 
-        async with self.docker._query(
-            "services/{service_id}".format(service_id=service_id), method="DELETE"
-        ):
+        async with self.docker._query(f"services/{service_id}", method="DELETE"):
             return True
 
     async def inspect(self, service_id: str) -> Mapping[str, Any]:
@@ -177,9 +175,7 @@ class DockerServices(object):
             a dict with info about a service
         """
 
-        response = await self.docker._query_json(
-            "services/{service_id}".format(service_id=service_id), method="GET"
-        )
+        response = await self.docker._query_json(f"services/{service_id}", method="GET")
         return response
 
     def logs(
@@ -225,7 +221,7 @@ class DockerServices(object):
             "tail": tail,
         }
         cm = self.docker._query(
-            "services/{service_id}/logs".format(service_id=service_id),
+            f"services/{service_id}/logs",
             method="GET",
             params=params,
         )

@@ -37,7 +37,7 @@ class DockerLog:
         params2 = ChainMap(forced_params, params, default_params)
         try:
             self.response = await self.docker._query(
-                "containers/{self.container._id}/logs".format(self=self), params=params2
+                f"containers/{self.container._id}/logs", params=params2
             )
             assert self.response is not None
             while True:

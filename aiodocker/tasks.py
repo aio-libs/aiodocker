@@ -3,7 +3,7 @@ from typing import Any, List, Mapping
 from .utils import clean_filters
 
 
-class DockerTasks(object):
+class DockerTasks:
     def __init__(self, docker):
         self.docker = docker
 
@@ -38,7 +38,5 @@ class DockerTasks(object):
 
         """
 
-        response = await self.docker._query_json(
-            "tasks/{task_id}".format(task_id=task_id), method="GET"
-        )
+        response = await self.docker._query_json(f"tasks/{task_id}", method="GET")
         return response

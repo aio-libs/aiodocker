@@ -3,7 +3,7 @@ from typing import Any, List, Mapping
 from .utils import clean_filters
 
 
-class DockerSwarmNodes(object):
+class DockerSwarmNodes:
     def __init__(self, docker):
         self.docker = docker
 
@@ -36,9 +36,7 @@ class DockerSwarmNodes(object):
             node_id: The ID or name of the node
         """
 
-        response = await self.docker._query_json(
-            "nodes/{node_id}".format(node_id=node_id), method="GET"
-        )
+        response = await self.docker._query_json(f"nodes/{node_id}", method="GET")
         return response
 
     async def update(
@@ -62,7 +60,7 @@ class DockerSwarmNodes(object):
             assert spec["Availability"] in {"active", "pause", "drain"}
 
         response = await self.docker._query_json(
-            "nodes/{node_id}/update".format(node_id=node_id),
+            f"nodes/{node_id}/update",
             method="POST",
             params=params,
             data=spec,
@@ -80,6 +78,6 @@ class DockerSwarmNodes(object):
         params = {"force": force}
 
         response = await self.docker._query_json(
-            "nodes/{node_id}".format(node_id=node_id), method="DELETE", params=params
+            f"nodes/{node_id}", method="DELETE", params=params
         )
         return response
