@@ -26,7 +26,7 @@ class DockerVolumes:
         return data
 
     async def get(self, id):
-        data = await self.docker._query_json("volumes/{id}".format(id=id), method="GET")
+        data = await self.docker._query_json(f"volumes/{id}", method="GET")
         return DockerVolume(self.docker, data["Name"])
 
     async def create(self, config):
@@ -43,11 +43,9 @@ class DockerVolume:
         self.name = name
 
     async def show(self):
-        data = await self.docker._query_json("volumes/{self.name}".format(self=self))
+        data = await self.docker._query_json(f"volumes/{self.name}")
         return data
 
     async def delete(self):
-        async with self.docker._query(
-            "volumes/{self.name}".format(self=self), method="DELETE"
-        ):
+        async with self.docker._query(f"volumes/{self.name}", method="DELETE"):
             pass

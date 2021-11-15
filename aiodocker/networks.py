@@ -37,9 +37,7 @@ class DockerNetworks:
         return DockerNetwork(self.docker, data["Id"])
 
     async def get(self, net_specs: str) -> "DockerNetwork":
-        data = await self.docker._query_json(
-            "networks/{net_specs}".format(net_specs=net_specs), method="GET"
-        )
+        data = await self.docker._query_json(f"networks/{net_specs}", method="GET")
         return DockerNetwork(self.docker, data["Id"])
 
 
@@ -49,25 +47,23 @@ class DockerNetwork:
         self.id = id_
 
     async def show(self) -> Dict[str, Any]:
-        data = await self.docker._query_json("networks/{self.id}".format(self=self))
+        data = await self.docker._query_json(f"networks/{self.id}")
         return data
 
     async def delete(self) -> bool:
-        async with self.docker._query(
-            "networks/{self.id}".format(self=self), method="DELETE"
-        ) as resp:
+        async with self.docker._query(f"networks/{self.id}", method="DELETE") as resp:
             return resp.status == 204
 
     async def connect(self, config: Dict[str, Any]) -> None:
         bconfig = json.dumps(config, sort_keys=True).encode("utf-8")
         await self.docker._query_json(
-            "networks/{self.id}/connect".format(self=self), method="POST", data=bconfig
+            f"networks/{self.id}/connect", method="POST", data=bconfig
         )
 
     async def disconnect(self, config: Dict[str, Any]) -> None:
         bconfig = json.dumps(config, sort_keys=True).encode("utf-8")
         await self.docker._query_json(
-            "networks/{self.id}/disconnect".format(self=self),
+            f"networks/{self.id}/disconnect",
             method="POST",
             data=bconfig,
         )

@@ -20,7 +20,7 @@ from .jsonstream import json_stream_list, json_stream_stream
 from .utils import clean_map, compose_auth_header
 
 
-class DockerImages(object):
+class DockerImages:
     def __init__(self, docker):
         self.docker = docker
 
@@ -38,7 +38,7 @@ class DockerImages(object):
         Args:
             name: name of the image
         """
-        response = await self.docker._query_json("images/{name}/json".format(name=name))
+        response = await self.docker._query_json(f"images/{name}/json")
         return response
 
     async def get(self, name: str) -> Mapping:
@@ -51,9 +51,7 @@ class DockerImages(object):
         return await self.inspect(name)
 
     async def history(self, name: str) -> Mapping:
-        response = await self.docker._query_json(
-            "images/{name}/history".format(name=name)
-        )
+        response = await self.docker._query_json(f"images/{name}/history")
         return response
 
     @overload
@@ -179,7 +177,7 @@ class DockerImages(object):
                 )
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
         cm = self.docker._query(
-            "images/{name}/push".format(name=name),
+            f"images/{name}/push",
             "POST",
             params=params,
             headers=headers,
@@ -201,7 +199,7 @@ class DockerImages(object):
             params["tag"] = tag
 
         async with self.docker._query(
-            "images/{name}/tag".format(name=name),
+            f"images/{name}/tag",
             "POST",
             params=params,
             headers={"content-type": "application/json"},
@@ -225,9 +223,7 @@ class DockerImages(object):
             List of deleted images
         """
         params = {"force": force, "noprune": noprune}
-        return await self.docker._query_json(
-            "images/{name}".format(name=name), "DELETE", params=params
-        )
+        return await self.docker._query_json(f"images/{name}", "DELETE", params=params)
 
     @staticmethod
     async def _stream(fileobj: BinaryIO) -> AsyncIterator[bytes]:
@@ -364,9 +360,7 @@ class DockerImages(object):
         Returns:
             Streamreader of tarball image
         """
-        return _ExportCM(
-            self.docker._query("images/{name}/get".format(name=name), "GET")
-        )
+        return _ExportCM(self.docker._query(f"images/{name}/get", "GET"))
 
     def import_image(self, data, stream: bool = False):
         """

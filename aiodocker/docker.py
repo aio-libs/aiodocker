@@ -185,7 +185,7 @@ class Docker:
                 )
             )
         else:
-            return URL("{self.docker_host}/{path}".format(self=self, path=path))
+            return URL(f"{self.docker_host}/{path}")
 
     async def _check_version(self) -> None:
         if self.api_version == "auto":

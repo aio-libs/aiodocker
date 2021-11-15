@@ -44,7 +44,7 @@ async def parse_result(response, response_type=None, *, encoding="utf-8"):
             response_type = "text"
             encoding = extras.get("charset", encoding)
         else:
-            raise TypeError("Unrecognized response type: {ct}".format(ct=ct))
+            raise TypeError(f"Unrecognized response type: {ct}")
     if "tar" == response_type:
         what = await response.read()
         return tarfile.open(mode="r", fileobj=BytesIO(what))
@@ -67,7 +67,7 @@ def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
     try:
         main_type, sub_type = pieces[0].split("/")
     except ValueError:
-        msg = 'Invalid mime-type component: "{0}"'.format(pieces[0])
+        msg = f'Invalid mime-type component: "{pieces[0]}"'
         raise ValueError(msg)
     if len(pieces) > 1:
         options = {}
@@ -78,7 +78,7 @@ def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
             try:
                 k, v = opt.split("=", 1)
             except ValueError:
-                msg = 'Invalid option component: "{0}"'.format(opt)
+                msg = f'Invalid option component: "{opt}"'
                 raise ValueError(msg)
             else:
                 options[k.lower()] = v.lower()
@@ -103,7 +103,7 @@ def identical(d1, d2):
             return False
 
         pairs = zip(d1, d2)
-        return all((identical(x, y) for (x, y) in pairs))
+        return all(identical(x, y) for (x, y) in pairs)
 
     return d1 == d2
 
@@ -118,7 +118,7 @@ def human_bool(s) -> bool:
             return True
         if s.lower() in _false_strs:
             return False
-        raise ValueError("Cannot interpret {s!r} as boolean.".format(s=s))
+        raise ValueError(f"Cannot interpret {s!r} as boolean.")
     else:
         return bool(s)
 
@@ -190,7 +190,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     if isinstance(value, bytes):
         value = value.decode("utf-8")
 
-    return "{key}={value}".format(key=key, value=value)
+    return f"{key}={value}"
 
 
 def clean_networks(networks: Iterable[str] = None) -> Optional[Iterable[str]]:
