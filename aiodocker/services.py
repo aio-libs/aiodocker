@@ -41,7 +41,7 @@ class DockerServices(object):
         task_template: Mapping[str, Any],
         *,
         name: str = None,
-        labels: List = None,
+        labels: Optional[Mapping[str, str]] = None,
         mode: Mapping = None,
         update_config: Mapping = None,
         rollback_config: Mapping = None,
