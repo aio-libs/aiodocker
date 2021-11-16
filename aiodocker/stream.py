@@ -1,9 +1,8 @@
 import socket
 import struct
 import warnings
-from collections import namedtuple
 from types import TracebackType
-from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Awaitable, Callable, NamedTuple, Optional, Tuple, Type
 
 import aiohttp
 from yarl import URL
@@ -14,7 +13,10 @@ from .exceptions import DockerError
 if TYPE_CHECKING:
     from .docker import Docker
 
-Message = namedtuple("Message", "stream data")
+
+class Message(NamedTuple):
+    stream: int
+    data: bytes
 
 
 class Stream:
