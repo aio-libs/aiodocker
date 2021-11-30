@@ -106,7 +106,7 @@ jobs:
 
   deploy:
     name: Deploy on PyPI
-    needs: [lint, unit]
+    needs: [lint, test]
     runs-on: ubuntu-latest
     # Run only on pushing a tag
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
