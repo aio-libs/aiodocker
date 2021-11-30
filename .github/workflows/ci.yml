@@ -98,10 +98,11 @@ jobs:
       run: |
         python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Upload coverage artifact
+      # On Windows action doesn't work for unknown reason
+      if: ${{ matrix.os != 'windows' }}
       uses: neuro-inc/prepare-coverage@v21.9.1
       with:
         key: unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.cmd }}-${{ matrix.registry }}-${{ matrix.pytest-arg }}
-        file: coverage.xml
 
   deploy:
     name: Deploy on PyPI
