@@ -364,7 +364,7 @@ class Docker:
         """
         Create a SSLContext object using DOCKER_* env vars.
         """
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
         context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)  # type: ignore
         certs_path = os.environ.get("DOCKER_CERT_PATH", None)
         if certs_path is None:
