@@ -13,7 +13,7 @@ with (Path(__file__).parent / "aiodocker" / "__init__.py").open() as fp:
         raise RuntimeError("Unable to determine version.")
 
 
-long_description = open("README.rst").read() + open("CHANGES.rst").read()
+long_description = open("README.rst").read()
 
 
 requirements = [
