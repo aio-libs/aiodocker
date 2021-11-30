@@ -101,6 +101,7 @@ jobs:
       uses: neuro-inc/prepare-coverage@v21.9.1
       with:
         key: unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.cmd }}-${{ matrix.registry }}-${{ matrix.pytest-arg }}
+        file: coverage.xml
 
   deploy:
     name: Deploy on PyPI
