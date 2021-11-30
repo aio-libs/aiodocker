@@ -1,16 +1,15 @@
 # Some simple testing tasks (sorry, UNIX only).
 
-lint flake: .flake
-
-.flake:
-	flake8 aiodocker tests
-	black --check aiodocker tests setup.py
-	isort --check aiodocker tests setup.py
+lint: fmt
 	mypy aiodocker tests
 
 fmt:
-	isort aiodocker tests setup.py
-	black aiodocker tests setup.py
+ifdef CI
+	pre-commit run --all-files --show-diff-on-failure
+else
+	pre-commit run --all-files
+endif
+
 
 develop:
 	@pip install -e .

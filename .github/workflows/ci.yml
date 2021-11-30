@@ -95,7 +95,6 @@ jobs:
       env:
         COLOR: 'yes'
         DOCKER_VERSION: ${{ matrix.docker }}
-        CI: true
       run: |
         python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Upload coverage artifact
