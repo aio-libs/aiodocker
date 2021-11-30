@@ -61,7 +61,7 @@ jobs:
           - python-version: '3.9'
             os: windows
             registry: '0'
-            pytest-arg: 'tests/test_integration.py'
+            pytest-arg: '-k test_integration'
     runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 30
     steps:
@@ -98,8 +98,6 @@ jobs:
       run: |
         python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Upload coverage artifact
-      # On Windows action doesn't work for unknown reason
-      if: ${{ matrix.os != 'windows' }}
       uses: neuro-inc/prepare-coverage@v21.9.1
       with:
         key: unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.cmd }}-${{ matrix.registry }}-${{ matrix.pytest-arg }}
