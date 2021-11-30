@@ -3,7 +3,7 @@ import os
 import sys
 import traceback
 import uuid
-from distutils.version import StrictVersion
+from packaging.version import parse as parse_version
 from typing import Any, Dict
 
 import pytest
@@ -137,7 +137,7 @@ async def requires_api_version(docker):
     await docker.version()
 
     def check(version, reason):
-        if StrictVersion(docker.api_version[1:]) < StrictVersion(version[1:]):
+        if parse_version(docker.api_version[1:]) < parse_version(version[1:]):
             pytest.skip(reason)
 
     yield check

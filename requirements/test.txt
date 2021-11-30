@@ -5,4 +5,5 @@ flake8==4.0.1
 mypy==0.910
 black==21.11b1
 isort==5.10.1
+packaging==2.4.7
 -r ci.txt
