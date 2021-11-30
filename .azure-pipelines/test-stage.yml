@@ -38,7 +38,7 @@ stages:
           docker: '17.09.0'
           registry: '0'
           pytest-arg: 'tests/test_integration.py'
-      
+
     pool:
       vmImage: $[ variables['image'] ]
 

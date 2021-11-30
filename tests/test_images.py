@@ -29,7 +29,7 @@ async def test_build_from_remote_file(docker, random_name, requires_api_version)
         "aiodocker/master/tests/docker/Dockerfile"
     )
 
-    tag = "{}:1.0".format(random_name())
+    tag = f"{random_name()}:1.0"
     params = {"tag": tag, "remote": remote}
     await docker.images.build(**params)
 
@@ -46,7 +46,7 @@ async def test_build_from_remote_tar(docker, random_name):
         "raw/master/tests/docker/docker_context.tar"
     )
 
-    tag = "{}:1.0".format(random_name())
+    tag = f"{random_name()}:1.0"
     params = {"tag": tag, "remote": remote}
     await docker.images.build(**params)
 
@@ -102,7 +102,7 @@ async def test_delete_image(docker, image_name):
 
 @pytest.mark.asyncio
 async def test_not_existing_image(docker, random_name):
-    name = "{}:latest".format(random_name())
+    name = f"{random_name()}:latest"
     with pytest.raises(DockerError) as excinfo:
         await docker.images.inspect(name=name)
     assert excinfo.value.status == 404
@@ -129,7 +129,7 @@ async def test_pull_image_stream(docker, image_name):
 
 @pytest.mark.asyncio
 async def test_build_from_tar(docker, random_name, image_name):
-    name = "{}:latest".format(random_name())
+    name = f"{random_name()}:latest"
     dockerfile = f"""
     # Shared Volume
     FROM {image_name}
@@ -144,7 +144,7 @@ async def test_build_from_tar(docker, random_name, image_name):
 
 @pytest.mark.asyncio
 async def test_build_from_tar_stream(docker, random_name, image_name):
-    name = "{}:latest".format(random_name())
+    name = f"{random_name()}:latest"
     dockerfile = f"""
     # Shared Volume
     FROM {image_name}
@@ -189,7 +189,7 @@ async def test_import_image(docker):
     repository = "gcr.io/google-containers/pause"
 
     for tag in ["1.0", "go", "latest", "test", "test2"]:
-        name = "{}:{}".format(repository, tag)
+        name = f"{repository}:{tag}"
         image = await docker.images.inspect(name=name)
         assert image
 

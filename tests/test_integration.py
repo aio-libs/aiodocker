@@ -210,7 +210,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: "stderr={}".format(x))
+@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
 async def test_attach_nontty(docker, image_name, make_container, stderr):
     if stderr:
         cmd = [

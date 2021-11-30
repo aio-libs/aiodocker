@@ -3,10 +3,10 @@ import os
 import sys
 import traceback
 import uuid
-from packaging.version import parse as parse_version
 from typing import Any, Dict
 
 import pytest
+from packaging.version import parse as parse_version
 
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
@@ -68,7 +68,7 @@ def random_name():
                 continue
             try:
                 if img["RepoTags"][0].startswith("aiodocker-"):
-                    print("Deleting image id: {0}".format(img["Id"]))
+                    print("Deleting image id: {}".format(img["Id"]))
                     await docker.images.delete(img["Id"], force=True)
             except DockerError:
                 traceback.print_exc()
@@ -100,7 +100,7 @@ def testing_images(image_name: str) -> None:
                 await docker.images.inspect(img)
             except DockerError as e:
                 assert e.status == 404
-                print('Pulling "{img}" for the testing session...'.format(img=img))
+                print(f'Pulling "{img}" for the testing session...')
                 await docker.pull(img)
         await docker.close()
 

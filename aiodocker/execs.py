@@ -57,7 +57,7 @@ class Exec:
     ) -> Stream:
         pass
 
-    @overload  # noqa
+    @overload
     async def start(
         self,
         *,
@@ -66,7 +66,7 @@ class Exec:
     ) -> bytes:
         pass
 
-    def start(self, *, timeout=None, detach=False):  # noqa
+    def start(self, *, timeout=None, detach=False):
         """
         Start this exec instance.
         Args:

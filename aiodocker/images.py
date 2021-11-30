@@ -66,7 +66,7 @@ class DockerImages:
     ) -> Dict[str, Any]:
         pass
 
-    @overload  # noqa: F811
+    @overload
     def pull(
         self,
         from_image: str,
@@ -78,7 +78,7 @@ class DockerImages:
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
-    def pull(  # noqa: F811
+    def pull(
         self,
         from_image: str,
         *,
@@ -142,7 +142,7 @@ class DockerImages:
     ) -> Dict[str, Any]:
         pass
 
-    @overload  # noqa: F811
+    @overload
     def push(
         self,
         name: str,
@@ -153,7 +153,7 @@ class DockerImages:
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
-    def push(  # noqa: F811
+    def push(
         self,
         name: str,
         *,
@@ -252,7 +252,7 @@ class DockerImages:
     ) -> Dict[str, Any]:
         pass
 
-    @overload  # noqa: F811
+    @overload
     def build(
         self,
         *,
@@ -272,7 +272,7 @@ class DockerImages:
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
-    def build(  # noqa: F811
+    def build(
         self,
         *,
         remote: str = None,

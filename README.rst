@@ -78,4 +78,3 @@ Examples
        loop.run_until_complete(list_things())
        loop.run_until_complete(run_container())
        loop.close()
-
