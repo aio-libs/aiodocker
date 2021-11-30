@@ -97,7 +97,7 @@ jobs:
         COLOR: 'yes'
         DOCKER_VERSION: ${{ matrix.docker }}
         CI: true
-    - script: |
+      run: |
         python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Upload coverage artifact
       uses: neuro-inc/prepare-coverage@v21.9.1
