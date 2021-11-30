@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-def test_events_default_task(docker):
+async def test_events_default_task(docker):
     docker.events.subscribe()
     assert docker.events.task is not None
     await docker.close()
@@ -13,7 +13,7 @@ def test_events_default_task(docker):
 
 
 @pytest.mark.asyncio
-def test_events_provided_task(docker):
+async def test_events_provided_task(docker):
     task = asyncio.ensure_future(docker.events.run())
     docker.events.subscribe(create_task=False)
     assert docker.events.task is None
@@ -25,7 +25,7 @@ def test_events_provided_task(docker):
 
 
 @pytest.mark.asyncio
-def test_events_no_task(docker):
+async def test_events_no_task(docker):
     assert docker.events.task is None
     await docker.close()
     assert docker.events.json_stream is None
