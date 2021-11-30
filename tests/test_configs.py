@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 
 from aiodocker.exceptions import DockerError
@@ -136,4 +134,3 @@ async def test_config_create_duplicated_error(swarm, tmp_config):
         "code = AlreadyExists "
         "desc = config " + name + " already exists"
     )
-    await asyncio.sleep(1)
