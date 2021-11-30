@@ -95,10 +95,7 @@ async def test_delete_image(docker, image_name):
     repository = "localhost:5000/image"
     await docker.images.tag(name=image_name, repo=repository)
     assert await docker.images.inspect(repository)
-    old_images = await docker.images.list(filter=repository)
     await docker.images.delete(name=repository)
-    new_images = await docker.images.list(filter=repository)
-    assert len(old_images) > len(new_images)
 
 
 @pytest.mark.asyncio
