@@ -73,7 +73,7 @@ async def test_ssl_context(monkeypatch):
     await docker.close()
     with pytest.raises(TypeError):
         docker = Docker(ssl_context="bad ssl context")
-    ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    ssl_ctx = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
     ssl_ctx.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
     ssl_ctx.load_verify_locations(cafile=str(cert_dir / "ca.pem"))
     ssl_ctx.load_cert_chain(
