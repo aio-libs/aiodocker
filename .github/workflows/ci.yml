@@ -58,7 +58,7 @@ jobs:
         registry: ['1']
         pytest-arg: ['']
         include:
-          - python-version: 3.9
+          - python-version: '3.9'
             os: windows
             registry: '0'
             pytest-arg: 'tests/test_integration.py'

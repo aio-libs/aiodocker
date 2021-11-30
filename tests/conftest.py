@@ -55,10 +55,10 @@ def random_name():
 
     # If some test cases have used randomly-named temporary images,
     # we need to clean up them!
-    if os.environ.get("CI", "") == "true":
+    if os.environ.get("CI") is not None:
         # But inside the CI server, we don't need clean up!
         return
-    event_loop = asyncio.get_event_loop()
+    event_loop = asyncio.new_event_loop()
 
     async def _clean():
         docker = Docker()
@@ -88,7 +88,7 @@ def image_name() -> str:
 @pytest.fixture(scope="session")
 def testing_images(image_name: str) -> None:
     # Prepare a small Linux image shared by most test cases.
-    event_loop = asyncio.get_event_loop()
+    event_loop = asyncio.new_event_loop()
 
     async def _pull():
         docker = Docker()
