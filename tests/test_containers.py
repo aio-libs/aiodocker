@@ -170,7 +170,6 @@ async def test_resize(shell_container):
 )
 @pytest.mark.asyncio
 async def test_commit(docker, image_name, shell_container):
-    shell_container.commit()
     ret = await shell_container.commit()
     img_id = ret["Id"]
     img = await docker.images.inspect(img_id)

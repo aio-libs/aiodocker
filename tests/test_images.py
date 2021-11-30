@@ -63,7 +63,7 @@ async def test_history(docker, image_name):
 @pytest.mark.asyncio
 async def test_list_images(docker, image_name):
     images = await docker.images.list(filter=image_name)
-    assert len(images) == 1
+    assert len(images) >= 1
 
 
 @pytest.mark.asyncio
@@ -95,9 +95,10 @@ async def test_delete_image(docker, image_name):
     repository = "localhost:5000/image"
     await docker.images.tag(name=image_name, repo=repository)
     assert await docker.images.inspect(repository)
+    old_images = await docker.images.list(filter=repository)
     await docker.images.delete(name=repository)
-    images = await docker.images.list(filter=repository)
-    assert len(images) == 0
+    new_images = await docker.images.list(filter=repository)
+    assert len(old_images) > len(new_images)
 
 
 @pytest.mark.asyncio
