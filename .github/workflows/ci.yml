@@ -103,7 +103,7 @@ jobs:
         key: unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.cmd }}-${{ matrix.registry }}
 
   check:
-    # All's good, upload coverage
+    # All's good, upload coverage (also good for branch protection rule)
     name: Check
     needs: [test]
     runs-on: ubuntu-latest
