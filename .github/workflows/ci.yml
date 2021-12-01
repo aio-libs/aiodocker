@@ -102,6 +102,19 @@ jobs:
       with:
         key: unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.cmd }}-${{ matrix.registry }}
 
+  check:
+    # All's good, upload coverage
+    name: Check
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.sha }}
+    - name: Upload coverage
+      uses: neuro-inc/upload-coverage@v21.9.4
+
   deploy:
     name: Deploy on PyPI
     needs: [lint, test]
