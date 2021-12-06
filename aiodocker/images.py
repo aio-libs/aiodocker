@@ -305,6 +305,7 @@ class DockerImages:
         Args:
             path_dockerfile: path within the build context to the Dockerfile
             remote: a Git repository URI or HTTP/HTTPS context URI
+            tag: a name and optional tag to apply to the image
             quiet: suppress verbose build output
             nocache: do not use the cache when building the image
             rm: remove intermediate containers after a successful build
