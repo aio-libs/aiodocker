@@ -62,6 +62,7 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: str = None,
         repo: str = None,
+        platform: Optional[str] = None,
         stream: Literal[False] = False,
     ) -> Dict[str, Any]:
         pass
@@ -74,6 +75,7 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: str = None,
         repo: str = None,
+        platform: Optional[str] = None,
         stream: Literal[True],
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
@@ -85,6 +87,7 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: str = None,
         repo: str = None,
+        platform: Optional[str] = None,
         stream: bool = False,
     ) -> Any:
         """
@@ -95,6 +98,7 @@ class DockerImages:
             repo: repository name given to an image when it is imported
             tag: if empty when pulling an image all tags
                  for the given image to be pulled
+            platform: platform in the format `os[/arch[/variant]]`
             auth: special {'auth': base64} pull private repo
         """
         image = from_image  # TODO: clean up
@@ -104,6 +108,8 @@ class DockerImages:
             params["repo"] = repo
         if tag:
             params["tag"] = tag
+        if platform:
+            params["platform"] = platform
         if auth is not None:
             registry, has_registry_host, _ = image.partition("/")
             if not has_registry_host:
@@ -247,6 +253,7 @@ class DockerImages:
         rm: bool = True,
         forcerm: bool = False,
         labels: Mapping = None,
+        platform: Optional[str] = None,
         stream: Literal[False] = False,
         encoding: str = None,
     ) -> Dict[str, Any]:
@@ -267,6 +274,7 @@ class DockerImages:
         rm: bool = True,
         forcerm: bool = False,
         labels: Mapping = None,
+        platform: Optional[str] = None,
         stream: Literal[True],
         encoding: str = None,
     ) -> AsyncIterator[Dict[str, Any]]:
@@ -286,6 +294,7 @@ class DockerImages:
         rm: bool = True,
         forcerm: bool = False,
         labels: Mapping = None,
+        platform: Optional[str] = None,
         stream: bool = False,
         encoding: str = None,
     ) -> Any:
@@ -303,6 +312,7 @@ class DockerImages:
             encoding: set `Content-Encoding` for the file object your send
             forcerm: always remove intermediate containers, even upon failure
             labels: arbitrary key/value labels to set on the image
+            platform: platform in the format `os[/arch[/variant]]`
             fileobj: a tar archive compressed or not
         """
         headers = {}
@@ -340,6 +350,9 @@ class DockerImages:
 
         if labels:
             params.update({"labels": json.dumps(labels)})
+
+        if platform:
+            params["platform"] = platform
 
         cm = self.docker._query(
             "build",
