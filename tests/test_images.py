@@ -221,3 +221,35 @@ async def test_pups_image_auth(docker, image_name):
         await docker.pull("image:latest", auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.pull(repository, auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.images.inspect(repository)
+
+
+@pytest.mark.asyncio
+async def test_build_image_invalid_platform(docker, image_name):
+    dockerfile = f"""
+        FROM {image_name}
+        """
+    f = BytesIO(dockerfile.encode("utf-8"))
+    tar_obj = utils.mktar_from_dockerfile(f)
+    with pytest.raises(DockerError) as excinfo:
+        async for item in docker.images.build(
+            fileobj=tar_obj, encoding="gzip", stream=True, platform="foo"
+        ):
+            pass
+    tar_obj.close()
+    assert excinfo.value.status == 400
+    assert (
+        "unknown operating system or architecture: invalid argument"
+        in excinfo.exconly()
+    )
+
+
+@pytest.mark.asyncio
+async def test_pull_image_invalid_platform(docker, image_name):
+    with pytest.raises(DockerError) as excinfo:
+        await docker.images.pull("hello-world", platform="foo")
+
+    assert excinfo.value.status == 400
+    assert (
+        "unknown operating system or architecture: invalid argument"
+        in excinfo.exconly()
+    )
