@@ -6,17 +6,7 @@ import sys
 import tarfile
 import tempfile
 from io import BytesIO
-from typing import (
-    IO,
-    Any,
-    BinaryIO,
-    Iterable,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import IO, Any, Iterable, Mapping, MutableMapping, Optional, Tuple, Union
 
 
 async def parse_result(response, response_type=None, *, encoding="utf-8"):
@@ -227,12 +217,12 @@ def clean_filters(filters: Mapping = None) -> str:
     return json.dumps(filters)
 
 
-def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
+def mktar_from_dockerfile(fileobject: Union[BytesIO, IO[bytes]]) -> IO[bytes]:
     """
     Create a zipped tar archive from a Dockerfile
     **Remember to close the file object**
     Args:
-        fileobj: a Dockerfile
+        fileobject: a Dockerfile
     Returns:
         a NamedTemporaryFile() object
     """

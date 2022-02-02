@@ -2,9 +2,9 @@ import io
 import json
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
-    BinaryIO,
     Dict,
     List,
     Mapping,
@@ -13,6 +13,10 @@ from typing import (
     Union,
     overload,
 )
+
+
+if TYPE_CHECKING:
+    from _typeshed import SupportsRead
 
 from typing_extensions import Literal
 
@@ -226,7 +230,7 @@ class DockerImages:
         return await self.docker._query_json(f"images/{name}", "DELETE", params=params)
 
     @staticmethod
-    async def _stream(fileobj: BinaryIO) -> AsyncIterator[bytes]:
+    async def _stream(fileobj: "SupportsRead[bytes]") -> AsyncIterator[bytes]:
         chunk = fileobj.read(io.DEFAULT_BUFFER_SIZE)
         while chunk:
             yield chunk
@@ -237,7 +241,7 @@ class DockerImages:
         self,
         *,
         remote: str = None,
-        fileobj: BinaryIO = None,
+        fileobj: "SupportsRead[bytes]" = None,
         path_dockerfile: str = None,
         tag: str = None,
         quiet: bool = False,
@@ -257,7 +261,7 @@ class DockerImages:
         self,
         *,
         remote: str = None,
-        fileobj: BinaryIO = None,
+        fileobj: "SupportsRead[bytes]" = None,
         path_dockerfile: str = None,
         tag: str = None,
         quiet: bool = False,
@@ -276,7 +280,7 @@ class DockerImages:
         self,
         *,
         remote: str = None,
-        fileobj: BinaryIO = None,
+        fileobj: "SupportsRead[bytes]" = None,
         path_dockerfile: str = None,
         tag: str = None,
         quiet: bool = False,
