@@ -32,4 +32,3 @@ async def test_create_show_delete_volume(docker, force_delete):
     await volume.delete(force_delete)
     with pytest.raises(aiodocker.exceptions.DockerError):
         await docker.volumes.get(name)
-
