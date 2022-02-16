@@ -191,7 +191,7 @@ class DockerContainer:
             f"containers/{self._id}/start",
             method="POST",
             headers={"content-type": "application/json"},
-            data=kwargs,
+            params=kwargs,
         ):
             pass
 
