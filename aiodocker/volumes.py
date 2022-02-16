@@ -46,6 +46,8 @@ class DockerVolume:
         data = await self.docker._query_json(f"volumes/{self.name}")
         return data
 
-    async def delete(self):
-        async with self.docker._query(f"volumes/{self.name}", method="DELETE"):
+    async def delete(self, force=False):
+        async with self.docker._query(
+            f"volumes/{self.name}", method="DELETE", params=dict(force=force)
+        ):
             pass
