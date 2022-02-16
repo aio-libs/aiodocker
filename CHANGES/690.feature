@@ -1,1 +1,0 @@
-Adds force parameter to DockerVolume.delete()
