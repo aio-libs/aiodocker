@@ -75,7 +75,7 @@ class DockerContainers:
         try:
             container = await self.create(config, name=name)
         except DockerError as err:
-            # image not fount, try pulling it
+            # image not found, try pulling it
             if err.status == 404 and "Image" in config:
                 await self.docker.pull(config["Image"], auth=auth)
                 container = await self.create(config, name=name)
