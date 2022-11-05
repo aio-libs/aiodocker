@@ -249,6 +249,7 @@ class DockerImages:
         labels: Mapping = None,
         stream: Literal[False] = False,
         encoding: str = None,
+        extra_params: Optional[Dict] = None,
     ) -> Dict[str, Any]:
         pass
 
@@ -269,6 +270,7 @@ class DockerImages:
         labels: Mapping = None,
         stream: Literal[True],
         encoding: str = None,
+        extra_params: Optional[Dict] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
@@ -288,6 +290,7 @@ class DockerImages:
         labels: Mapping = None,
         stream: bool = False,
         encoding: str = None,
+        extra_params: Optional[Dict] = None,
     ) -> Any:
         """
         Build an image given a remote Dockerfile
@@ -304,6 +307,7 @@ class DockerImages:
             forcerm: always remove intermediate containers, even upon failure
             labels: arbitrary key/value labels to set on the image
             fileobj: a tar archive compressed or not
+            extra_params: a dict with extra params what don't implement in this library or exists on experimental release only
         """
         headers = {}
 
@@ -340,6 +344,9 @@ class DockerImages:
 
         if labels:
             params.update({"labels": json.dumps(labels)})
+
+        if extra_params:
+            params.update(extra_params)
 
         cm = self.docker._query(
             "build",
