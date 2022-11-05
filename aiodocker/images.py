@@ -307,7 +307,7 @@ class DockerImages:
             forcerm: always remove intermediate containers, even upon failure
             labels: arbitrary key/value labels to set on the image
             fileobj: a tar archive compressed or not
-            extra_params: a dict with extra params what don't implement in this library or exists on experimental release only
+            extra_params: a dict with extra params what don't implement on this library or exists on experimental release only
         """
         headers = {}
 
