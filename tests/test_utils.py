@@ -72,3 +72,8 @@ def test_clean_filters():
     filters = ()
     result = {"a": ["1", "2", "3", "4"], "b": ["string"]}
     utils.clean_filters(filters=filters) == json.dumps(result)
+
+
+def test_compose_auth_header():
+    auth = {"username": "alice", "password": "~"}
+    assert utils.compose_auth_header(auth) == "eyJ1c2VybmFtZSI6ICJhbGljZSIsICJwYXNzd29yZCI6ICJ-In0="
