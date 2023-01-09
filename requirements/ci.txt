@@ -1,6 +1,6 @@
 aiohttp==3.8.1
 codecov==2.1.12
 multidict==5.2.0
-tox==3.24.4
+tox==4.2.6
 tox-travis==0.12
 yarl==1.7.2
