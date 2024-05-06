@@ -17,8 +17,10 @@ long_description = open("README.rst").read()
 
 
 requirements = [
-    "aiohttp>=3.6",
+    "aiohttp>=3.8",
+    "async-timeout>=4.0.3",
     "typing_extensions>=4.0",
+    "yarl>=1.7.2",
 ]
 
 
