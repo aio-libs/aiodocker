@@ -149,11 +149,6 @@ class _DecodeHelper:
     def __aiter__(self):
         return self
 
-    # to make it compatible with Python 3.5.0 and 3.5.2
-    # https://www.python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
-    if sys.version_info <= (3, 5, 2):
-        __aiter__ = asyncio.coroutine(__aiter__)
-
     async def __anext__(self):
         if self._flag:
             raise StopAsyncIteration

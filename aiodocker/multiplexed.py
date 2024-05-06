@@ -30,9 +30,6 @@ class MultiplexedResult:
 
         return response
 
-    if sys.version_info <= (3, 5, 2):
-        __aiter__ = asyncio.coroutine(__aiter__)
-
     @types.coroutine
     def fetch(self):
         while True:
