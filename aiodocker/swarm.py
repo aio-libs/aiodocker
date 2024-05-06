@@ -1,4 +1,4 @@
-from typing import Optional, Iterable, Mapping
+from typing import Iterable, Mapping, Optional
 
 from .utils import clean_map
 

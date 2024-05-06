@@ -1,5 +1,5 @@
 import json
-from typing import Optional, Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Optional
 
 from .utils import clean_filters
 
