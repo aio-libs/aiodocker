@@ -26,3 +26,7 @@ lines-after-imports = 2
 
 [tool.ruff.format]
 preview = true  # enable the black's preview style
+
+[tool.mypy]
+files = ["aiodocker", "examples", "tests"]
+ignore-missing-imports = true
