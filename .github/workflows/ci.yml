@@ -20,11 +20,11 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/checkout@v4
+    - name: Setup Python 3.12
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: '3.12'
     - name: Cache PyPI
       uses: actions/cache@v2
       with:
@@ -53,12 +53,12 @@ jobs:
     needs: [lint]
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         os: [ubuntu]
         registry: ['1']
         pytest-arg: ['']
         include:
-          - python-version: '3.9'
+          - python-version: '3.12'
             os: windows
             registry: '0'
             pytest-arg: '-k test_integration'
@@ -66,9 +66,9 @@ jobs:
     timeout-minutes: 30
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Get pip cache dir
@@ -109,7 +109,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.sha }}
     - name: Upload coverage
@@ -123,11 +123,11 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/checkout@v4
+    - name: Setup Python 3.12
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: '3.12'
     - name: Install dependencies
       run: |
         pip install build wheel
