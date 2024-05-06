@@ -4,12 +4,12 @@ from aiodocker.exceptions import DockerError
 
 
 @pytest.fixture
-def tmp_config(event_loop, swarm, random_name):
-    config = event_loop.run_until_complete(
-        swarm.configs.create(name="config-" + random_name(), data=random_name())
+async def tmp_config(swarm, random_name):
+    config = await swarm.configs.create(
+        name="config-" + random_name(), data=random_name()
     )
     yield config["ID"]
-    event_loop.run_until_complete(swarm.configs.delete(config["ID"]))
+    await swarm.configs.delete(config["ID"])
 
 
 @pytest.mark.asyncio

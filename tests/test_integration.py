@@ -415,7 +415,7 @@ async def test_port(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_events(docker, image_name, event_loop):
+async def test_events(docker, image_name):
     # Сheck the stop procedure
     docker.events.subscribe()
     await docker.events.stop()

@@ -4,12 +4,12 @@ from aiodocker.exceptions import DockerError
 
 
 @pytest.fixture
-def tmp_secret(event_loop, swarm, random_name):
-    secret = event_loop.run_until_complete(
-        swarm.secrets.create(name="secret-" + random_name(), data=random_name())
+async def tmp_secret(swarm, random_name):
+    secret = await swarm.secrets.create(
+        name="secret-" + random_name(), data=random_name()
     )
     yield secret["ID"]
-    event_loop.run_until_complete(swarm.secrets.delete(secret["ID"]))
+    await swarm.secrets.delete(secret["ID"])
 
 
 @pytest.mark.asyncio
