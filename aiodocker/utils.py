@@ -193,7 +193,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return f"{key}={value}"
 
 
-def clean_networks(networks: Iterable[str] = None) -> Optional[Iterable[str]]:
+def clean_networks(networks: Optional[Iterable[str]] = None) -> Optional[Iterable[str]]:
     """
     Cleans the values inside `networks`
     Returns a new list
@@ -211,7 +211,7 @@ def clean_networks(networks: Iterable[str] = None) -> Optional[Iterable[str]]:
     return result
 
 
-def clean_filters(filters: Mapping = None) -> str:
+def clean_filters(filters: Optional[Mapping] = None) -> str:
     """
     Checks the values inside `filters`
     https://docs.docker.com/engine/api/v1.29/#operation/ServiceList
@@ -254,7 +254,7 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
 
 
 def compose_auth_header(
-    auth: Union[MutableMapping, str, bytes], registry_addr: str = None
+    auth: Union[MutableMapping, str, bytes], registry_addr: Optional[str] = None
 ) -> str:
     """
     Validate and compose base64-encoded authentication header
