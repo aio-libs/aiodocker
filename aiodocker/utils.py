@@ -1,8 +1,6 @@
-import asyncio
 import base64
 import codecs
 import json
-import sys
 import tarfile
 import tempfile
 from io import BytesIO
