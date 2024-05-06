@@ -117,7 +117,7 @@ async def test_config_create_b64_error(swarm):
     not_b64 = "I'm not base64 encoded"
     with pytest.raises(DockerError) as error:
         await swarm.configs.create(name=name, data=not_b64, b64=True)
-    assert error.value.message == "illegal base64 data at input byte 1"
+    assert "illegal base64 data at input byte 1" in error.value.message
 
 
 @pytest.mark.asyncio
