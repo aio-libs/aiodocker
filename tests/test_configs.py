@@ -23,7 +23,6 @@ async def test_config_list_with_filter(swarm, tmp_config):
 
 @pytest.mark.asyncio
 async def test_config_update(swarm, tmp_config):
-
     config = await swarm.configs.inspect(config_id=tmp_config)
     config_id = config["ID"]
 
@@ -45,7 +44,6 @@ async def test_config_update(swarm, tmp_config):
 
 @pytest.mark.asyncio
 async def test_config_labels(swarm, tmp_config):
-
     config = await swarm.configs.inspect(config_id=tmp_config)
     config_id1 = config["ID"]
     config = await swarm.configs.inspect(config_id1)
@@ -88,7 +86,6 @@ async def test_config_labels(swarm, tmp_config):
 
 @pytest.mark.asyncio
 async def test_config_update_error(swarm, tmp_config):
-
     config = await swarm.configs.inspect(config_id=tmp_config)
     config_id = config["ID"]
 

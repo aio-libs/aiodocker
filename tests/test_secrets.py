@@ -23,7 +23,6 @@ async def test_secret_list_with_filter(swarm, tmp_secret):
 
 @pytest.mark.asyncio
 async def test_secret_update(swarm, tmp_secret):
-
     secret = await swarm.secrets.inspect(secret_id=tmp_secret)
     secret_id = secret["ID"]
 
@@ -45,7 +44,6 @@ async def test_secret_update(swarm, tmp_secret):
 
 @pytest.mark.asyncio
 async def test_secret_labels(swarm, tmp_secret):
-
     secret = await swarm.secrets.inspect(secret_id=tmp_secret)
     secret_id1 = secret["ID"]
     secret = await swarm.secrets.inspect(secret_id1)
@@ -88,7 +86,6 @@ async def test_secret_labels(swarm, tmp_secret):
 
 @pytest.mark.asyncio
 async def test_secret_update_error(swarm, tmp_secret):
-
     secret = await swarm.secrets.inspect(secret_id=tmp_secret)
     secret_id = secret["ID"]
 

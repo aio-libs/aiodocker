@@ -281,7 +281,6 @@ async def test_attach_tty(docker, image_name, make_container):
     container = await make_container(config, name="aiodocker-testing-attach-tty")
 
     async with container.attach(stdin=True, stdout=True, stderr=True) as stream:
-
         await container.resize(w=80, h=25)
 
         assert await expect_prompt(stream) == b">>>"
@@ -445,16 +444,12 @@ async def test_events(docker, image_name, event_loop):
             break
 
     # 'kill' event may be omitted
-    assert (
-        events_occurred
-        == [
-            "create",
-            "start",
-            "kill",
-            "die",
-            "destroy",
-        ]
-        or events_occurred == ["create", "start", "die", "destroy"]
-    )
+    assert events_occurred == [
+        "create",
+        "start",
+        "kill",
+        "die",
+        "destroy",
+    ] or events_occurred == ["create", "start", "die", "destroy"]
 
     await docker.events.stop()

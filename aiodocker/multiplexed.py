@@ -36,7 +36,6 @@ class MultiplexedResult:
     @types.coroutine
     def fetch(self):
         while True:
-
             try:
                 hdrlen = constants.STREAM_HEADER_SIZE_BYTES
                 header = yield from self._response.content.readexactly(hdrlen)
@@ -70,7 +69,6 @@ class MultiplexedResult:
 
 
 async def multiplexed_result_stream(response, is_tty=False, encoding="utf-8"):
-
     # if is_tty is True you get a raw output
     log_stream = MultiplexedResult(response, raw=is_tty)
 
@@ -79,7 +77,6 @@ async def multiplexed_result_stream(response, is_tty=False, encoding="utf-8"):
 
 
 async def multiplexed_result_list(response, is_tty=False, encoding="utf-8"):
-
     # if is_tty is True you get a raw output
     log_stream = MultiplexedResult(response, raw=is_tty)
 

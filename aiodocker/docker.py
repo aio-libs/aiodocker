@@ -69,7 +69,6 @@ class Docker:
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
     ) -> None:
-
         docker_host = url  # rename
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
