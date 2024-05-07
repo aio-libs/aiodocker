@@ -24,7 +24,7 @@ Create a network
         print(network)
         await docker.close()
 
-    if __name__ == '__main__':
+    if __name__ == "__main__":
         asyncio.run(create_network())
 
 ---------
