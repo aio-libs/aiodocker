@@ -13,9 +13,10 @@ async def test_list_networks(docker):
 
 @pytest.mark.asyncio
 async def test_list_networks_with_filter(docker):
-    await docker.networks.create(
-        {"Name": "test-net-filter", "Labels": {"some": "label"}}
-    )
+    await docker.networks.create({
+        "Name": "test-net-filter",
+        "Labels": {"some": "label"},
+    })
     networks = await docker.networks.list(filters={"label": "some=label"})
     assert len(networks) == 1
 

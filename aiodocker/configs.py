@@ -9,7 +9,7 @@ class DockerConfigs:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping = None) -> List[Mapping]:
+    async def list(self, *, filters: Optional[Mapping] = None) -> List[Mapping]:
         """
         Return a list of configs
 
@@ -34,7 +34,7 @@ class DockerConfigs:
         *,
         b64: bool = False,
         labels: Optional[Mapping[str, str]] = None,
-        templating: Mapping = None,
+        templating: Optional[Mapping] = None,
     ) -> Mapping[str, Any]:
         """
         Create a config
@@ -101,11 +101,11 @@ class DockerConfigs:
         config_id: str,
         version: str,
         *,
-        name: str = None,
-        data: str = None,
+        name: Optional[str] = None,
+        data: Optional[str] = None,
         b64: bool = False,
         labels: Optional[Mapping[str, str]] = None,
-        templating: Mapping = None,
+        templating: Optional[Mapping] = None,
     ) -> bool:
         """
         Update a config.

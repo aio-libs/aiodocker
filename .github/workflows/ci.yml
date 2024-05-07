@@ -20,22 +20,23 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/checkout@v4
+    - name: Setup Python 3.12
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
-    - name: Cache PyPI
-      uses: actions/cache@v2
-      with:
-        key: pip-lint-${{ hashFiles('requirements/*.txt') }}
-        path: ~/.cache/pip
-        restore-keys: |
-            pip-lint-
+        python-version: '3.12'
+        cache: pip
+        cache-dependency-path: |
+          setup.py
+          requirements/lint.txt
     - name: Install dependencies
       uses: py-actions/py-dependency-install@v2
       with:
-        path: requirements/test.txt
+        path: requirements/lint.txt
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit/
+        key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
     - name: Generate dists
       run: |
         pip install build
@@ -53,12 +54,12 @@ jobs:
     needs: [lint]
     strategy:
       matrix:
-        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
         os: [ubuntu]
         registry: ['1']
         pytest-arg: ['']
         include:
-          - python-version: '3.9'
+          - python-version: '3.12'
             os: windows
             registry: '0'
             pytest-arg: '-k test_integration'
@@ -66,22 +67,15 @@ jobs:
     timeout-minutes: 30
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Get pip cache dir
-      id: pip-cache
-      run: |
-        echo "::set-output name=dir::$(pip cache dir)"    # - name: Cache
-    - name: Cache PyPI
-      uses: actions/cache@v2
-      with:
-        key: pip-ci-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('requirements/*.txt') }}
-        path: ${{ steps.pip-cache.outputs.dir }}
-        restore-keys: |
-            pip-ci-${{ runner.os }}-${{ matrix.python-version }}-
+        cache: pip
+        cache-dependency-path: |
+          setup.py
+          requirements/test.txt
     - name: Install dependencies
       uses: py-actions/py-dependency-install@v2
       with:
@@ -109,12 +103,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.sha }}
-    - name: Upload coverage
-      uses: neuro-inc/upload-coverage@v21.9.4
-
+    - name: Upload code coverage report
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
   deploy:
     name: Deploy on PyPI
     needs: [lint, test]
@@ -123,11 +118,11 @@ jobs:
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
-    - name: Setup Python 3.9
-      uses: actions/setup-python@v2
+      uses: actions/checkout@v4
+    - name: Setup Python 3.12
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: '3.12'
     - name: Install dependencies
       run: |
         pip install build wheel
@@ -135,7 +130,7 @@ jobs:
       run: |
         python -m build
     - name: Release
-      uses: aio-libs/create-release@v1.2.3
+      uses: aio-libs/create-release@v1.6.5
       with:
         changes_file: CHANGES.rst
         name: aiodocker

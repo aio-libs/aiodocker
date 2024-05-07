@@ -1,4 +1,4 @@
-from typing import Iterable, Mapping
+from typing import Iterable, Mapping, Optional
 
 from .utils import clean_map
 
@@ -10,10 +10,10 @@ class DockerSwarm:
     async def init(
         self,
         *,
-        advertise_addr: str = None,
+        advertise_addr: Optional[str] = None,
         listen_addr: str = "0.0.0.0:2377",
         force_new_cluster: bool = False,
-        swarm_spec: Mapping = None,
+        swarm_spec: Optional[Mapping] = None,
     ) -> str:
         """
         Initialize a new swarm.
@@ -57,8 +57,8 @@ class DockerSwarm:
         remote_addrs: Iterable[str],
         listen_addr: str = "0.0.0.0:2377",
         join_token: str,
-        advertise_addr: str = None,
-        data_path_addr: str = None,
+        advertise_addr: Optional[str] = None,
+        data_path_addr: Optional[str] = None,
     ) -> bool:
         """
         Join a swarm.
