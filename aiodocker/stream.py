@@ -83,7 +83,7 @@ class Stream:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         queue: aiohttp.FlowControlDataQueue[Message] = aiohttp.FlowControlDataQueue(
-            protocol, limit=2 ** 16, loop=loop
+            protocol, limit=2**16, loop=loop
         )
         protocol.set_parser(_ExecParser(queue, tty=tty), queue)
         protocol.force_close()

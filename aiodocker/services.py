@@ -15,7 +15,7 @@ class DockerServices:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping = None) -> List[Mapping]:
+    async def list(self, *, filters: Optional[Mapping] = None) -> List[Mapping]:
         """
         Return a list of services
 
@@ -40,15 +40,15 @@ class DockerServices:
         self,
         task_template: Mapping[str, Any],
         *,
-        name: str = None,
+        name: Optional[str] = None,
         labels: Optional[Mapping[str, str]] = None,
-        mode: Mapping = None,
-        update_config: Mapping = None,
-        rollback_config: Mapping = None,
-        networks: List = None,
-        endpoint_spec: Mapping = None,
+        mode: Optional[Mapping] = None,
+        update_config: Optional[Mapping] = None,
+        rollback_config: Optional[Mapping] = None,
+        networks: Optional[List] = None,
+        endpoint_spec: Optional[Mapping] = None,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        registry: str = None,
+        registry: Optional[str] = None,
     ) -> Mapping[str, Any]:
         """
         Create a service
@@ -112,7 +112,7 @@ class DockerServices:
         service_id: str,
         version: str,
         *,
-        image: str = None,
+        image: Optional[str] = None,
         rollback: bool = False,
     ) -> bool:
         """
