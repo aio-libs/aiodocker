@@ -69,7 +69,6 @@ class Docker:
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
     ) -> None:
-
         docker_host = url  # rename
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
@@ -198,7 +197,7 @@ class Docker:
         method: str = "GET",
         *,
         params: Optional[Mapping[str, Any]] = None,
-        data: Any = None,
+        data: Optional[Any] = None,
         headers=None,
         timeout=None,
         chunked=None,
@@ -285,7 +284,7 @@ class Docker:
         method: str = "GET",
         *,
         params: Optional[Mapping[str, Any]] = None,
-        data: Any = None,
+        data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,
@@ -318,7 +317,7 @@ class Docker:
         method: str = "POST",
         *,
         params: Optional[Mapping[str, Any]] = None,
-        data: Any = None,
+        data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,

@@ -1,9 +1,6 @@
 # Some simple testing tasks (sorry, UNIX only).
 
-lint: fmt
-	mypy aiodocker tests
-
-fmt:
+lint:
 ifdef CI
 	pre-commit run --all-files --show-diff-on-failure
 else

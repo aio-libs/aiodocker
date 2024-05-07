@@ -17,13 +17,13 @@ async def _wait_service(swarm, service_id):
 
 
 @pytest.fixture
-def tmp_service(event_loop, swarm, random_name):
-    service = event_loop.run_until_complete(
-        swarm.services.create(task_template=TaskTemplate, name=random_name())
+async def tmp_service(swarm, random_name):
+    service = await swarm.services.create(
+        task_template=TaskTemplate, name=random_name()
     )
-    event_loop.run_until_complete(_wait_service(swarm, service["ID"]))
+    await _wait_service(swarm, service["ID"])
     yield service["ID"]
-    event_loop.run_until_complete(swarm.services.delete(service["ID"]))
+    await swarm.services.delete(service["ID"])
 
 
 @pytest.mark.asyncio

@@ -3,3 +3,40 @@ package = "aiodocker"
 filename = "CHANGES.rst"
 directory = "CHANGES"
 title_format = "{version} ({project_date})"
+
+[tool.ruff]
+line-length = 88
+src = ["aiodocker", "tests", "examples"]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+]
+ignore = ["E203", "E731", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["aiodocker"]
+known-third-party= ["aiohttp", "async_timeout", "pytest"]
+split-on-trailing-comma = true
+combine-as-imports = true
+lines-after-imports = 2
+
+[tool.ruff.format]
+preview = true  # enable the black's preview style
+
+[tool.mypy]
+files = ["aiodocker", "examples", "tests"]
+ignore-missing-imports = true
+
+[tool.pytest.ini_options]
+addopts = "--cov-branch --cov-report xml --cov=aiodocker -v"
+norecursedirs = ["dist", "docs", "build", "venv", "virtualenv", ".git"]
+minversion = "3.8.2"
+testpaths = ["tests"]
+junit_suite_name = "aiodocker_test_suite"
+junit_family = "xunit2"
+filterwarnings = ["error", "ignore::ResourceWarning:asyncio"]
+asyncio_mode = "auto"
