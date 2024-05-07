@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# mypy: disable-error-code="var-annotated"
 #
 # aiodocker documentation build configuration file, created by
 # sphinx-quickstart on Sat Jul 15 11:34:21 2017.
@@ -32,7 +33,7 @@ _version_path = os.path.abspath(
 )
 with codecs.open(_version_path, "r", "latin1") as fp:
     try:
-        _version_info = re.search(
+        _version_match = re.search(
             r"^__version__ = \""
             r"(?P<major>\d+)"
             r"\.(?P<minor>\d+)"
@@ -40,8 +41,11 @@ with codecs.open(_version_path, "r", "latin1") as fp:
             r"(?P<tag>.*)?\"$",
             fp.read(),
             re.M,
-        ).groupdict()
-    except IndexError:
+        )
+        if _version_match is None:
+            raise ValueError
+        _version_info = _version_match.groupdict()
+    except (IndexError, ValueError):
         raise RuntimeError("Unable to determine version.")
 
 _root_path = os.path.abspath(os.path.join(_docs_path, ".."))

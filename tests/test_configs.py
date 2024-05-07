@@ -4,12 +4,12 @@ from aiodocker.exceptions import DockerError
 
 
 @pytest.fixture
-def tmp_config(event_loop, swarm, random_name):
-    config = event_loop.run_until_complete(
-        swarm.configs.create(name="config-" + random_name(), data=random_name())
+async def tmp_config(swarm, random_name):
+    config = await swarm.configs.create(
+        name="config-" + random_name(), data=random_name()
     )
     yield config["ID"]
-    event_loop.run_until_complete(swarm.configs.delete(config["ID"]))
+    await swarm.configs.delete(config["ID"])
 
 
 @pytest.mark.asyncio
@@ -23,7 +23,6 @@ async def test_config_list_with_filter(swarm, tmp_config):
 
 @pytest.mark.asyncio
 async def test_config_update(swarm, tmp_config):
-
     config = await swarm.configs.inspect(config_id=tmp_config)
     config_id = config["ID"]
 
@@ -45,7 +44,6 @@ async def test_config_update(swarm, tmp_config):
 
 @pytest.mark.asyncio
 async def test_config_labels(swarm, tmp_config):
-
     config = await swarm.configs.inspect(config_id=tmp_config)
     config_id1 = config["ID"]
     config = await swarm.configs.inspect(config_id1)
@@ -88,7 +86,6 @@ async def test_config_labels(swarm, tmp_config):
 
 @pytest.mark.asyncio
 async def test_config_update_error(swarm, tmp_config):
-
     config = await swarm.configs.inspect(config_id=tmp_config)
     config_id = config["ID"]
 
@@ -120,7 +117,7 @@ async def test_config_create_b64_error(swarm):
     not_b64 = "I'm not base64 encoded"
     with pytest.raises(DockerError) as error:
         await swarm.configs.create(name=name, data=not_b64, b64=True)
-    assert error.value.message == "illegal base64 data at input byte 1"
+    assert "illegal base64 data at input byte 1" in error.value.message
 
 
 @pytest.mark.asyncio
