@@ -173,10 +173,10 @@ async def test_import_image(docker):
 
     async def file_sender(file_name=None):
         with open(file_name, "rb") as f:
-            chunk = f.read(2 ** 16)
+            chunk = f.read(2**16)
             while chunk:
                 yield chunk
-                chunk = f.read(2 ** 16)
+                chunk = f.read(2**16)
 
     dir = os.path.dirname(__file__)
     hello_world = os.path.join(dir, "docker/google-containers-pause.tar")
