@@ -13,6 +13,10 @@ on:
     - cron:  '0 6 * * *'  # Daily 6AM UTC build
 
 
+env:
+  PROJECT_NAME: aiodocker
+
+
 jobs:
 
   lint:
@@ -86,8 +90,8 @@ jobs:
     - name: Start Docker services
       if: ${{ matrix.registry == '1' }}
       run: |
-        docker run -d --name aiodocker-test-registry -p 5000:5000 registry:2
-        docker run -d -p 5001:5001 --name aiodocker-test-registry2 -v `pwd`/tests/certs:/certs -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/certs/htpasswd -e REGISTRY_HTTP_ADDR=0.0.0.0:5001 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
+        docker run -d --name ${{ env.PROJECT_NAME }}-test-registry -p 5000:5000 registry:2
+        docker run -d -p 5001:5001 --name ${{ env.PROJECT_NAME }}-test-registry2 -v `pwd`/tests/certs:/certs -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/certs/htpasswd -e REGISTRY_HTTP_ADDR=0.0.0.0:5001 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
     - name: Run unittests
       env:
         COLOR: 'yes'
@@ -136,7 +140,7 @@ jobs:
       uses: aio-libs/create-release@v1.6.5
       with:
         changes_file: CHANGES.rst
-        name: aiodocker
+        name: ${{ env.PROJECT_NAME }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
         pypi_token: ${{ secrets.PYPI_TOKEN }}
         head_line: "{version}\\s+\\({date}\\)\n====+\n?"
