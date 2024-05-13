@@ -14,13 +14,43 @@ on:
 
 
 env:
+  PYTHON_LATEST: 3.12
   PROJECT_NAME: aiodocker
+
+  # For re-actors/checkout-python-sdist
+  dists-artifact-name: python-package-distributions
 
 
 jobs:
 
+  build:
+    name: 📦 Build the distribution packages
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_LATEST }}
+        cache: pip
+    - name: Install core libraries for build
+      run: python -Im pip install build
+    - name: Build artifacts
+      run: python -Im build
+    - name: Upload built artifacts for testing
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: |
+          dist/${{ env.PROJECT_NAME }}*.tar.gz
+          dist/${{ env.PROJECT_NAME }}*.whl
+        retention-days: 15
+
   lint:
     name: Linter
+    needs:
+    - build
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -28,10 +58,15 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Setup Python 3.12
+    - name: Download all the dists
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: dist
+    - name: Setup Python ${{ env.PYTHON_LATEST }}
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
         cache-dependency-path: |
           setup.py
@@ -44,21 +79,18 @@ jobs:
       with:
         path: ~/.cache/pre-commit/
         key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
-    - name: Generate dists
-      run: |
-        pip install build
-        python -m build
     - name: Run linters
       run: |
         make lint
     - name: Run twine checker
       run: |
         pip install twine
-        twine check dist/*
+        twine check --strict dist/*
 
   test:
     name: test
-    needs: [lint]
+    needs:
+    - build
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
@@ -117,30 +149,60 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-  deploy:
-    name: Deploy on PyPI
-    needs: [lint, test]
+
+  publish:  # Run only on creating release for new tag
+    name: 📦 Publish to PyPI
+    needs:
+    - build
+    - lint
+    - test
     runs-on: ubuntu-latest
     # Run only on pushing a tag
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: write  # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write  # IMPORTANT: mandatory for trusted publishing & sigstore
+
+    environment:
+      name: pypi
+      url: >-
+        https://pypi.org/project/${{ env.PROJECT_NAME }}/${{ github.ref_name }}
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: Setup Python 3.12
-      uses: actions/setup-python@v5
+    - name: Download all the dists
+      uses: actions/download-artifact@v3
       with:
-        python-version: '3.12'
-    - name: Install dependencies
-      run: |
-        pip install build wheel
-    - name: Build wheels
-      run: |
-        python -m build
+        name: ${{ env.dists-artifact-name }}
+        path: dist
+
     - name: Release
       uses: aio-libs/create-release@v1.6.5
       with:
         changes_file: CHANGES.rst
         name: ${{ env.PROJECT_NAME }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        pypi_token: ${{ secrets.PYPI_TOKEN }}
         head_line: "{version}\\s+\\({date}\\)\n====+\n?"
+
+    - name: >-
+        Publish 🐍📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+    - name: Sign the dists with Sigstore
+      uses: sigstore/gh-action-sigstore-python@v2.1.1
+      with:
+        inputs: >-
+          ./dist/${{ env.PROJECT_NAME }}*.tar.gz
+          ./dist/${{ env.PROJECT_NAME }}*.whl
+
+    - name: Upload artifact signatures to GitHub Release
+      # Confusingly, this action also supports updating releases, not
+      # just creating them. This is what we want here, since we've manually
+      # created the release above.
+      uses: softprops/action-gh-release@v2
+      with:
+        # dist/ contains the built packages, which smoketest-artifacts/
+        # contains the signatures and certificates.
+        files: dist/**
+
+...
