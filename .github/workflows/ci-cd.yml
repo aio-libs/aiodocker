@@ -159,9 +159,7 @@ jobs:
   publish:  # Run only on creating release for new tag
     name: 📦 Publish to PyPI
     needs:
-    - build
-    - lint
-    - test
+    - check
     runs-on: ubuntu-latest
     # Run only on pushing a tag
     if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
