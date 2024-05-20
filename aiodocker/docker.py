@@ -77,6 +77,8 @@ class Docker:
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
         if docker_host is None:
+            docker_host = self._get_docker_context_host()
+        if docker_host is None:
             for sockpath in _sock_search_paths:
                 if sockpath.is_socket():
                     docker_host = "unix://" + str(sockpath)
@@ -380,3 +382,22 @@ class Docker:
             certfile=str(certs_path2 / "cert.pem"), keyfile=str(certs_path2 / "key.pem")
         )
         return context
+
+    @staticmethod
+    def _get_docker_context_host() -> Optional[str]:
+        current_context_name = os.environ.get("DOCKER_CONTEXT", None)
+        if current_context_name is None:
+            try:
+                docker_config_path = Path.home() / ".docker" / "config.json"
+                docker_config = json.loads(docker_config_path.read_bytes())
+            except IOError:
+                return None
+            current_context_name = docker_config.get("currentContext", "default")
+
+        for meta_path in (Path.home() / ".docker" / "contexts" / "meta").glob(
+            "*/meta.json"
+        ):
+            context_data = json.loads(meta_path.read_bytes())
+            if context_data["Name"] == current_context_name:
+                return context_data["Endpoints"]["docker"]["Host"]
+        return None
