@@ -70,9 +70,8 @@ class DockerImages:
         tag: Optional[str] = None,
         repo: Optional[str] = None,
         platform: Optional[str] = None,
-        stream: Literal[False],
-    ) -> Dict[str, Any]:
-        pass
+        stream: Literal[False] = False,
+    ) -> Dict[str, Any]: ...
 
     @overload
     def pull(
@@ -84,8 +83,7 @@ class DockerImages:
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: Literal[True],
-    ) -> AsyncIterator[Dict[str, Any]]:
-        pass
+    ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def pull(
         self,
@@ -151,9 +149,8 @@ class DockerImages:
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
-        stream: Literal[False],
-    ) -> Dict[str, Any]:
-        pass
+        stream: Literal[False] = False,
+    ) -> Dict[str, Any]: ...
 
     @overload
     def push(
@@ -163,8 +160,7 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[True],
-    ) -> AsyncIterator[Dict[str, Any]]:
-        pass
+    ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def push(
         self,
