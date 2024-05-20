@@ -18,7 +18,7 @@ Changes
 Bugfixes
 --------
 
-- Use ssl_context passsed to Docker constructor for creating underlying connection to docker engine. (#536)
+- Use ssl_context passed to Docker constructor for creating underlying connection to docker engine. (#536)
 - Fix an error when attach/exec when container stops before close connection to it. (#608)
 
 
@@ -98,7 +98,7 @@ Bugfixes
 Bugfixes
 --------
 
-- Improve the errror message when connection is closed by Docker Engine on TCP hijacking. (#424)
+- Improve the error message when connection is closed by Docker Engine on TCP hijacking. (#424)
 
 
 0.18.0 (2020-03-25)

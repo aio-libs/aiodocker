@@ -75,7 +75,7 @@ class DockerServices:
 
         if auth and registry is None:
             raise KeyError(
-                "When auth is specified you need to specifiy also the registry"
+                "When auth is specified you need to specify also the registry"
             )
 
         # from {"key":"value"} to ["key=value"]

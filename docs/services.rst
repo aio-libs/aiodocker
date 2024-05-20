@@ -8,29 +8,25 @@ Create a service
 
 .. code-block:: python
 
-   import asyncio
-   import aiodocker
+    import asyncio
+    import aiodocker
 
-   docker = aiodocker.Docker()
+    async def create_service():
+        docker = aiodocker.Docker()
+        task_template = {
+            "ContainerSpec": {
+                "Image": "redis",
+            },
+        }
+        service = await docker.services.create(
+            task_template=task_template,
+            name="my_service"
+        )
+        print(service)
+        await docker.close()
 
-   TaskTemplate = {
-       "ContainerSpec": {
-           "Image": "redis",
-           },
-   }
-
-   async def create_service():
-       service = await docker.services.create(
-           task_template=TaskTemplate,
-           name="my_service"
-       )
-       await docker.close()
-
-
-   if __name__ == '__main__':
-       loop = asyncio.get_event_loop()
-       loop.run_until_complete(create_service())
-       loop.close()
+    if __name__ == "__main__":
+         asyncio.run(create_service())
 
 ------------
 Reference
