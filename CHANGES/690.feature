@@ -1,1 +1,1 @@
-Adds force parameter to DockerVolume.delete()
+Adds the force parameter to `DockerVolume.delete()`
