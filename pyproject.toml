@@ -1,3 +1,54 @@
+[build-system]
+requires = [
+    "hatchling >= 1.10.0",
+]
+build-backend = "hatchling.build"
+
+[project]
+name = "aiodocker"
+dynamic = ["version"]
+description = "A simple Docker HTTP API wrapper written with asyncio and aiohttp."
+license = { text = "Apache 2.0" }
+requires-python = ">=3.8.0"
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "aiohttp==3.9.5",
+    "async-timeout==4.0.3",
+    "codecov==2.1.13",
+    "multidict==6.0.5",
+    "typing_extensions==4.11.0",
+    "yarl==1.9.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy==1.10",
+    "packaging==24.0",
+    "pre-commit==3.7.1",
+    "pytest==8.2.1",
+    "pytest-asyncio==0.23.7",
+    "pytest-cov==5.0.0",
+    "pytest-sugar==1.0.0",
+    "ruff==0.4.4",
+    "ruff-lsp==0.0.53",
+    "towncrier==23.11.0",
+]
+doc = [
+    "alabaster==0.7.16",
+    "sphinx==7.3.7",
+    "sphinx-autodoc-typehints==2.1.0",
+    "sphinxcontrib-asyncio==0.3.0"
+]
+
 [tool.towncrier]
 package = "aiodocker"
 filename = "CHANGES.rst"
