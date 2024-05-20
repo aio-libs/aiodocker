@@ -1,10 +1,7 @@
-from __future__ import annotations
-
 import io
 import json
 import warnings
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -16,13 +13,10 @@ from typing import (
     overload,
 )
 
-
-if TYPE_CHECKING:
-    from _typeshed import SupportsRead
-
 from typing_extensions import Literal
 
 from .jsonstream import json_stream_list, json_stream_stream
+from .types import SupportsRead
 from .utils import clean_map, compose_auth_header
 
 
