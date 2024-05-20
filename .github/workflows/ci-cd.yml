@@ -160,7 +160,7 @@ jobs:
     - name: Download coverage artifact
       uses: actions/download-artifact@v4
       with:
-        pattern: coverage-unit-*.xml
+        pattern: coverage-unit-*
         path: coverage
         merge-multiple: true
     - name: Upload code coverage report
