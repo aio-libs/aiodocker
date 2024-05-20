@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Optional
 
 from .utils import clean_filters
 
@@ -8,7 +8,7 @@ class DockerNetworks:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping = None) -> List[Dict[str, Any]]:
+    async def list(self, *, filters: Optional[Mapping] = None) -> List[Dict[str, Any]]:
         """
         Return a list of networks
 

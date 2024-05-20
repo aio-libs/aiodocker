@@ -1,8 +1,7 @@
-*swp
-*pyc
+*py[cod]
 *aiodocker*egg*
-build
-dist
+/build
+/dist
 __pycache__
 .cache
 venv
@@ -14,5 +13,14 @@ docs/_build
 .tox
 .mypy_cache
 .python-version
+.python-runtime
 .pytest_cache
 pip-wheel-metadata
+.sw[po]
+.*.sw[po]
+/.vscode
+/.vim
+/.idea
+.vimrc
+.nvimrc
+.exrc
