@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import io
 import json
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -20,8 +23,12 @@ from .types import SupportsRead
 from .utils import clean_map, compose_auth_header
 
 
+if TYPE_CHECKING:
+    from .docker import Docker
+
+
 class DockerImages:
-    def __init__(self, docker):
+    def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
     async def list(self, **params) -> Mapping:
@@ -62,9 +69,9 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
         repo: Optional[str] = None,
+        platform: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]:
-        pass
+    ) -> Dict[str, Any]: ...
 
     @overload
     def pull(
@@ -74,9 +81,9 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
         repo: Optional[str] = None,
+        platform: Optional[str] = None,
         stream: Literal[True],
-    ) -> AsyncIterator[Dict[str, Any]]:
-        pass
+    ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def pull(
         self,
@@ -85,6 +92,7 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
         repo: Optional[str] = None,
+        platform: Optional[str] = None,
         stream: bool = False,
     ) -> Any:
         """
@@ -95,6 +103,7 @@ class DockerImages:
             repo: repository name given to an image when it is imported
             tag: if empty when pulling an image all tags
                  for the given image to be pulled
+            platform: platform in the format `os[/arch[/variant]]`
             auth: special {'auth': base64} pull private repo
         """
         image = from_image  # TODO: clean up
@@ -104,6 +113,8 @@ class DockerImages:
             params["repo"] = repo
         if tag:
             params["tag"] = tag
+        if platform:
+            params["platform"] = platform
         if auth is not None:
             registry, has_registry_host, _ = image.partition("/")
             if not has_registry_host:
@@ -139,8 +150,7 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]:
-        pass
+    ) -> Dict[str, Any]: ...
 
     @overload
     def push(
@@ -150,8 +160,7 @@ class DockerImages:
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[True],
-    ) -> AsyncIterator[Dict[str, Any]]:
-        pass
+    ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def push(
         self,
@@ -247,6 +256,7 @@ class DockerImages:
         rm: bool = True,
         forcerm: bool = False,
         labels: Optional[Mapping] = None,
+        platform: Optional[str] = None,
         stream: Literal[False] = False,
         encoding: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -267,6 +277,7 @@ class DockerImages:
         rm: bool = True,
         forcerm: bool = False,
         labels: Optional[Mapping] = None,
+        platform: Optional[str] = None,
         stream: Literal[True],
         encoding: Optional[str] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
@@ -286,6 +297,7 @@ class DockerImages:
         rm: bool = True,
         forcerm: bool = False,
         labels: Optional[Mapping] = None,
+        platform: Optional[str] = None,
         stream: bool = False,
         encoding: Optional[str] = None,
     ) -> Any:
@@ -296,6 +308,7 @@ class DockerImages:
         Args:
             path_dockerfile: path within the build context to the Dockerfile
             remote: a Git repository URI or HTTP/HTTPS context URI
+            tag: a name and optional tag to apply to the image
             quiet: suppress verbose build output
             nocache: do not use the cache when building the image
             rm: remove intermediate containers after a successful build
@@ -303,6 +316,7 @@ class DockerImages:
             encoding: set `Content-Encoding` for the file object your send
             forcerm: always remove intermediate containers, even upon failure
             labels: arbitrary key/value labels to set on the image
+            platform: platform in the format `os[/arch[/variant]]`
             fileobj: a tar archive compressed or not
         """
         headers = {}
@@ -340,6 +354,9 @@ class DockerImages:
 
         if labels:
             params.update({"labels": json.dumps(labels)})
+
+        if platform:
+            params["platform"] = platform
 
         cm = self.docker._query(
             "build",
