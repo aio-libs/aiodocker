@@ -30,7 +30,7 @@ class DockerLog:
 
     async def run(self, **params: Any) -> None:
         if self.response:
-            warnings.warn("already running", Warning, stackelevel=2)
+            warnings.warn("already running", RuntimeWarning, stackelevel=2)
             return
         forced_params = {"follow": True}
         default_params = {"stdout": True, "stderr": True}
