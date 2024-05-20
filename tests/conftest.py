@@ -52,7 +52,7 @@ async def random_name():
     docker = Docker()
     images = await docker.images.list()
     for img in images:
-        if img["RepoTags"] is None:
+        if img["RepoTags"] in [None, []]:
             continue
         try:
             if img["RepoTags"][0].startswith("aiodocker-"):
