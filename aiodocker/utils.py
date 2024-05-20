@@ -210,12 +210,12 @@ def clean_filters(filters: Optional[Mapping] = None) -> str:
     return json.dumps(filters)
 
 
-def mktar_from_dockerfile(fileobject: Union[BytesIO, IO[bytes]]) -> IO[bytes]:
+def mktar_from_dockerfile(fileobj: Union[BytesIO, IO[bytes]]) -> IO[bytes]:
     """
     Create a zipped tar archive from a Dockerfile
     **Remember to close the file object**
     Args:
-        fileobject: a Dockerfile
+        fileobj: a Dockerfile
     Returns:
         a NamedTemporaryFile() object
     """
@@ -223,14 +223,14 @@ def mktar_from_dockerfile(fileobject: Union[BytesIO, IO[bytes]]) -> IO[bytes]:
     f = tempfile.NamedTemporaryFile()
     t = tarfile.open(mode="w:gz", fileobj=f)
 
-    if isinstance(fileobject, BytesIO):
+    if isinstance(fileobj, BytesIO):
         dfinfo = tarfile.TarInfo("Dockerfile")
-        dfinfo.size = len(fileobject.getvalue())
-        fileobject.seek(0)
+        dfinfo.size = len(fileobj.getvalue())
+        fileobj.seek(0)
     else:
-        dfinfo = t.gettarinfo(fileobj=fileobject, arcname="Dockerfile")
+        dfinfo = t.gettarinfo(fileobj=fileobj, arcname="Dockerfile")
 
-    t.addfile(dfinfo, fileobject)
+    t.addfile(dfinfo, fileobj)
     t.close()
     f.seek(0)
     return f
