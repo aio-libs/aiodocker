@@ -1,7 +1,5 @@
-import asyncio
 import json
 import logging
-import sys
 import types
 
 import aiohttp
@@ -17,9 +15,6 @@ class _JsonStreamResult:
 
     def __aiter__(self):
         return self
-
-    if sys.version_info <= (3, 5, 2):
-        __aiter__ = asyncio.coroutine(__aiter__)
 
     @types.coroutine
     def __anext__(self):

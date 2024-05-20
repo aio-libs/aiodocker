@@ -60,8 +60,8 @@ class DockerImages:
         from_image: str,
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        tag: str = None,
-        repo: str = None,
+        tag: Optional[str] = None,
+        repo: Optional[str] = None,
         stream: Literal[False] = False,
     ) -> Dict[str, Any]:
         pass
@@ -72,8 +72,8 @@ class DockerImages:
         from_image: str,
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        tag: str = None,
-        repo: str = None,
+        tag: Optional[str] = None,
+        repo: Optional[str] = None,
         stream: Literal[True],
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
@@ -83,8 +83,8 @@ class DockerImages:
         from_image: str,
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        tag: str = None,
-        repo: str = None,
+        tag: Optional[str] = None,
+        repo: Optional[str] = None,
         stream: bool = False,
     ) -> Any:
         """
@@ -136,8 +136,8 @@ class DockerImages:
         self,
         name: str,
         *,
-        auth: Union[MutableMapping, str, bytes] = None,
-        tag: str = None,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: Optional[str] = None,
         stream: Literal[False] = False,
     ) -> Dict[str, Any]:
         pass
@@ -147,8 +147,8 @@ class DockerImages:
         self,
         name: str,
         *,
-        auth: Union[MutableMapping, str, bytes] = None,
-        tag: str = None,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: Optional[str] = None,
         stream: Literal[True],
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
@@ -157,8 +157,8 @@ class DockerImages:
         self,
         name: str,
         *,
-        auth: Union[MutableMapping, str, bytes] = None,
-        tag: str = None,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: Optional[str] = None,
         stream: bool = False,
     ) -> Any:
         params = {}
@@ -184,7 +184,7 @@ class DockerImages:
         )
         return self._handle_response(cm, stream)
 
-    async def tag(self, name: str, repo: str, *, tag: str = None) -> bool:
+    async def tag(self, name: str, repo: str, *, tag: Optional[str] = None) -> bool:
         """
         Tag the given image so that it becomes part of a repository.
 
@@ -236,19 +236,19 @@ class DockerImages:
     async def build(
         self,
         *,
-        remote: str = None,
-        fileobj: BinaryIO = None,
-        path_dockerfile: str = None,
-        tag: str = None,
+        remote: Optional[str] = None,
+        fileobj: Optional[BinaryIO] = None,
+        path_dockerfile: Optional[str] = None,
+        tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Mapping = None,
+        buildargs: Optional[Mapping] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Mapping = None,
+        labels: Optional[Mapping] = None,
         stream: Literal[False] = False,
-        encoding: str = None,
+        encoding: Optional[str] = None,
     ) -> Dict[str, Any]:
         pass
 
@@ -256,38 +256,38 @@ class DockerImages:
     def build(
         self,
         *,
-        remote: str = None,
-        fileobj: BinaryIO = None,
-        path_dockerfile: str = None,
-        tag: str = None,
+        remote: Optional[str] = None,
+        fileobj: Optional[BinaryIO] = None,
+        path_dockerfile: Optional[str] = None,
+        tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Mapping = None,
+        buildargs: Optional[Mapping] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Mapping = None,
+        labels: Optional[Mapping] = None,
         stream: Literal[True],
-        encoding: str = None,
+        encoding: Optional[str] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
     def build(
         self,
         *,
-        remote: str = None,
-        fileobj: BinaryIO = None,
-        path_dockerfile: str = None,
-        tag: str = None,
+        remote: Optional[str] = None,
+        fileobj: Optional[BinaryIO] = None,
+        path_dockerfile: Optional[str] = None,
+        tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Mapping = None,
+        buildargs: Optional[Mapping] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Mapping = None,
+        labels: Optional[Mapping] = None,
         stream: bool = False,
-        encoding: str = None,
+        encoding: Optional[str] = None,
     ) -> Any:
         """
         Build an image given a remote Dockerfile
