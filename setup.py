@@ -17,8 +17,10 @@ long_description = open("README.rst").read()
 
 
 requirements = [
-    "aiohttp>=3.6",
-    "typing_extensions>=3.6.5",
+    "aiohttp>=3.8",
+    "async-timeout>=4.0.3",
+    "typing_extensions>=4.0",
+    "yarl>=1.7.2",
 ]
 
 
@@ -38,8 +40,11 @@ setup(
         "Framework :: AsyncIO",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Software Development",
         "Framework :: AsyncIO",
     ],
@@ -47,6 +52,6 @@ setup(
     platforms=["any"],
     packages=["aiodocker"],
     include_package_data=True,
-    python_requires=">=3.6",
+    python_requires=">=3.8",
     install_requires=requirements,
 )

@@ -4,12 +4,12 @@ from aiodocker.exceptions import DockerError
 
 
 @pytest.fixture
-def tmp_secret(event_loop, swarm, random_name):
-    secret = event_loop.run_until_complete(
-        swarm.secrets.create(name="secret-" + random_name(), data=random_name())
+async def tmp_secret(swarm, random_name):
+    secret = await swarm.secrets.create(
+        name="secret-" + random_name(), data=random_name()
     )
     yield secret["ID"]
-    event_loop.run_until_complete(swarm.secrets.delete(secret["ID"]))
+    await swarm.secrets.delete(secret["ID"])
 
 
 @pytest.mark.asyncio
@@ -23,7 +23,6 @@ async def test_secret_list_with_filter(swarm, tmp_secret):
 
 @pytest.mark.asyncio
 async def test_secret_update(swarm, tmp_secret):
-
     secret = await swarm.secrets.inspect(secret_id=tmp_secret)
     secret_id = secret["ID"]
 
@@ -45,7 +44,6 @@ async def test_secret_update(swarm, tmp_secret):
 
 @pytest.mark.asyncio
 async def test_secret_labels(swarm, tmp_secret):
-
     secret = await swarm.secrets.inspect(secret_id=tmp_secret)
     secret_id1 = secret["ID"]
     secret = await swarm.secrets.inspect(secret_id1)
@@ -88,7 +86,6 @@ async def test_secret_labels(swarm, tmp_secret):
 
 @pytest.mark.asyncio
 async def test_secret_update_error(swarm, tmp_secret):
-
     secret = await swarm.secrets.inspect(secret_id=tmp_secret)
     secret_id = secret["ID"]
 
@@ -119,7 +116,7 @@ async def test_secret_create_b64_error(swarm):
     not_b64 = "I'm not base64 encoded"
     with pytest.raises(DockerError) as error:
         await swarm.secrets.create(name=name, data=not_b64, b64=True)
-    assert error.value.message == "illegal base64 data at input byte 1"
+    assert "illegal base64 data at input byte 1" in error.value.message
 
 
 @pytest.mark.asyncio

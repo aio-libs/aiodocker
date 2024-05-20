@@ -1,8 +1,6 @@
-import asyncio
 import base64
 import codecs
 import json
-import sys
 import tarfile
 import tempfile
 from io import BytesIO
@@ -149,11 +147,6 @@ class _DecodeHelper:
     def __aiter__(self):
         return self
 
-    # to make it compatible with Python 3.5.0 and 3.5.2
-    # https://www.python.org/dev/peps/pep-0492/#api-design-and-implementation-revisions
-    if sys.version_info <= (3, 5, 2):
-        __aiter__ = asyncio.coroutine(__aiter__)
-
     async def __anext__(self):
         if self._flag:
             raise StopAsyncIteration
@@ -193,7 +186,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return f"{key}={value}"
 
 
-def clean_networks(networks: Iterable[str] = None) -> Optional[Iterable[str]]:
+def clean_networks(networks: Optional[Iterable[str]] = None) -> Optional[Iterable[str]]:
     """
     Cleans the values inside `networks`
     Returns a new list
@@ -211,7 +204,7 @@ def clean_networks(networks: Iterable[str] = None) -> Optional[Iterable[str]]:
     return result
 
 
-def clean_filters(filters: Mapping = None) -> str:
+def clean_filters(filters: Optional[Mapping] = None) -> str:
     """
     Checks the values inside `filters`
     https://docs.docker.com/engine/api/v1.29/#operation/ServiceList
@@ -254,7 +247,7 @@ def mktar_from_dockerfile(fileobject: BinaryIO) -> IO:
 
 
 def compose_auth_header(
-    auth: Union[MutableMapping, str, bytes], registry_addr: str = None
+    auth: Union[MutableMapping, str, bytes], registry_addr: Optional[str] = None
 ) -> str:
     """
     Validate and compose base64-encoded authentication header
