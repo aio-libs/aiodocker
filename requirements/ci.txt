@@ -1,4 +1,4 @@
-aiohttp==3.9.4
+aiohttp==3.9.5
 async-timeout==4.0.3
 codecov==2.1.13
 multidict==6.0.5
