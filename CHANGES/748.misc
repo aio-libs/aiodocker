@@ -1,0 +1,1 @@
+Add `$HOME/.docker/run/docker.sock` to the default docker socket search paths

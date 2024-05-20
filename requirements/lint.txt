@@ -1,4 +1,9 @@
 -r ci.txt
 mypy==1.10
+<<<<<<< dependabot/pip/ruff-0.4.4 -- Incoming Change
 pre-commit==3.5.0
 ruff==0.4.4
+=======
+pre-commit==3.7.1
+ruff==0.4.3
+>>>>>>> master -- Current Change

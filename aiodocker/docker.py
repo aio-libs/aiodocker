@@ -54,7 +54,11 @@ __all__ = (
 
 log = logging.getLogger(__name__)
 
-_sock_search_paths = [Path("/run/docker.sock"), Path("/var/run/docker.sock")]
+_sock_search_paths = [
+    Path("/run/docker.sock"),
+    Path("/var/run/docker.sock"),
+    Path.home() / ".docker/run/docker.sock",
+]
 
 _rx_version = re.compile(r"^v\d+\.\d+$")
 _rx_tcp_schemes = re.compile(r"^(tcp|http)://")
