@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import io
 import json
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Dict,
@@ -20,8 +23,12 @@ from .types import SupportsRead
 from .utils import clean_map, compose_auth_header
 
 
+if TYPE_CHECKING:
+    from .docker import Docker
+
+
 class DockerImages:
-    def __init__(self, docker):
+    def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
     async def list(self, **params) -> Mapping:
@@ -63,7 +70,7 @@ class DockerImages:
         tag: Optional[str] = None,
         repo: Optional[str] = None,
         platform: Optional[str] = None,
-        stream: Literal[False] = False,
+        stream: Literal[False],
     ) -> Dict[str, Any]:
         pass
 
@@ -76,7 +83,7 @@ class DockerImages:
         tag: Optional[str] = None,
         repo: Optional[str] = None,
         platform: Optional[str] = None,
-        stream: Literal[True] = True,
+        stream: Literal[True],
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
@@ -144,7 +151,7 @@ class DockerImages:
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
         tag: Optional[str] = None,
-        stream: Literal[False] = False,
+        stream: Literal[False],
     ) -> Dict[str, Any]:
         pass
 
