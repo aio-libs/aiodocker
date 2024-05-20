@@ -4,7 +4,16 @@ import json
 import tarfile
 import tempfile
 from io import BytesIO
-from typing import IO, Any, Iterable, Mapping, MutableMapping, Optional, Tuple, Union
+from typing import (
+    IO,
+    Any,
+    Iterable,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 
 async def parse_result(response, response_type=None, *, encoding="utf-8"):
