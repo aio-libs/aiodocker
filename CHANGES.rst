@@ -12,6 +12,35 @@ Changes
 
 .. towncrier release notes start
 
+0.22.0a1 (2024-05-21)
+=====================
+
+Features
+--------
+
+- Add support for filters when listing networks.
+  Add support for filters when listing volumes.
+  Add get option for fetching volumes by name or id. (#623)
+
+
+Improved Documentation
+----------------------
+
+- Update the documentation examples to use the modern `asyncio.run()` pattern and initialize `aiodocker.Docker()` instance inside async functions where there is a valid running event loop (#837)
+
+
+Deprecations and Removals
+-------------------------
+
+- Starting container with non-empty request body was deprecated since API v1.22 and removed in v1.24 (#660)
+
+
+Misc
+----
+
+- #621, #748
+
+
 0.21.0 (2021-07-23)
 ===================
 
