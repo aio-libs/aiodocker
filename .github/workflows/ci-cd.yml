@@ -181,7 +181,7 @@ jobs:
         path: dist
 
     - name: Release
-      uses: aio-libs/create-release@v1.6.5
+      uses: aio-libs/create-release@v1.6.6
       with:
         changes_file: CHANGES.rst
         name: ${{ env.PROJECT_NAME }}
