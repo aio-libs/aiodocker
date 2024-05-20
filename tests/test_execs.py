@@ -29,7 +29,7 @@ async def expect_prompt(stream: Stream) -> bytes:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: "stderr={}".format(x))
+@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
 async def test_exec_attached(shell_container, stderr):
     if stderr:
         cmd = ["python", "-c", "import sys;print('Hello', file=sys.stderr)"]
@@ -83,8 +83,8 @@ async def test_exec_attached_tty(shell_container):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("tty", [True, False], ids=lambda x: "tty={}".format(x))
-@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: "stderr={}".format(x))
+@pytest.mark.parametrize("tty", [True, False], ids=lambda x: f"tty={x}")
+@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
 async def test_exec_detached(shell_container, tty, stderr):
     if stderr:
         cmd = ["python", "-c", "import sys;print('Hello', file=sys.stderr)"]

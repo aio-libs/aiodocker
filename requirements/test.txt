@@ -1,8 +1,5 @@
-pytest==6.2.5
-pytest-cov==3.0.0
-pytest-asyncio==0.16.0
-flake8==4.0.1
-mypy==0.910
-black==21.10b0
-isort==5.10.1
 -r ci.txt
+packaging==24.0
+pytest==8.2.1
+pytest-asyncio==0.23.7
+pytest-cov==5.0.0

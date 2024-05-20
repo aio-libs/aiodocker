@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
 
 import asyncio
+
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 
 async def demo(docker):
     try:
-        await docker.images.inspect('alpine:latest')
+        await docker.images.inspect("alpine:latest")
     except DockerError as e:
         if e.status == 404:
-            await docker.pull('alpine:latest')
+            await docker.pull("alpine:latest")
         else:
-            print('Error retrieving alpine:latest image.')
+            print("Error retrieving alpine:latest image.")
             return
 
     config = {
-        # "Cmd": ["/bin/ash", "-c", "sleep 1; echo a; sleep 1; echo a; sleep 1; echo a; sleep 1; echo x"],
         "Cmd": ["/bin/ash"],
         "Image": "alpine:latest",
         "AttachStdin": True,
@@ -27,11 +27,14 @@ async def demo(docker):
         "StdinOnce": True,
     }
     container = await docker.containers.create_or_replace(
-        config=config, name='aiodocker-example')
-    print("created and started container {}".format(container._id[:12]))
+        config=config, name="aiodocker-example"
+    )
+    print(f"created and started container {container._id[:12]}")
 
     try:
-        ws = await container.websocket(stdin=True, stdout=True, stderr=True, stream=True)
+        ws = await container.websocket(
+            stdin=True, stdout=True, stderr=True, stream=True
+        )
         await container.start()
 
         async def _send():
@@ -41,17 +44,17 @@ async def demo(docker):
 
         asyncio.ensure_future(_send())
         resp = await ws.receive()
-        print("received: {}".format(resp))
+        print(f"received: {resp}")
         await ws.close()
 
         output = await container.log(stdout=True)
-        print("log output: {}".format(output))
+        print(f"log output: {output}")
     finally:
         print("removing container")
         await container.delete(force=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     docker = Docker()
     try:

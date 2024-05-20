@@ -23,4 +23,5 @@ Paul Tagliamonte
 Tianon Gravi
 Tommy Beadle
 Travis DePrato
+Vivien Maisonneuve
 Yannick Perrenet

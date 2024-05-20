@@ -11,11 +11,11 @@ from .utils import (
 )
 
 
-class DockerServices(object):
+class DockerServices:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping = None) -> List[Mapping]:
+    async def list(self, *, filters: Optional[Mapping] = None) -> List[Mapping]:
         """
         Return a list of services
 
@@ -40,15 +40,15 @@ class DockerServices(object):
         self,
         task_template: Mapping[str, Any],
         *,
-        name: str = None,
-        labels: List = None,
-        mode: Mapping = None,
-        update_config: Mapping = None,
-        rollback_config: Mapping = None,
-        networks: List = None,
-        endpoint_spec: Mapping = None,
+        name: Optional[str] = None,
+        labels: Optional[Mapping[str, str]] = None,
+        mode: Optional[Mapping] = None,
+        update_config: Optional[Mapping] = None,
+        rollback_config: Optional[Mapping] = None,
+        networks: Optional[List] = None,
+        endpoint_spec: Optional[Mapping] = None,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        registry: str = None,
+        registry: Optional[str] = None,
     ) -> Mapping[str, Any]:
         """
         Create a service
@@ -75,7 +75,7 @@ class DockerServices(object):
 
         if auth and registry is None:
             raise KeyError(
-                "When auth is specified you need to specifiy also the registry"
+                "When auth is specified you need to specify also the registry"
             )
 
         # from {"key":"value"} to ["key=value"]
@@ -112,7 +112,7 @@ class DockerServices(object):
         service_id: str,
         version: str,
         *,
-        image: str = None,
+        image: Optional[str] = None,
         rollback: bool = False,
     ) -> bool:
         """
@@ -143,7 +143,7 @@ class DockerServices(object):
         data = json.dumps(clean_map(spec))
 
         await self.docker._query_json(
-            "services/{service_id}/update".format(service_id=service_id),
+            f"services/{service_id}/update",
             method="POST",
             data=data,
             params=params,
@@ -161,9 +161,7 @@ class DockerServices(object):
             True if successful
         """
 
-        async with self.docker._query(
-            "services/{service_id}".format(service_id=service_id), method="DELETE"
-        ):
+        async with self.docker._query(f"services/{service_id}", method="DELETE"):
             return True
 
     async def inspect(self, service_id: str) -> Mapping[str, Any]:
@@ -177,9 +175,7 @@ class DockerServices(object):
             a dict with info about a service
         """
 
-        response = await self.docker._query_json(
-            "services/{service_id}".format(service_id=service_id), method="GET"
-        )
+        response = await self.docker._query_json(f"services/{service_id}", method="GET")
         return response
 
     def logs(
@@ -225,7 +221,7 @@ class DockerServices(object):
             "tail": tail,
         }
         cm = self.docker._query(
-            "services/{service_id}/logs".format(service_id=service_id),
+            f"services/{service_id}/logs",
             method="GET",
             params=params,
         )

@@ -54,7 +54,11 @@ __all__ = (
 
 log = logging.getLogger(__name__)
 
-_sock_search_paths = [Path("/run/docker.sock"), Path("/var/run/docker.sock")]
+_sock_search_paths = [
+    Path("/run/docker.sock"),
+    Path("/var/run/docker.sock"),
+    Path.home() / ".docker/run/docker.sock",
+]
 
 _rx_version = re.compile(r"^v\d+\.\d+$")
 _rx_tcp_schemes = re.compile(r"^(tcp|http)://")
@@ -69,7 +73,6 @@ class Docker:
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
     ) -> None:
-
         docker_host = url  # rename
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
@@ -185,7 +188,7 @@ class Docker:
                 )
             )
         else:
-            return URL("{self.docker_host}/{path}".format(self=self, path=path))
+            return URL(f"{self.docker_host}/{path}")
 
     async def _check_version(self) -> None:
         if self.api_version == "auto":
@@ -198,7 +201,7 @@ class Docker:
         method: str = "GET",
         *,
         params: Optional[Mapping[str, Any]] = None,
-        data: Any = None,
+        data: Optional[Any] = None,
         headers=None,
         timeout=None,
         chunked=None,
@@ -243,6 +246,8 @@ class Docker:
             headers = CIMultiDict(headers)
             if "Content-Type" not in headers:
                 headers["Content-Type"] = "application/json"
+        if timeout is None:
+            timeout = self.session.timeout
         try:
             real_params = httpize(params)
             response = await self.session.request(
@@ -283,7 +288,7 @@ class Docker:
         method: str = "GET",
         *,
         params: Optional[Mapping[str, Any]] = None,
-        data: Any = None,
+        data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,
@@ -316,7 +321,7 @@ class Docker:
         method: str = "POST",
         *,
         params: Optional[Mapping[str, Any]] = None,
-        data: Any = None,
+        data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,
@@ -362,7 +367,7 @@ class Docker:
         """
         Create a SSLContext object using DOCKER_* env vars.
         """
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
         context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)  # type: ignore
         certs_path = os.environ.get("DOCKER_CERT_PATH", None)
         if certs_path is None:

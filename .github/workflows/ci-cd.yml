@@ -1,0 +1,212 @@
+---
+
+name: CI/CD
+
+on:
+  merge_group:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+  schedule:
+    - cron:  '0 6 * * *'  # Daily 6AM UTC build
+
+
+env:
+  PYTHON_LATEST: 3.12
+  PROJECT_NAME: aiodocker
+
+  # For re-actors/checkout-python-sdist
+  dists-artifact-name: python-package-distributions
+
+
+jobs:
+
+  build:
+    name: 📦 Build the distribution packages
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_LATEST }}
+        cache: pip
+    - name: Install core libraries for build
+      run: python -Im pip install build
+    - name: Build artifacts
+      run: python -Im build
+    - name: Upload built artifacts for testing
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: |
+          dist/${{ env.PROJECT_NAME }}*.tar.gz
+          dist/${{ env.PROJECT_NAME }}*.whl
+        retention-days: 15
+
+  lint:
+    name: Linter
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Download all the dists
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: dist
+    - name: Setup Python ${{ env.PYTHON_LATEST }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_LATEST }}
+        cache: pip
+        cache-dependency-path: |
+          setup.py
+          requirements/lint.txt
+    - name: Install dependencies
+      uses: py-actions/py-dependency-install@v2
+      with:
+        path: requirements/lint.txt
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit/
+        key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+    - name: Run linters
+      run: |
+        make lint
+    - name: Run twine checker
+      run: |
+        pip install twine
+        twine check --strict dist/*
+
+  test:
+    name: test
+    needs:
+    - build
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        os: [ubuntu]
+        registry: ['1']
+        pytest-arg: ['']
+        include:
+          - python-version: '3.12'
+            os: windows
+            registry: '0'
+            pytest-arg: '-k test_integration'
+    runs-on: ${{ matrix.os }}-latest
+    timeout-minutes: 30
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: |
+          setup.py
+          requirements/test.txt
+    - name: Install dependencies
+      uses: py-actions/py-dependency-install@v2
+      with:
+        path: requirements/test.txt
+    - name: Start Docker services
+      if: ${{ matrix.registry == '1' }}
+      run: |
+        docker run -d --name ${{ env.PROJECT_NAME }}-test-registry -p 5000:5000 registry:2
+        docker run -d -p 5001:5001 --name ${{ env.PROJECT_NAME }}-test-registry2 -v `pwd`/tests/certs:/certs -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/certs/htpasswd -e REGISTRY_HTTP_ADDR=0.0.0.0:5001 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
+    - name: Run unittests
+      env:
+        COLOR: 'yes'
+        DOCKER_VERSION: ${{ matrix.docker }}
+      run: |
+        python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
+    - name: Upload coverage artifact
+      uses: neuro-inc/prepare-coverage@v21.9.1
+      with:
+        key: unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.cmd }}-${{ matrix.registry }}
+
+  check:  # This job does nothing and is only used for the branch protection
+    name: ✅ Ensure the required checks passing
+    if: always()
+    needs:
+    - lint
+    - test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Decide whether the needed jobs succeeded or failed
+      uses: re-actors/alls-green@release/v1
+      with:
+        jobs: ${{ toJSON(needs) }}
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.sha }}
+    - name: Upload code coverage report
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  publish:  # Run only on creating release for new tag
+    name: 📦 Publish to PyPI
+    needs:
+    - check
+    runs-on: ubuntu-latest
+    # Run only on pushing a tag
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+
+    permissions:
+      contents: write  # IMPORTANT: mandatory for making GitHub Releases
+      id-token: write  # IMPORTANT: mandatory for trusted publishing & sigstore
+
+    environment:
+      name: pypi
+      url: >-
+        https://pypi.org/project/${{ env.PROJECT_NAME }}/${{ github.ref_name }}
+
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: dist
+
+    - name: Release
+      uses: aio-libs/create-release@v1.6.5
+      with:
+        changes_file: CHANGES.rst
+        name: ${{ env.PROJECT_NAME }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        head_line: "{version}\\s+\\({date}\\)\n====+\n?"
+
+    - name: >-
+        Publish 🐍📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+    - name: Sign the dists with Sigstore
+      uses: sigstore/gh-action-sigstore-python@v2.1.1
+      with:
+        inputs: >-
+          ./dist/${{ env.PROJECT_NAME }}*.tar.gz
+          ./dist/${{ env.PROJECT_NAME }}*.whl
+
+    - name: Upload artifact signatures to GitHub Release
+      # Confusingly, this action also supports updating releases, not
+      # just creating them. This is what we want here, since we've manually
+      # created the release above.
+      uses: softprops/action-gh-release@v2
+      with:
+        # dist/ contains the built packages, which smoketest-artifacts/
+        # contains the signatures and certificates.
+        files: dist/**
+
+...

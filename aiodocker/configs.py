@@ -1,15 +1,15 @@
 import json
 from base64 import b64encode
-from typing import Any, List, Mapping
+from typing import Any, List, Mapping, Optional
 
 from .utils import clean_filters, clean_map
 
 
-class DockerConfigs(object):
+class DockerConfigs:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Mapping = None) -> List[Mapping]:
+    async def list(self, *, filters: Optional[Mapping] = None) -> List[Mapping]:
         """
         Return a list of configs
 
@@ -33,8 +33,8 @@ class DockerConfigs(object):
         data: str,
         *,
         b64: bool = False,
-        labels: List = None,
-        templating: Mapping = None,
+        labels: Optional[Mapping[str, str]] = None,
+        templating: Optional[Mapping] = None,
     ) -> Mapping[str, Any]:
         """
         Create a config
@@ -79,9 +79,7 @@ class DockerConfigs(object):
             a dict with info about a config
         """
 
-        response = await self.docker._query_json(
-            "configs/{config_id}".format(config_id=config_id), method="GET"
-        )
+        response = await self.docker._query_json(f"configs/{config_id}", method="GET")
         return response
 
     async def delete(self, config_id: str) -> bool:
@@ -95,9 +93,7 @@ class DockerConfigs(object):
             True if successful
         """
 
-        async with self.docker._query(
-            "configs/{config_id}".format(config_id=config_id), method="DELETE"
-        ):
+        async with self.docker._query(f"configs/{config_id}", method="DELETE"):
             return True
 
     async def update(
@@ -105,11 +101,11 @@ class DockerConfigs(object):
         config_id: str,
         version: str,
         *,
-        name: str = None,
-        data: str = None,
+        name: Optional[str] = None,
+        data: Optional[str] = None,
         b64: bool = False,
-        labels: List = None,
-        templating: Mapping = None,
+        labels: Optional[Mapping[str, str]] = None,
+        templating: Optional[Mapping] = None,
     ) -> bool:
         """
         Update a config.
@@ -147,7 +143,7 @@ class DockerConfigs(object):
         request_data = json.dumps(clean_map(spec))
 
         await self.docker._query_json(
-            "configs/{config_id}/update".format(config_id=config_id),
+            f"configs/{config_id}/update",
             method="POST",
             data=request_data,
             params=params,

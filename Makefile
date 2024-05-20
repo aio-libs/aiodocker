@@ -1,16 +1,12 @@
 # Some simple testing tasks (sorry, UNIX only).
 
-lint flake: .flake
+lint:
+ifdef CI
+	pre-commit run --all-files --show-diff-on-failure
+else
+	pre-commit run --all-files
+endif
 
-.flake:
-	flake8 aiodocker tests
-	black --check aiodocker tests setup.py
-	isort --check aiodocker tests setup.py
-	mypy aiodocker tests
-
-fmt:
-	isort aiodocker tests setup.py
-	black aiodocker tests setup.py
 
 develop:
 	@pip install -e .
@@ -18,6 +14,7 @@ develop:
 install:
 	@pip install -U pip
 	@pip install -Ur requirements/dev.txt
+	pre-commit install
 
 create-tar:
 	@tar -cvf tests/docker/docker_context.tar -C tests/docker/tar/ .
