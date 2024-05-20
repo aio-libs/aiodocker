@@ -30,21 +30,22 @@ class DockerLog:
 
     async def run(self, **params: Any) -> None:
         if self.response:
-            warnings.warn("already running", RuntimeWarning, stackelevel=2)
+            warnings.warn("already running", Warning, stackelevel=2)
             return
         forced_params = {"follow": True}
         default_params = {"stdout": True, "stderr": True}
         params2 = ChainMap(forced_params, params, default_params)
         try:
-            self.response = await self.docker._query(
+            async with self.docker._query(
                 f"containers/{self.container._id}/logs", params=params2
-            )
-            assert self.response is not None
-            while True:
-                msg = await self.response.content.readline()
-                if not msg:
-                    break
-                await self.channel.publish(msg)
+            ) as resp:
+                self.response = resp
+                assert self.response is not None
+                while True:
+                    msg = await self.response.content.readline()
+                    if not msg:
+                        break
+                    await self.channel.publish(msg)
         except (aiohttp.ClientConnectionError, aiohttp.ServerDisconnectedError):
             pass
         finally:

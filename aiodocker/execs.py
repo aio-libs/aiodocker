@@ -45,8 +45,8 @@ class Exec:
         if not dct:
             return
         url = URL(f"exec/{self._id}/resize").with_query(dct)
-        async with self.docker._query(url, method="POST") as resp:
-            resp
+        async with self.docker._query(url, method="POST"):
+            pass
 
     @overload
     def start(

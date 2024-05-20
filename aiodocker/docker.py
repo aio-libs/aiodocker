@@ -5,9 +5,10 @@ import os
 import re
 import ssl
 import sys
+from contextlib import asynccontextmanager
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, Mapping, Optional, Type, Union
+from typing import Any, AsyncIterator, Dict, Mapping, Optional, Type, Union
 
 import aiohttp
 from multidict import CIMultiDict
@@ -27,7 +28,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .utils import _AsyncCM, httpize, parse_result
+from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
@@ -195,7 +196,8 @@ class Docker:
             ver = await self._query_json("version", versioned_api=False)
             self.api_version = "v" + ver["ApiVersion"]
 
-    def _query(
+    @asynccontextmanager
+    async def _query(
         self,
         path: Union[str, URL],
         method: str = "GET",
@@ -207,23 +209,22 @@ class Docker:
         chunked=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
-    ):
+    ) -> AsyncIterator[aiohttp.ClientResponse]:
         """
         Get the response object by performing the HTTP request.
-        The caller is responsible to finalize the response object.
+        The caller is responsible to finalize the response object
+        via the async context manager protocol.
         """
-        return _AsyncCM(
-            self._do_query(
-                path=path,
-                method=method,
-                params=params,
-                data=data,
-                headers=headers,
-                timeout=timeout,
-                chunked=chunked,
-                read_until_eof=read_until_eof,
-                versioned_api=versioned_api,
-            )
+        yield await self._do_query(
+            path=path,
+            method=method,
+            params=params,
+            data=data,
+            headers=headers,
+            timeout=timeout,
+            chunked=chunked,
+            read_until_eof=read_until_eof,
+            versioned_api=versioned_api,
         )
 
     async def _do_query(
@@ -238,7 +239,7 @@ class Docker:
         chunked,
         read_until_eof: bool,
         versioned_api: bool,
-    ):
+    ) -> aiohttp.ClientResponse:
         if versioned_api:
             await self._check_version()
         url = self._canonicalize_url(path, versioned_api=versioned_api)
