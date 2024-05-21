@@ -1,0 +1,19 @@
+ignore:
+  - "docs/*.py"
+  - "examples/**/*.py"
+  - "tests/**/*.py"
+  - "setup.py"
+coverage:
+  status:
+    project:
+      default:
+        threshold: 3%
+        informational: true
+        paths:
+          - "aiodocker"
+    patch:
+      default:
+        threshold: 3%
+        informational: true
+        paths:
+          - "aiodocker"
