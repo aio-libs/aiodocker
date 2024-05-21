@@ -1,1 +1,0 @@
-Update the documentation examples to use the modern `asyncio.run()` pattern and initialize `aiodocker.Docker()` instance inside async functions where there is a valid running event loop
