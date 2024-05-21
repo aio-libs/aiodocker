@@ -3,10 +3,10 @@ import os
 import sys
 import traceback
 import uuid
-from distutils.version import StrictVersion
 from typing import Any, Dict
 
 import pytest
+from packaging.version import parse as parse_version
 
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
@@ -35,46 +35,32 @@ if sys.platform == "win32":
         WindowsProactorEventLoopPolicy = asyncio.WindowsProactorEventLoopPolicy
 
 
-@pytest.fixture
-def event_loop(request):
-    """Create an instance of the default event loop for each test case."""
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
-
 def _random_name():
     return "aiodocker-" + uuid.uuid4().hex[:7]
 
 
 @pytest.fixture(scope="session")
-def random_name():
+async def random_name():
     yield _random_name
 
     # If some test cases have used randomly-named temporary images,
     # we need to clean up them!
-    if os.environ.get("CI", "") == "true":
+    if os.environ.get("CI") is not None:
         # But inside the CI server, we don't need clean up!
         return
-    event_loop = asyncio.get_event_loop()
 
-    async def _clean():
-        docker = Docker()
-        images = await docker.images.list()
-        for img in images:
-            if img["RepoTags"] is None:
-                continue
-            try:
-                if img["RepoTags"][0].startswith("aiodocker-"):
-                    print("Deleting image id: {0}".format(img["Id"]))
-                    await docker.images.delete(img["Id"], force=True)
-            except DockerError:
-                traceback.print_exc()
-        await docker.close()
-
-    event_loop.run_until_complete(_clean())
+    docker = Docker()
+    images = await docker.images.list()
+    for img in images:
+        if img["RepoTags"] is None:
+            continue
+        try:
+            if img["RepoTags"][0].startswith("aiodocker-"):
+                print("Deleting image id: {}".format(img["Id"]))
+                await docker.images.delete(img["Id"], force=True)
+        except DockerError:
+            traceback.print_exc()
+    await docker.close()
 
 
 @pytest.fixture(scope="session")
@@ -86,29 +72,24 @@ def image_name() -> str:
 
 
 @pytest.fixture(scope="session")
-def testing_images(image_name: str) -> None:
+async def testing_images(image_name: str) -> None:
     # Prepare a small Linux image shared by most test cases.
-    event_loop = asyncio.get_event_loop()
-
-    async def _pull():
-        docker = Docker()
-        required_images = [image_name]
-        if image_name != "python:latest":
-            required_images.append("python:latest")
-        for img in required_images:
-            try:
-                await docker.images.inspect(img)
-            except DockerError as e:
-                assert e.status == 404
-                print('Pulling "{img}" for the testing session...'.format(img=img))
-                await docker.pull(img)
-        await docker.close()
-
-    event_loop.run_until_complete(_pull())
+    docker = Docker()
+    required_images = [image_name]
+    if image_name != "python:latest":
+        required_images.append("python:latest")
+    for img in required_images:
+        try:
+            await docker.images.inspect(img)
+        except DockerError as e:
+            assert e.status == 404
+            print(f'Pulling "{img}" for the testing session...')
+            await docker.pull(img)
+    await docker.close()
 
 
 @pytest.fixture
-def docker(event_loop, testing_images):
+async def docker(testing_images):
     kwargs = {}
     version = os.environ.get("DOCKER_VERSION")
     if version:
@@ -119,16 +100,9 @@ def docker(event_loop, testing_images):
         else:
             raise RuntimeError(f"Cannot find docker API version for {version}")
 
-    async def _make_docker():
-        return Docker(**kwargs)
-
-    docker = event_loop.run_until_complete(_make_docker())
+    docker = Docker(**kwargs)
     yield docker
-
-    async def _finalize():
-        await docker.close()
-
-    event_loop.run_until_complete(_finalize())
+    await docker.close()
 
 
 @pytest.fixture
@@ -137,23 +111,23 @@ async def requires_api_version(docker):
     await docker.version()
 
     def check(version, reason):
-        if StrictVersion(docker.api_version[1:]) < StrictVersion(version[1:]):
+        if parse_version(docker.api_version[1:]) < parse_version(version[1:]):
             pytest.skip(reason)
 
     yield check
 
 
 @pytest.fixture
-def swarm(event_loop, docker):
+async def swarm(docker):
     if sys.platform == "win32":
         pytest.skip("swarm commands dont work on Windows")
-    assert event_loop.run_until_complete(docker.swarm.init())
+    assert await docker.swarm.init()
     yield docker
-    assert event_loop.run_until_complete(docker.swarm.leave(force=True))
+    assert await docker.swarm.leave(force=True)
 
 
 @pytest.fixture
-def make_container(event_loop, docker):
+async def make_container(docker):
     container = None
 
     async def _spawn(config: Dict[str, Any], name=None):
@@ -164,16 +138,12 @@ def make_container(event_loop, docker):
 
     yield _spawn
 
-    async def _delete():
-        nonlocal container
-        if container is not None:
-            await container.delete(force=True)
-
-    event_loop.run_until_complete(_delete())
+    if container is not None:
+        await container.delete(force=True)
 
 
 @pytest.fixture
-async def shell_container(event_loop, docker, make_container, image_name):
+async def shell_container(docker, make_container, image_name):
     config = {
         "Cmd": ["python"],
         "Image": image_name,

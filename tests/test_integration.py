@@ -73,7 +73,7 @@ async def test_ssl_context(monkeypatch):
     await docker.close()
     with pytest.raises(TypeError):
         docker = Docker(ssl_context="bad ssl context")
-    ssl_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    ssl_ctx = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
     ssl_ctx.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)
     ssl_ctx.load_verify_locations(cafile=str(cert_dir / "ca.pem"))
     ssl_ctx.load_cert_chain(
@@ -175,7 +175,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
     try:
         # collect the websocket outputs for at most 2 secs until we see the
         # output.
-        with timeout(2):
+        async with timeout(2):
             while True:
                 output += await ws.receive_bytes()
                 if b"print('hello world\\n')" in output:
@@ -194,7 +194,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
     try:
         # collect the logs for at most 2 secs until we see the output.
-        with timeout(2):
+        async with timeout(2):
             async for s in shell_container.log(stdout=True, follow=True):
                 log.append(s)
                 if "hello world\r\n" in s:
@@ -210,7 +210,7 @@ async def test_stdio_stdin(docker, testing_images, shell_container):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: "stderr={}".format(x))
+@pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
 async def test_attach_nontty(docker, image_name, make_container, stderr):
     if stderr:
         cmd = [
@@ -241,6 +241,30 @@ async def test_attach_nontty(docker, image_name, make_container, stderr):
 
 
 @pytest.mark.asyncio
+async def test_attach_nontty_wait_for_exit(docker, image_name, make_container):
+    cmd = ["python", "-c", "import time; time.sleep(3); print('Hello')"]
+
+    config = {
+        "Cmd": cmd,
+        "Image": image_name,
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": False,
+        "OpenStdin": False,
+        "StdinOnce": False,
+    }
+
+    container = await make_container(
+        config,
+        name="aiodocker-testing-attach-nontty-wait-for-exit",
+    )
+
+    async with container.attach(stdin=False, stdout=True, stderr=True):
+        await asyncio.sleep(10)
+
+
+@pytest.mark.asyncio
 async def test_attach_tty(docker, image_name, make_container):
     skip_windows()
     config = {
@@ -257,7 +281,6 @@ async def test_attach_tty(docker, image_name, make_container):
     container = await make_container(config, name="aiodocker-testing-attach-tty")
 
     async with container.attach(stdin=True, stdout=True, stderr=True) as stream:
-
         await container.resize(w=80, h=25)
 
         assert await expect_prompt(stream) == b">>>"
@@ -392,7 +415,7 @@ async def test_port(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_events(docker, image_name, event_loop):
+async def test_events(docker, image_name):
     # Сheck the stop procedure
     docker.events.subscribe()
     await docker.events.stop()
@@ -410,7 +433,7 @@ async def test_events(docker, image_name, event_loop):
     events_occurred = []
     while True:
         try:
-            with timeout(0.2):
+            async with timeout(0.2):
                 event = await subscriber.get()
             if event["Actor"]["ID"] == container._id:
                 events_occurred.append(event["Action"])
@@ -421,16 +444,12 @@ async def test_events(docker, image_name, event_loop):
             break
 
     # 'kill' event may be omitted
-    assert (
-        events_occurred
-        == [
-            "create",
-            "start",
-            "kill",
-            "die",
-            "destroy",
-        ]
-        or events_occurred == ["create", "start", "die", "destroy"]
-    )
+    assert events_occurred == [
+        "create",
+        "start",
+        "kill",
+        "die",
+        "destroy",
+    ] or events_occurred == ["create", "start", "die", "destroy"]
 
     await docker.events.stop()

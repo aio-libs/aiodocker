@@ -12,6 +12,26 @@ Changes
 
 .. towncrier release notes start
 
+0.21.0 (2021-07-23)
+===================
+
+Bugfixes
+--------
+
+- Use ssl_context passed to Docker constructor for creating underlying connection to docker engine. (#536)
+- Fix an error when attach/exec when container stops before close connection to it. (#608)
+
+
+0.20.0 (2021-07-21)
+===================
+
+Bugfixes
+--------
+
+- Accept auth parameter by `run()` method; it allows auto-pulling absent image from private storages. (#295)
+- Fix passing of JSON params. (#543)
+- Fix issue with unclosed response object in attach/exec. (#604)
+
 
 0.19.1 (2020-07-09)
 ===================
@@ -78,7 +98,7 @@ Bugfixes
 Bugfixes
 --------
 
-- Improve the errror message when connection is closed by Docker Engine on TCP hijacking. (#424)
+- Improve the error message when connection is closed by Docker Engine on TCP hijacking. (#424)
 
 
 0.18.0 (2020-03-25)

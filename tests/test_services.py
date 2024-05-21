@@ -17,13 +17,13 @@ async def _wait_service(swarm, service_id):
 
 
 @pytest.fixture
-def tmp_service(event_loop, swarm, random_name):
-    service = event_loop.run_until_complete(
-        swarm.services.create(task_template=TaskTemplate, name=random_name())
+async def tmp_service(swarm, random_name):
+    service = await swarm.services.create(
+        task_template=TaskTemplate, name=random_name()
     )
-    event_loop.run_until_complete(_wait_service(swarm, service["ID"]))
+    await _wait_service(swarm, service["ID"])
     yield service["ID"]
-    event_loop.run_until_complete(swarm.services.delete(service["ID"]))
+    await swarm.services.delete(service["ID"])
 
 
 @pytest.mark.asyncio
@@ -66,7 +66,7 @@ async def test_logs_services(swarm):
     filters = {"service": service_id}
 
     # wait till task status is `complete`
-    with timeout(60):
+    async with timeout(60):
         while True:
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
@@ -96,7 +96,7 @@ async def test_logs_services_stream(swarm):
     filters = {"service": service_id}
 
     # wait till task status is `complete`
-    with timeout(60):
+    async with timeout(60):
         while True:
             await asyncio.sleep(2)
             task = await swarm.tasks.list(filters=filters)
@@ -109,7 +109,7 @@ async def test_logs_services_stream(swarm):
     # let's check for them
     count = 0
     try:
-        with timeout(2):
+        async with timeout(2):
             while True:
                 async for log in swarm.services.logs(
                     service_id, stdout=True, follow=True

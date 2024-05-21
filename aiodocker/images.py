@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import io
 import json
 import warnings
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
-    BinaryIO,
     Dict,
     List,
     Mapping,
@@ -17,11 +19,16 @@ from typing import (
 from typing_extensions import Literal
 
 from .jsonstream import json_stream_list, json_stream_stream
+from .types import SupportsRead
 from .utils import clean_map, compose_auth_header
 
 
-class DockerImages(object):
-    def __init__(self, docker):
+if TYPE_CHECKING:
+    from .docker import Docker
+
+
+class DockerImages:
+    def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
     async def list(self, **params) -> Mapping:
@@ -38,7 +45,7 @@ class DockerImages(object):
         Args:
             name: name of the image
         """
-        response = await self.docker._query_json("images/{name}/json".format(name=name))
+        response = await self.docker._query_json(f"images/{name}/json")
         return response
 
     async def get(self, name: str) -> Mapping:
@@ -51,9 +58,7 @@ class DockerImages(object):
         return await self.inspect(name)
 
     async def history(self, name: str) -> Mapping:
-        response = await self.docker._query_json(
-            "images/{name}/history".format(name=name)
-        )
+        response = await self.docker._query_json(f"images/{name}/history")
         return response
 
     @overload
@@ -62,31 +67,32 @@ class DockerImages(object):
         from_image: str,
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        tag: str = None,
-        repo: str = None,
+        tag: Optional[str] = None,
+        repo: Optional[str] = None,
+        platform: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]:
-        pass
+    ) -> Dict[str, Any]: ...
 
-    @overload  # noqa: F811
+    @overload
     def pull(
         self,
         from_image: str,
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        tag: str = None,
-        repo: str = None,
+        tag: Optional[str] = None,
+        repo: Optional[str] = None,
+        platform: Optional[str] = None,
         stream: Literal[True],
-    ) -> AsyncIterator[Dict[str, Any]]:
-        pass
+    ) -> AsyncIterator[Dict[str, Any]]: ...
 
-    def pull(  # noqa: F811
+    def pull(
         self,
         from_image: str,
         *,
         auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        tag: str = None,
-        repo: str = None,
+        tag: Optional[str] = None,
+        repo: Optional[str] = None,
+        platform: Optional[str] = None,
         stream: bool = False,
     ) -> Any:
         """
@@ -97,6 +103,7 @@ class DockerImages(object):
             repo: repository name given to an image when it is imported
             tag: if empty when pulling an image all tags
                  for the given image to be pulled
+            platform: platform in the format `os[/arch[/variant]]`
             auth: special {'auth': base64} pull private repo
         """
         image = from_image  # TODO: clean up
@@ -106,6 +113,8 @@ class DockerImages(object):
             params["repo"] = repo
         if tag:
             params["tag"] = tag
+        if platform:
+            params["platform"] = platform
         if auth is not None:
             registry, has_registry_host, _ = image.partition("/")
             if not has_registry_host:
@@ -138,29 +147,27 @@ class DockerImages(object):
         self,
         name: str,
         *,
-        auth: Union[MutableMapping, str, bytes] = None,
-        tag: str = None,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]:
-        pass
+    ) -> Dict[str, Any]: ...
 
-    @overload  # noqa: F811
+    @overload
     def push(
         self,
         name: str,
         *,
-        auth: Union[MutableMapping, str, bytes] = None,
-        tag: str = None,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: Optional[str] = None,
         stream: Literal[True],
-    ) -> AsyncIterator[Dict[str, Any]]:
-        pass
+    ) -> AsyncIterator[Dict[str, Any]]: ...
 
-    def push(  # noqa: F811
+    def push(
         self,
         name: str,
         *,
-        auth: Union[MutableMapping, str, bytes] = None,
-        tag: str = None,
+        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        tag: Optional[str] = None,
         stream: bool = False,
     ) -> Any:
         params = {}
@@ -179,18 +186,19 @@ class DockerImages(object):
                 )
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
         cm = self.docker._query(
-            "images/{name}/push".format(name=name),
+            f"images/{name}/push",
             "POST",
             params=params,
             headers=headers,
         )
         return self._handle_response(cm, stream)
 
-    async def tag(self, name: str, repo: str, *, tag: str = None) -> bool:
+    async def tag(self, name: str, repo: str, *, tag: Optional[str] = None) -> bool:
         """
         Tag the given image so that it becomes part of a repository.
 
         Args:
+            name: name/id of the image to be tagged
             repo: the repository to tag in
             tag: the name for the new tag
         """
@@ -200,7 +208,7 @@ class DockerImages(object):
             params["tag"] = tag
 
         async with self.docker._query(
-            "images/{name}/tag".format(name=name),
+            f"images/{name}/tag",
             "POST",
             params=params,
             headers={"content-type": "application/json"},
@@ -224,12 +232,10 @@ class DockerImages(object):
             List of deleted images
         """
         params = {"force": force, "noprune": noprune}
-        return await self.docker._query_json(
-            "images/{name}".format(name=name), "DELETE", params=params
-        )
+        return await self.docker._query_json(f"images/{name}", "DELETE", params=params)
 
     @staticmethod
-    async def _stream(fileobj: BinaryIO) -> AsyncIterator[bytes]:
+    async def _stream(fileobj: SupportsRead[bytes]) -> AsyncIterator[bytes]:
         chunk = fileobj.read(io.DEFAULT_BUFFER_SIZE)
         while chunk:
             yield chunk
@@ -239,58 +245,61 @@ class DockerImages(object):
     async def build(
         self,
         *,
-        remote: str = None,
-        fileobj: BinaryIO = None,
-        path_dockerfile: str = None,
-        tag: str = None,
+        remote: Optional[str] = None,
+        fileobj: Optional[SupportsRead[bytes]] = None,
+        path_dockerfile: Optional[str] = None,
+        tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Mapping = None,
+        buildargs: Optional[Mapping] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Mapping = None,
+        labels: Optional[Mapping] = None,
+        platform: Optional[str] = None,
         stream: Literal[False] = False,
-        encoding: str = None,
+        encoding: Optional[str] = None,
     ) -> Dict[str, Any]:
         pass
 
-    @overload  # noqa: F811
+    @overload
     def build(
         self,
         *,
-        remote: str = None,
-        fileobj: BinaryIO = None,
-        path_dockerfile: str = None,
-        tag: str = None,
+        remote: Optional[str] = None,
+        fileobj: Optional[SupportsRead[bytes]] = None,
+        path_dockerfile: Optional[str] = None,
+        tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Mapping = None,
+        buildargs: Optional[Mapping] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Mapping = None,
+        labels: Optional[Mapping] = None,
+        platform: Optional[str] = None,
         stream: Literal[True],
-        encoding: str = None,
+        encoding: Optional[str] = None,
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
-    def build(  # noqa: F811
+    def build(
         self,
         *,
-        remote: str = None,
-        fileobj: BinaryIO = None,
-        path_dockerfile: str = None,
-        tag: str = None,
+        remote: Optional[str] = None,
+        fileobj: Optional[SupportsRead[bytes]] = None,
+        path_dockerfile: Optional[str] = None,
+        tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Mapping = None,
+        buildargs: Optional[Mapping] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Mapping = None,
+        labels: Optional[Mapping] = None,
+        platform: Optional[str] = None,
         stream: bool = False,
-        encoding: str = None,
+        encoding: Optional[str] = None,
     ) -> Any:
         """
         Build an image given a remote Dockerfile
@@ -299,6 +308,7 @@ class DockerImages(object):
         Args:
             path_dockerfile: path within the build context to the Dockerfile
             remote: a Git repository URI or HTTP/HTTPS context URI
+            tag: a name and optional tag to apply to the image
             quiet: suppress verbose build output
             nocache: do not use the cache when building the image
             rm: remove intermediate containers after a successful build
@@ -306,6 +316,7 @@ class DockerImages(object):
             encoding: set `Content-Encoding` for the file object your send
             forcerm: always remove intermediate containers, even upon failure
             labels: arbitrary key/value labels to set on the image
+            platform: platform in the format `os[/arch[/variant]]`
             fileobj: a tar archive compressed or not
         """
         headers = {}
@@ -344,6 +355,9 @@ class DockerImages(object):
         if labels:
             params.update({"labels": json.dumps(labels)})
 
+        if platform:
+            params["platform"] = platform
+
         cm = self.docker._query(
             "build",
             "POST",
@@ -363,9 +377,7 @@ class DockerImages(object):
         Returns:
             Streamreader of tarball image
         """
-        return _ExportCM(
-            self.docker._query("images/{name}/get".format(name=name), "GET")
-        )
+        return _ExportCM(self.docker._query(f"images/{name}/get", "GET"))
 
     def import_image(self, data, stream: bool = False):
         """

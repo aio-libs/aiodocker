@@ -1,0 +1,4 @@
+-r ci.txt
+mypy==1.10
+pre-commit==3.7.1
+ruff==0.4.4

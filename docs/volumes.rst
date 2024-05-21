@@ -19,4 +19,3 @@ DockerVolume
 .. autoclass:: aiodocker.docker.DockerVolume
         :members:
         :undoc-members:
-

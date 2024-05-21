@@ -15,7 +15,7 @@ from .stream import Stream
 from .utils import identical, parse_result
 
 
-class DockerContainers(object):
+class DockerContainers:
     def __init__(self, docker):
         self.docker = docker
 
@@ -56,19 +56,28 @@ class DockerContainers(object):
         )
         return DockerContainer(self.docker, id=data["Id"])
 
-    async def run(self, config, *, name=None):
+    async def run(
+        self,
+        config,
+        *,
+        auth: Optional[Union[Mapping, str, bytes]] = None,
+        name: Optional[str] = None,
+    ):
         """
         Create and start a container.
 
         If container.start() will raise an error the exception will contain
         a `container_id` attribute with the id of the container.
+
+        Use `auth` for specifying credentials for pulling absent image from
+        a private registry.
         """
         try:
             container = await self.create(config, name=name)
         except DockerError as err:
-            # image not find, try pull it
+            # image not found, try pulling it
             if err.status == 404 and "Image" in config:
-                await self.docker.pull(config["Image"])
+                await self.docker.pull(config["Image"], auth=auth)
                 container = await self.create(config, name=name)
             else:
                 raise err
@@ -84,7 +93,7 @@ class DockerContainers(object):
 
     async def get(self, container, **kwargs):
         data = await self.docker._query_json(
-            "containers/{container}/json".format(container=container),
+            f"containers/{container}/json",
             method="GET",
             params=kwargs,
         )
@@ -121,7 +130,7 @@ class DockerContainer:
         params.update(kwargs)
 
         cm = self.docker._query(
-            "containers/{self._id}/logs".format(self=self), method="GET", params=params
+            f"containers/{self._id}/logs", method="GET", params=params
         )
 
         if follow:
@@ -146,7 +155,7 @@ class DockerContainer:
 
     async def get_archive(self, path: str) -> tarfile.TarFile:
         async with self.docker._query(
-            "containers/{self._id}/archive".format(self=self),
+            f"containers/{self._id}/archive",
             method="GET",
             params={"path": path},
         ) as response:
@@ -155,7 +164,7 @@ class DockerContainer:
 
     async def put_archive(self, path, data):
         async with self.docker._query(
-            "containers/{self._id}/archive".format(self=self),
+            f"containers/{self._id}/archive",
             method="PUT",
             data=data,
             headers={"content-type": "application/json"},
@@ -166,23 +175,23 @@ class DockerContainer:
 
     async def show(self, **kwargs):
         data = await self.docker._query_json(
-            "containers/{self._id}/json".format(self=self), method="GET", params=kwargs
+            f"containers/{self._id}/json", method="GET", params=kwargs
         )
         self._container = data
         return data
 
     async def stop(self, **kwargs):
         async with self.docker._query(
-            "containers/{self._id}/stop".format(self=self), method="POST", params=kwargs
+            f"containers/{self._id}/stop", method="POST", params=kwargs
         ):
             pass
 
     async def start(self, **kwargs):
         async with self.docker._query(
-            "containers/{self._id}/start".format(self=self),
+            f"containers/{self._id}/start",
             method="POST",
             headers={"content-type": "application/json"},
-            data=kwargs,
+            params=kwargs,
         ):
             pass
 
@@ -191,7 +200,7 @@ class DockerContainer:
         if timeout is not None:
             params["t"] = timeout
         async with self.docker._query(
-            "containers/{self._id}/restart".format(self=self),
+            f"containers/{self._id}/restart",
             method="POST",
             params=params,
         ):
@@ -199,13 +208,13 @@ class DockerContainer:
 
     async def kill(self, **kwargs):
         async with self.docker._query(
-            "containers/{self._id}/kill".format(self=self), method="POST", params=kwargs
+            f"containers/{self._id}/kill", method="POST", params=kwargs
         ):
             pass
 
     async def wait(self, *, timeout=None, **kwargs):
         data = await self.docker._query_json(
-            "containers/{self._id}/wait".format(self=self),
+            f"containers/{self._id}/wait",
             method="POST",
             params=kwargs,
             timeout=timeout,
@@ -214,13 +223,13 @@ class DockerContainer:
 
     async def delete(self, **kwargs):
         async with self.docker._query(
-            "containers/{self._id}".format(self=self), method="DELETE", params=kwargs
+            f"containers/{self._id}", method="DELETE", params=kwargs
         ):
             pass
 
     async def rename(self, newname):
         async with self.docker._query(
-            "containers/{self._id}/rename".format(self=self),
+            f"containers/{self._id}/rename",
             method="POST",
             headers={"content-type": "application/json"},
             params={"name": newname},
@@ -230,7 +239,7 @@ class DockerContainer:
     async def websocket(self, **params):
         if not params:
             params = {"stdin": True, "stdout": True, "stderr": True, "stream": True}
-        path = "containers/{self._id}/attach/ws".format(self=self)
+        path = f"containers/{self._id}/attach/ws"
         ws = await self.docker._websocket(path, **params)
         return ws
 
@@ -287,7 +296,7 @@ class DockerContainer:
 
     def stats(self, *, stream=True):
         cm = self.docker._query(
-            "containers/{self._id}/stats".format(self=self),
+            f"containers/{self._id}/stats",
             params={"stream": "1" if stream else "0"},
         )
         if stream:

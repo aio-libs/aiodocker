@@ -1,2 +1,0 @@
-aiohttp>=3.0
-yarl>=1.0

@@ -52,21 +52,21 @@ class Exec:
     def start(
         self,
         *,
-        timeout: aiohttp.ClientTimeout = None,
+        timeout: Optional[aiohttp.ClientTimeout] = None,
         detach: Literal[False] = False,
     ) -> Stream:
         pass
 
-    @overload  # noqa
+    @overload
     async def start(
         self,
         *,
-        timeout: aiohttp.ClientTimeout = None,
+        timeout: Optional[aiohttp.ClientTimeout] = None,
         detach: Literal[True],
     ) -> bytes:
         pass
 
-    def start(self, *, timeout=None, detach=False):  # noqa
+    def start(self, *, timeout=None, detach=False):
         """
         Start this exec instance.
         Args:
@@ -102,7 +102,7 @@ class Exec:
 
     async def _start_detached(
         self,
-        timeout: aiohttp.ClientTimeout = None,
+        timeout: Optional[aiohttp.ClientTimeout] = None,
         tty: bool = False,
     ) -> bytes:
         if self._tty is None:

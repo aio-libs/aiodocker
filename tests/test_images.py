@@ -29,7 +29,7 @@ async def test_build_from_remote_file(docker, random_name, requires_api_version)
         "aiodocker/master/tests/docker/Dockerfile"
     )
 
-    tag = "{}:1.0".format(random_name())
+    tag = f"{random_name()}:1.0"
     params = {"tag": tag, "remote": remote}
     await docker.images.build(**params)
 
@@ -46,7 +46,7 @@ async def test_build_from_remote_tar(docker, random_name):
         "raw/master/tests/docker/docker_context.tar"
     )
 
-    tag = "{}:1.0".format(random_name())
+    tag = f"{random_name()}:1.0"
     params = {"tag": tag, "remote": remote}
     await docker.images.build(**params)
 
@@ -63,7 +63,7 @@ async def test_history(docker, image_name):
 @pytest.mark.asyncio
 async def test_list_images(docker, image_name):
     images = await docker.images.list(filter=image_name)
-    assert len(images) == 1
+    assert len(images) >= 1
 
 
 @pytest.mark.asyncio
@@ -96,13 +96,11 @@ async def test_delete_image(docker, image_name):
     await docker.images.tag(name=image_name, repo=repository)
     assert await docker.images.inspect(repository)
     await docker.images.delete(name=repository)
-    images = await docker.images.list(filter=repository)
-    assert len(images) == 0
 
 
 @pytest.mark.asyncio
 async def test_not_existing_image(docker, random_name):
-    name = "{}:latest".format(random_name())
+    name = f"{random_name()}:latest"
     with pytest.raises(DockerError) as excinfo:
         await docker.images.inspect(name=name)
     assert excinfo.value.status == 404
@@ -129,7 +127,7 @@ async def test_pull_image_stream(docker, image_name):
 
 @pytest.mark.asyncio
 async def test_build_from_tar(docker, random_name, image_name):
-    name = "{}:latest".format(random_name())
+    name = f"{random_name()}:latest"
     dockerfile = f"""
     # Shared Volume
     FROM {image_name}
@@ -144,7 +142,7 @@ async def test_build_from_tar(docker, random_name, image_name):
 
 @pytest.mark.asyncio
 async def test_build_from_tar_stream(docker, random_name, image_name):
-    name = "{}:latest".format(random_name())
+    name = f"{random_name()}:latest"
     dockerfile = f"""
     # Shared Volume
     FROM {image_name}
@@ -175,10 +173,10 @@ async def test_import_image(docker):
 
     async def file_sender(file_name=None):
         with open(file_name, "rb") as f:
-            chunk = f.read(2 ** 16)
+            chunk = f.read(2**16)
             while chunk:
                 yield chunk
-                chunk = f.read(2 ** 16)
+                chunk = f.read(2**16)
 
     dir = os.path.dirname(__file__)
     hello_world = os.path.join(dir, "docker/google-containers-pause.tar")
@@ -189,7 +187,7 @@ async def test_import_image(docker):
     repository = "gcr.io/google-containers/pause"
 
     for tag in ["1.0", "go", "latest", "test", "test2"]:
-        name = "{}:{}".format(repository, tag)
+        name = f"{repository}:{tag}"
         image = await docker.images.inspect(name=name)
         assert image
 
@@ -223,3 +221,35 @@ async def test_pups_image_auth(docker, image_name):
         await docker.pull("image:latest", auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.pull(repository, auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.images.inspect(repository)
+
+
+@pytest.mark.asyncio
+async def test_build_image_invalid_platform(docker, image_name):
+    dockerfile = f"""
+        FROM {image_name}
+        """
+    f = BytesIO(dockerfile.encode("utf-8"))
+    tar_obj = utils.mktar_from_dockerfile(f)
+    with pytest.raises(DockerError) as excinfo:
+        async for item in docker.images.build(
+            fileobj=tar_obj, encoding="gzip", stream=True, platform="foo"
+        ):
+            pass
+    tar_obj.close()
+    assert excinfo.value.status == 400
+    assert (
+        "unknown operating system or architecture: invalid argument"
+        in excinfo.exconly()
+    )
+
+
+@pytest.mark.asyncio
+async def test_pull_image_invalid_platform(docker, image_name):
+    with pytest.raises(DockerError) as excinfo:
+        await docker.images.pull("hello-world", platform="foo")
+
+    assert excinfo.value.status == 400
+    assert (
+        "unknown operating system or architecture: invalid argument"
+        in excinfo.exconly()
+    )

@@ -1,9 +1,8 @@
 import socket
 import struct
 import warnings
-from collections import namedtuple
 from types import TracebackType
-from typing import TYPE_CHECKING, Awaitable, Callable, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Awaitable, Callable, NamedTuple, Optional, Tuple, Type
 
 import aiohttp
 from yarl import URL
@@ -14,7 +13,10 @@ from .exceptions import DockerError
 if TYPE_CHECKING:
     from .docker import Docker
 
-Message = namedtuple("Message", "stream data")
+
+class Message(NamedTuple):
+    stream: int
+    data: bytes
 
 
 class Stream:
@@ -81,7 +83,7 @@ class Stream:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         queue: aiohttp.FlowControlDataQueue[Message] = aiohttp.FlowControlDataQueue(
-            protocol, limit=2 ** 16, loop=loop
+            protocol, limit=2**16, loop=loop
         )
         protocol.set_parser(_ExecParser(queue, tty=tty), queue)
         protocol.force_close()
@@ -115,7 +117,7 @@ class Stream:
             return
         self._closed = True
         transport = self._resp.connection.transport
-        if transport.can_write_eof():
+        if transport and transport.can_write_eof():
             transport.write_eof()
         self._resp.close()
 
