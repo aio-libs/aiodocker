@@ -23,7 +23,7 @@ async def test_swarm_failing_joining(swarm):
 
 
 @pytest.mark.asyncio
-async def test_swarm_init(event_loop, docker):
+async def test_swarm_init(docker):
     if sys.platform == "win32":
         pytest.skip("swarm commands dont work on Windows")
     default_addr_pool = ["10.0.0.0/8"]
