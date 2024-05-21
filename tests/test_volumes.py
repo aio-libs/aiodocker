@@ -1,5 +1,7 @@
 import pytest
 
+import aiodocker
+
 
 @pytest.mark.asyncio
 async def test_create_search_get_delete(docker):
@@ -15,10 +17,13 @@ async def test_create_search_get_delete(docker):
     volume_data = volumes[0]
     volume = await docker.volumes.get(volume_data["Name"])
     await volume.delete()
+    with pytest.raises(aiodocker.exceptions.DockerError):
+        await docker.volumes.get(name)
 
 
 @pytest.mark.asyncio
-async def test_create_show_delete_volume(docker):
+@pytest.mark.parametrize("force_delete", [True, False])
+async def test_create_show_delete_volume(docker, force_delete):
     name = "aiodocker-test-volume"
     volume = await docker.volumes.create({
         "Name": name,
@@ -28,4 +33,6 @@ async def test_create_show_delete_volume(docker):
     assert volume
     data = await volume.show()
     assert data
-    await volume.delete()
+    await volume.delete(force_delete)
+    with pytest.raises(aiodocker.exceptions.DockerError):
+        await docker.volumes.get(name)
