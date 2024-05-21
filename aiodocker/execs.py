@@ -1,9 +1,11 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, overload
+from typing import TYPE_CHECKING, Dict, Optional, Tuple, overload
 
 import aiohttp
 from typing_extensions import Literal
 from yarl import URL
+
+from aiodocker.types import JSONObject
 
 from .stream import Stream
 
@@ -31,9 +33,10 @@ class Exec:
     def id(self) -> str:
         return self._id
 
-    async def inspect(self) -> Dict[str, Any]:
+    async def inspect(self) -> JSONObject:
         ret = await self.docker._query_json(f"exec/{self._id}/json")
-        self._tty = ret["ProcessConfig"]["tty"]
+        assert isinstance(ret["ProcessConfig"], dict)
+        self._tty = bool(ret["ProcessConfig"]["tty"])
         return ret
 
     async def resize(self, *, h: Optional[int] = None, w: Optional[int] = None) -> None:
@@ -85,6 +88,7 @@ class Exec:
             from stdout or 2 if from stderr.
         """
         if detach:
+            assert self._tty is not None
             return self._start_detached(timeout, self._tty)
         else:
 

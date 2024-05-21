@@ -5,14 +5,23 @@ import os
 import re
 import ssl
 import sys
-from contextlib import asynccontextmanager
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from types import TracebackType
-from typing import Any, AsyncIterator, Dict, Mapping, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import aiohttp
 from multidict import CIMultiDict
 from yarl import URL
+
+from aiodocker.types import JSONObject
 
 # Sub-API classes
 from .configs import DockerConfigs
@@ -32,7 +41,7 @@ from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
-__all__ = (
+__all__: Tuple[str, ...] = (
     "Docker",
     "DockerContainers",
     "DockerContainer",
@@ -169,11 +178,11 @@ class Docker:
         await self.events.stop()
         await self.session.close()
 
-    async def auth(self, **credentials: Any) -> Dict[str, Any]:
+    async def auth(self, **credentials: Any) -> JSONObject:
         response = await self._query_json("auth", "POST", data=credentials)
         return response
 
-    async def version(self) -> Dict[str, Any]:
+    async def version(self) -> JSONObject:
         data = await self._query_json("version")
         return data
 
@@ -194,7 +203,7 @@ class Docker:
     async def _check_version(self) -> None:
         if self.api_version == "auto":
             ver = await self._query_json("version", versioned_api=False)
-            self.api_version = "v" + ver["ApiVersion"]
+            self.api_version = "v" + str(ver["ApiVersion"])
 
     @asynccontextmanager
     async def _query(
@@ -202,7 +211,7 @@ class Docker:
         path: Union[str, URL],
         method: str = "GET",
         *,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
         timeout=None,
@@ -232,7 +241,7 @@ class Docker:
         path: Union[str, URL],
         method: str,
         *,
-        params: Optional[Mapping[str, Any]],
+        params: Optional[JSONObject],
         data: Any,
         headers,
         timeout,
@@ -288,13 +297,13 @@ class Docker:
         path: Union[str, URL],
         method: str = "GET",
         *,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
-    ):
+    ) -> JSONObject:
         """
         A shorthand of _query() that treats the input as JSON.
         """
@@ -321,13 +330,13 @@ class Docker:
         path: Union[str, URL],
         method: str = "POST",
         *,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
-    ):
+    ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:
         """
         A shorthand for uploading data by chunks
         """
