@@ -15,7 +15,7 @@ async def test_list_networks(docker):
 async def test_list_networks_with_filter(docker):
     network = await docker.networks.create({
         "Name": "test-net-filter",
-        "labels": {"some": "label"},
+        "Labels": {"some": "label"},
     })
     try:
         networks = await docker.networks.list(filters={"label": "some=label"})
