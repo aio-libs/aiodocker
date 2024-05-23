@@ -49,6 +49,9 @@ doc = [
     "sphinxcontrib-asyncio==0.3.0"
 ]
 
+[tool.hatch.version]
+path = "aiodocker/__init__.py"
+
 [tool.towncrier]
 package = "aiodocker"
 filename = "CHANGES.rst"
