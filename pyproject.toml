@@ -23,7 +23,6 @@ classifiers = [
 dependencies = [
     "aiohttp==3.9.5",
     "async-timeout==4.0.3",
-    "codecov==2.1.13",
     "multidict==6.0.5",
     "typing_extensions==4.11.0",
     "yarl==1.9.4",
@@ -31,6 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "codecov==2.1.13",
     "mypy==1.10",
     "packaging==24.0",
     "pre-commit==3.7.1",
