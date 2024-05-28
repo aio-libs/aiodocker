@@ -9,11 +9,11 @@ endif
 
 
 develop:
-	@pip install -e .
+	@pip install -e .[dev]
 
 install:
 	@pip install -U pip
-	@pip install -Ur requirements/dev.txt
+	@pip install -e .[dev]
 	pre-commit install
 
 create-tar:
