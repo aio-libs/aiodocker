@@ -22,14 +22,17 @@ classifiers = [
     "Programming Language :: Python :: 3.12"
 ]
 dependencies = [
-    "aiohttp==3.9.5",
-    "async-timeout==4.0.3",
-    "multidict==6.0.5",
-    "typing_extensions==4.11.0",
-    "yarl==1.9.4"
+    "aiohttp>=3.8",
 ]
 
 [project.optional-dependencies]
+ci = [
+    # pinned for reproducible CI
+    "aiohttp==3.9.5",
+    "async-timeout==4.0.3",
+    "multidict==6.0.5",
+    "yarl==1.9.4",
+]
 dev = [
     "codecov==2.1.13",
     "mypy==1.10",

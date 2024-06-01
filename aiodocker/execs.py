@@ -1,8 +1,15 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Literal,
+    Optional,
+    Tuple,
+    overload,
+)
 
 import aiohttp
-from typing_extensions import Literal
 from yarl import URL
 
 from .stream import Stream
