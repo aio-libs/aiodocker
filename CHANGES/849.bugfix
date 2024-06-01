@@ -1,0 +1,1 @@
+Fixes unittests that don't run locally due to deprecations in later versions of Docker. Tested with 26.00, v1.45.
