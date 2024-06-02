@@ -72,3 +72,15 @@ def test_clean_filters():
     filters = ()
     result = {"a": ["1", "2", "3", "4"], "b": ["string"]}
     utils.clean_filters(filters=filters) == json.dumps(result)
+
+
+async def test_cancel_async_cm():
+    async def _coro():
+        return
+
+    cm = utils._AsyncCM(_coro())
+    cm.cancel()
+
+    with pytest.raises(RuntimeError):
+        async with cm:
+            pass
