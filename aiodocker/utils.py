@@ -304,3 +304,6 @@ class _AsyncCM:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         return await self._resp.__aexit__(exc_type, exc_val, exc_tb)
+
+    def cancel(self):
+        self._coro.close()
