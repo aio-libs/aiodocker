@@ -74,6 +74,7 @@ def test_clean_filters():
     utils.clean_filters(filters=filters) == json.dumps(result)
 
 
+@pytest.mark.asyncio
 async def test_cancel_async_cm():
     async def _coro():
         return
