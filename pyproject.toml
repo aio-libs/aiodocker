@@ -1,6 +1,7 @@
 [build-system]
 requires = [
     "hatchling >= 1.10.0",
+    "hatch-vcs",
 ]
 build-backend = "hatchling.build"
 
@@ -54,7 +55,7 @@ doc = [
 ]
 
 [tool.hatch.version]
-path = "aiodocker/__init__.py"
+source = "vcs"
 
 [tool.towncrier]
 package = "aiodocker"
