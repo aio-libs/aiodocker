@@ -44,6 +44,29 @@ dependency sets.
 
    pip install -U pip
    pip install -e '.[ci,dev]'  # in zsh, you need to escape brackets
+   pre-commit install
+
+Running tests
+~~~~~~~~~~~~~
+
+.. code-block:: sh
+
+   # Run all tests
+   make test
+
+   # Run individual tests
+   python -m pytest tests/test_images.py
+
+
+Building packages
+~~~~~~~~~~~~~~~~~
+
+NOTE: Usually you don't need to run this step by yourself.
+
+.. code-block:: sh
+
+   pip install -U build
+   python -m build --sdist --wheel
 
 
 Documentation
