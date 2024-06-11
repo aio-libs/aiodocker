@@ -3,5 +3,20 @@ updates:
 - package-ecosystem: pip
   directory: "/"
   schedule:
-    interval: daily
+    interval: monthly
   open-pull-requests-limit: 10
+  groups:
+    ci:
+      dependency-type: "development"
+      patterns:
+        - "mypy*"
+        - "pytest*"
+        - "ruff*"
+        - "pre-commit"
+        - "codecov"
+        - "towncrier"
+    doc:
+      dependency-type: "development"
+      patterns:
+        - "sphinx*"
+        - "alabaster"
