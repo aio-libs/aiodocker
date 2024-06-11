@@ -1,8 +1,14 @@
 import json
-from typing import TYPE_CHECKING, Dict, Optional, Tuple, overload
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Literal,
+    Optional,
+    Tuple,
+    overload,
+)
 
 import aiohttp
-from typing_extensions import Literal
 from yarl import URL
 
 from aiodocker.types import JSONObject

@@ -8,14 +8,13 @@ from typing import (
     Any,
     AsyncIterator,
     Dict,
+    Literal,
     Mapping,
     Optional,
     Union,
     cast,
     overload,
 )
-
-from typing_extensions import Literal
 
 from .jsonstream import json_stream_list, json_stream_stream
 from .types import JSONList, JSONObject, SupportsRead
