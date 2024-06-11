@@ -9,14 +9,13 @@ from typing import (
     AsyncIterator,
     Dict,
     List,
+    Literal,
     Mapping,
     MutableMapping,
     Optional,
     Union,
     overload,
 )
-
-from typing_extensions import Literal
 
 from .jsonstream import json_stream_list, json_stream_stream
 from .types import SupportsRead
