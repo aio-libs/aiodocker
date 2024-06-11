@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from collections import ChainMap
 from typing import TYPE_CHECKING, Any
