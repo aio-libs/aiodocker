@@ -13,12 +13,17 @@ async def test_list_networks(docker):
 
 @pytest.mark.asyncio
 async def test_list_networks_with_filter(docker):
-    await docker.networks.create({
+    network = await docker.networks.create({
         "Name": "test-net-filter",
         "Labels": {"some": "label"},
     })
-    networks = await docker.networks.list(filters={"label": "some=label"})
-    assert len(networks) == 1
+    try:
+        networks = await docker.networks.list(filters={"label": "some=label"})
+        assert len(networks) == 1
+    finally:
+        if network:
+            deleted = await network.delete()
+            assert deleted is True
 
 
 @pytest.mark.asyncio

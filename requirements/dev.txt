@@ -1,7 +1,0 @@
--r lint.txt
--r test.txt
--r ci.txt
--r doc.txt
-pytest-sugar==1.0.0
-ruff-lsp==0.0.53
-towncrier==23.11.0

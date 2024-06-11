@@ -170,12 +170,17 @@ async def test_resize(shell_container):
 )
 @pytest.mark.asyncio
 async def test_commit(docker, image_name, shell_container):
+    """
+    "Container" key was removed in v1.45.
+    "ContainerConfig" is not present, although this information is now present in "Config"
+    These changes have been verified against v1.45.
+    """
     ret = await shell_container.commit()
     img_id = ret["Id"]
     img = await docker.images.inspect(img_id)
-    assert img["Container"].startswith(shell_container.id)
-    assert "Image" in img["ContainerConfig"]
-    assert image_name == img["ContainerConfig"]["Image"]
+
+    assert "Image" in img["Config"]
+    assert image_name == img["Config"]["Image"]
     python_img = await docker.images.inspect(image_name)
     python_id = python_img["Id"]
     assert "Parent" in img
@@ -191,7 +196,6 @@ async def test_commit_with_changes(docker, image_name, shell_container):
     ret = await shell_container.commit(changes=["EXPOSE 8000", 'CMD ["py"]'])
     img_id = ret["Id"]
     img = await docker.images.inspect(img_id)
-    assert img["Container"].startswith(shell_container.id)
     assert "8000/tcp" in img["Config"]["ExposedPorts"]
     assert img["Config"]["Cmd"] == ["py"]
     await docker.images.delete(img_id)
