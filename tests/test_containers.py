@@ -225,3 +225,14 @@ async def test_pause_unpause(shell_container):
     assert state["Running"] is True
     assert "Paused" in state
     assert state["Paused"] is False
+
+
+@pytest.mark.asyncio
+async def test_cancel_log(docker):
+    container = docker.containers.container("invalid_container_id")
+
+    with pytest.raises(DockerError):
+        await container.log(
+            stdout=True,
+            stderr=True,
+        )

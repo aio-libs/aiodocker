@@ -139,7 +139,11 @@ class DockerContainer:
             return self._logs_list(cm)
 
     async def _logs_stream(self, cm):
-        inspect_info = await self.show()
+        try:
+            inspect_info = await self.show()
+        except DockerError:
+            cm.cancel()
+            raise
         is_tty = inspect_info["Config"]["Tty"]
 
         async with cm as response:
@@ -147,7 +151,11 @@ class DockerContainer:
                 yield item
 
     async def _logs_list(self, cm):
-        inspect_info = await self.show()
+        try:
+            inspect_info = await self.show()
+        except DockerError:
+            cm.cancel()
+            raise
         is_tty = inspect_info["Config"]["Tty"]
 
         async with cm as response:
