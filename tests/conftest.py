@@ -5,8 +5,8 @@ import os
 import sys
 import traceback
 import uuid
-from collections.abc import AsyncIterator, Awaitable, Callable
-from typing import Any, Dict
+from collections.abc import AsyncIterator, Callable
+from typing import Any, Awaitable, Dict
 
 import pytest
 from packaging.version import parse as parse_version
