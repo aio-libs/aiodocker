@@ -151,9 +151,10 @@ async def test_exec_restore_tty_attached(docker, shell_container):
     )
 
     exec2 = docker.containers.exec(exec1.id)
-    async with exec2.start() as stream:
+    stream = exec2.start()
+    assert isinstance(stream, Stream)
+    async with stream:
         assert exec2._tty
-        stream
 
 
 @pytest.mark.asyncio

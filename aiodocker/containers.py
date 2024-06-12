@@ -8,6 +8,8 @@ from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
 from multidict import MultiDict
 from yarl import URL
 
+from aiodocker.types import JSONObject
+
 from .exceptions import DockerContainerError, DockerError
 from .execs import Exec
 from .jsonstream import json_stream_list, json_stream_stream
@@ -21,13 +23,17 @@ class DockerContainers:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, **kwargs):
+    async def list(self, **kwargs) -> Sequence[DockerContainer]:
         data = await self.docker._query_json(
             "containers/json", method="GET", params=kwargs
         )
         return [DockerContainer(self.docker, **x) for x in data]
 
-    async def create_or_replace(self, name, config):
+    async def create_or_replace(
+        self,
+        name: str,
+        config: JSONObject,
+    ) -> DockerContainer:
         container = None
 
         try:
@@ -46,25 +52,29 @@ class DockerContainers:
 
         return container
 
-    async def create(self, config, *, name=None):
+    async def create(
+        self,
+        config: JSONObject,
+        *,
+        name: Optional[str] = None,
+    ) -> DockerContainer:
         url = "containers/create"
-
-        config = json.dumps(config, sort_keys=True).encode("utf-8")
+        encoded_config = json.dumps(config, sort_keys=True).encode("utf-8")
         kwargs = {}
         if name:
             kwargs["name"] = name
         data = await self.docker._query_json(
-            url, method="POST", data=config, params=kwargs
+            url, method="POST", data=encoded_config, params=kwargs
         )
         return DockerContainer(self.docker, id=data["Id"])
 
     async def run(
         self,
-        config,
+        config: JSONObject,
         *,
         auth: Optional[Union[Mapping, str, bytes]] = None,
         name: Optional[str] = None,
-    ):
+    ) -> DockerContainer:
         """
         Create and start a container.
 
@@ -93,22 +103,22 @@ class DockerContainers:
 
         return container
 
-    async def get(self, container, **kwargs):
+    async def get(self, container_id: str, **kwargs) -> DockerContainer:
         data = await self.docker._query_json(
-            f"containers/{container}/json",
+            f"containers/{container_id}/json",
             method="GET",
             params=kwargs,
         )
         return DockerContainer(self.docker, **data)
 
-    def container(self, container_id, **kwargs):
+    def container(self, container_id: str, **kwargs) -> DockerContainer:
         data = {"id": container_id}
         data.update(kwargs)
         return DockerContainer(self.docker, **data)
 
     def exec(self, exec_id: str) -> Exec:
         """Return Exec instance for already created exec object."""
-        return Exec(self.docker, exec_id, None)
+        return Exec(self.docker, exec_id)
 
 
 class DockerContainer:

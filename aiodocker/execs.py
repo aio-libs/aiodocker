@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 
 class Exec:
-    def __init__(self, docker: "Docker", id: str, tty: Optional[bool]) -> None:
+    def __init__(self, docker: "Docker", id: str, tty: Optional[bool] = None) -> None:
         self.docker = docker
         self._id = id
         self._tty = tty
@@ -96,8 +96,10 @@ class Exec:
             from stdout or 2 if from stderr.
         """
         if detach:
-            assert self._tty is not None
-            return self._start_detached(timeout, self._tty)
+            return self._start_detached(
+                timeout,
+                self._tty if self._tty is not None else False,
+            )
         else:
 
             async def setup() -> Tuple[URL, bytes, bool]:

@@ -5,11 +5,14 @@ import os
 import sys
 import traceback
 import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Dict
 
 import pytest
 from packaging.version import parse as parse_version
+from typing_extensions import TypeAlias
 
+from aiodocker.containers import DockerContainer
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
@@ -128,24 +131,40 @@ async def swarm(docker):
     assert await docker.swarm.leave(force=True)
 
 
-@pytest.fixture
-async def make_container(docker):
-    container = None
+AsyncContainerFactory: TypeAlias = Callable[
+    [Dict[str, Any], str], Awaitable[DockerContainer]
+]
 
-    async def _spawn(config: Dict[str, Any], name=None):
+
+@pytest.fixture
+async def make_container(
+    docker: Docker,
+) -> AsyncIterator[AsyncContainerFactory]:
+    container: DockerContainer | None = None
+
+    async def _spawn(
+        config: Dict[str, Any],
+        name: str,
+    ) -> DockerContainer:
         nonlocal container
         container = await docker.containers.create_or_replace(config=config, name=name)
+        assert container is not None
         await container.start()
         return container
 
     yield _spawn
 
     if container is not None:
+        assert isinstance(container, DockerContainer)
         await container.delete(force=True)
 
 
 @pytest.fixture
-async def shell_container(docker, make_container, image_name):
+async def shell_container(
+    docker: Docker,
+    make_container,
+    image_name: str,
+) -> AsyncContainerFactory:
     config = {
         "Cmd": ["python"],
         "Image": image_name,
