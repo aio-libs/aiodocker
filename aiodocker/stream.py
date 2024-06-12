@@ -22,6 +22,8 @@ class Message(NamedTuple):
 
 
 class Stream:
+    _resp: aiohttp.ClientResponse | None
+
     def __init__(
         self,
         docker: "Docker",
@@ -132,8 +134,9 @@ class Stream:
         exc_typ: Type[BaseException],
         exc_val: BaseException,
         exc_tb: TracebackType,
-    ) -> None:
+    ) -> Optional[bool]:
         await self.close()
+        return None
 
     def __del__(self, _warnings=warnings) -> None:
         if self._resp is not None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import (
     TYPE_CHECKING,
+    Any,
     Dict,
     Literal,
     Optional,
@@ -77,7 +78,12 @@ class Exec:
     ) -> bytes:
         pass
 
-    def start(self, *, timeout=None, detach=False):
+    def start(
+        self,
+        *,
+        timeout: aiohttp.ClientTimeout | None = None,
+        detach: bool = False,
+    ) -> Any:
         """
         Start this exec instance.
         Args:
