@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import os
 import sys
 import traceback
@@ -26,18 +25,6 @@ API_VERSIONS = {
     "18.06": "v1.38",
     "18.09": "v1.39",
 }
-
-
-if sys.platform == "win32":
-    if sys.version_info < (3, 7):
-        # Python 3.6 has no WindowsProactorEventLoopPolicy class
-        from asyncio import events
-
-        class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
-            _loop_factory = asyncio.ProactorEventLoop
-
-    else:
-        WindowsProactorEventLoopPolicy = asyncio.WindowsProactorEventLoopPolicy
 
 
 def _random_name():
