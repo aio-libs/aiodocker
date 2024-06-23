@@ -89,21 +89,22 @@ class Docker:
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
         if docker_host is None:
-            for sockpath in _sock_search_paths:
-                if sockpath.is_socket():
-                    docker_host = "unix://" + str(sockpath)
-                    break
-        if docker_host is None and sys.platform == "win32":
-            try:
-                if Path("\\\\.\\pipe\\docker_engine").exists():
-                    docker_host = "npipe:////./pipe/docker_engine"
-            except OSError as ex:
-                if ex.winerror == 231:  # type: ignore
-                    # All pipe instances are busy
-                    # but the pipe definitely exists
-                    docker_host = "npipe:////./pipe/docker_engine"
-                else:
-                    raise
+            if sys.platform == "win32":
+                try:
+                    if Path("\\\\.\\pipe\\docker_engine").exists():
+                        docker_host = "npipe:////./pipe/docker_engine"
+                except OSError as ex:
+                    if ex.winerror == 231:  # type: ignore
+                        # All pipe instances are busy
+                        # but the pipe definitely exists
+                        docker_host = "npipe:////./pipe/docker_engine"
+                    else:
+                        raise
+            else:
+                for sockpath in _sock_search_paths:
+                    if sockpath.is_socket():
+                        docker_host = "unix://" + str(sockpath)
+                        break
         self.docker_host = docker_host
 
         if api_version != "auto" and _rx_version.search(api_version) is None:
