@@ -4,8 +4,13 @@ import os
 import sys
 import traceback
 import uuid
-from collections.abc import AsyncIterator, Callable
-from typing import Any, Awaitable, Dict
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+)
 
 import pytest
 from packaging.version import parse as parse_version
