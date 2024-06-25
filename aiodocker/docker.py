@@ -167,7 +167,7 @@ class Docker:
         self.pull = self.images.pull
         self.push = self.images.push
 
-    async def __aenter__(self) -> "Docker":
+    async def __aenter__(self) -> Docker:
         return self
 
     async def __aexit__(

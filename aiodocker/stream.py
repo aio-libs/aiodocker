@@ -125,7 +125,7 @@ class Stream:
             transport.write_eof()
         self._resp.close()
 
-    async def __aenter__(self) -> "Stream":
+    async def __aenter__(self) -> Stream:
         await self._init()
         return self
 

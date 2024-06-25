@@ -31,14 +31,14 @@ class DockerNetworks:
         data = await self.docker._query_json("networks", params=params)
         return data
 
-    async def create(self, config: Dict[str, Any]) -> "DockerNetwork":
+    async def create(self, config: Dict[str, Any]) -> DockerNetwork:
         bconfig = json.dumps(config, sort_keys=True).encode("utf-8")
         data = await self.docker._query_json(
             "networks/create", method="POST", data=bconfig
         )
         return DockerNetwork(self.docker, data["Id"])
 
-    async def get(self, net_specs: str) -> "DockerNetwork":
+    async def get(self, net_specs: str) -> DockerNetwork:
         data = await self.docker._query_json(f"networks/{net_specs}", method="GET")
         return DockerNetwork(self.docker, data["Id"])
 
