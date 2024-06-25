@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 import traceback
@@ -95,6 +96,7 @@ async def docker(testing_images):
             raise RuntimeError(f"Cannot find docker API version for {version}")
 
     docker = Docker(**kwargs)
+    print(asyncio.get_running_loop())
     try:
         yield docker
     finally:
