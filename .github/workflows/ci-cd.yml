@@ -113,10 +113,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -e .[ci,dev]
-    - name: Cache Docker images
-      uses: ScribeMD/docker-cache@0.5.0
-      with:
-        key: docker-${{ runner.os }}
+    # NOTE: Unfortunately the gain of image caching is too small,
+    #       and even it increases the latency of Linux jobs. :(
+    # - name: Cache Docker images
+    #   uses: ScribeMD/docker-cache@0.5.0
+    #   with:
+    #     key: docker-${{ runner.os }}
     - name: Prepare Docker images (Linux)
       if: ${{ runner.os == 'Linux' }}
       run: |
@@ -150,7 +152,7 @@ jobs:
         retention-days: 1
     - name: Clean up Docker images produced during tests
       run: |
-        docker image list --filter 'reference=aiodocker-*' --format '{{.Repository}}:{{.Tag}}' | xargs docker rmi
+        docker image list --filter 'reference=aiodocker-*' --format '{{.Repository}}:{{.Tag}}' | xargs -r docker rmi
 
   check:  # This job does nothing and is only used for the branch protection
     name: ✅ Ensure the required checks passing
