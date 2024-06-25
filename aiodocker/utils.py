@@ -9,9 +9,11 @@ from io import BytesIO
 from typing import (
     IO,
     Any,
+    Dict,
     Iterable,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     Union,
     cast,
@@ -189,13 +191,15 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return f"{key}={value}"
 
 
-def clean_networks(networks: Optional[Iterable[str]] = None) -> Optional[Iterable[str]]:
+def clean_networks(
+    networks: Optional[Iterable[str]] = None,
+) -> Optional[Sequence[Dict[str, Any]]]:
     """
     Cleans the values inside `networks`
     Returns a new list
     """
     if not networks:
-        return networks
+        return []
     if not isinstance(networks, list):
         raise TypeError("networks parameter must be a list.")
 

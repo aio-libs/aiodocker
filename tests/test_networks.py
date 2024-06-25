@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 import pytest
 
-import aiodocker
+from aiodocker.docker import Docker
+from aiodocker.exceptions import DockerError
+from aiodocker.networks import DockerNetwork
 
 
 @pytest.mark.asyncio
-async def test_list_networks(docker):
+async def test_list_networks(docker: Docker) -> None:
     data = await docker.networks.list()
     networks = {net["Name"]: net for net in data}
     assert "none" in networks
@@ -12,7 +16,7 @@ async def test_list_networks(docker):
 
 
 @pytest.mark.asyncio
-async def test_list_networks_with_filter(docker):
+async def test_list_networks_with_filter(docker: Docker) -> None:
     network = await docker.networks.create({
         "Name": "test-net-filter",
         "Labels": {"some": "label"},
@@ -27,11 +31,11 @@ async def test_list_networks_with_filter(docker):
 
 
 @pytest.mark.asyncio
-async def test_networks(docker):
+async def test_networks(docker: Docker) -> None:
     network = await docker.networks.create({"Name": "test-net"})
     net_find = await docker.networks.get("test-net")
     assert (await net_find.show())["Name"] == "test-net"
-    assert isinstance(network, aiodocker.networks.DockerNetwork)
+    assert isinstance(network, DockerNetwork)
     data = await network.show()
     assert data["Name"] == "test-net"
     container = None
@@ -47,8 +51,8 @@ async def test_networks(docker):
 
 
 @pytest.mark.asyncio
-async def test_network_delete_error(docker):
+async def test_network_delete_error(docker: Docker) -> None:
     network = await docker.networks.create({"Name": "test-delete-net"})
     assert await network.delete() is True
-    with pytest.raises(aiodocker.exceptions.DockerError):
+    with pytest.raises(DockerError):
         await network.delete()
