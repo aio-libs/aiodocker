@@ -106,11 +106,13 @@ async def docker(testing_images):
 
 
 @pytest.fixture
-async def requires_api_version(docker):
+async def requires_api_version(
+    docker: Docker,
+) -> AsyncIterator[Callable[[str, str], None]]:
     # Update version info from auto to the real value
     await docker.version()
 
-    def check(version, reason):
+    def check(version: str, reason: str) -> None:
         if parse_version(docker.api_version[1:]) < parse_version(version[1:]):
             pytest.skip(reason)
 

@@ -5,13 +5,15 @@ from typing import List
 import pytest
 from async_timeout import timeout
 
+from aiodocker.containers import DockerContainer
+from aiodocker.docker import Docker
 from aiodocker.execs import Stream
 
 
 async def expect_prompt(stream: Stream) -> bytes:
+    inp = []
+    ret: List[bytes] = []
     try:
-        inp = []
-        ret: List[bytes] = []
         async with timeout(3):
             while not ret or not ret[-1].endswith(b">>>"):
                 msg = await stream.read_out()
@@ -23,14 +25,14 @@ async def expect_prompt(stream: Stream) -> bytes:
                 lines = [line if b"\x1b[K" not in line else b"" for line in lines]
                 lines = [line for line in lines if line]
                 ret.extend(lines)
-            return b"\n".join(ret)
     except asyncio.TimeoutError:
-        raise AssertionError(f"[Timeout] {ret} {inp}")
+        pytest.fail(f"[Timeout] {ret} {inp}")
+    return b"\n".join(ret)
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
-async def test_exec_attached(shell_container, stderr):
+async def test_exec_attached(shell_container: DockerContainer, stderr: bool) -> None:
     if stderr:
         cmd = ["python", "-c", "import sys;print('Hello', file=sys.stderr)"]
     else:
@@ -45,6 +47,7 @@ async def test_exec_attached(shell_container, stderr):
     )
     async with execute.start(detach=False) as stream:
         msg = await stream.read_out()
+        assert msg is not None
         assert msg.stream == 2 if stderr else 1
         assert msg.data.strip() == b"Hello"
 
@@ -54,7 +57,7 @@ async def test_exec_attached(shell_container, stderr):
     sys.platform == "win32",
     reason="TTY session in Windows generates too complex ANSI escape sequences",
 )
-async def test_exec_attached_tty(shell_container):
+async def test_exec_attached_tty(shell_container: DockerContainer) -> None:
     execute = await shell_container.exec(
         stdout=True,
         stderr=True,
@@ -85,7 +88,9 @@ async def test_exec_attached_tty(shell_container):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("tty", [True, False], ids=lambda x: f"tty={x}")
 @pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
-async def test_exec_detached(shell_container, tty, stderr):
+async def test_exec_detached(
+    shell_container: DockerContainer, tty: bool, stderr: bool
+) -> None:
     if stderr:
         cmd = ["python", "-c", "import sys;print('Hello', file=sys.stderr)"]
     else:
@@ -102,7 +107,7 @@ async def test_exec_detached(shell_container, tty, stderr):
 
 
 @pytest.mark.asyncio
-async def test_exec_resize(shell_container):
+async def test_exec_resize(shell_container: DockerContainer) -> None:
     execute = await shell_container.exec(
         stdout=True,
         stderr=True,
@@ -115,7 +120,7 @@ async def test_exec_resize(shell_container):
 
 
 @pytest.mark.asyncio
-async def test_exec_inspect(shell_container):
+async def test_exec_inspect(shell_container: DockerContainer) -> None:
     execute = await shell_container.exec(
         stdout=True,
         stderr=True,
@@ -141,7 +146,9 @@ async def test_exec_inspect(shell_container):
 
 
 @pytest.mark.asyncio
-async def test_exec_restore_tty_attached(docker, shell_container):
+async def test_exec_restore_tty_attached(
+    docker: Docker, shell_container: DockerContainer
+) -> None:
     exec1 = await shell_container.exec(
         stdout=True,
         stderr=True,
@@ -158,7 +165,9 @@ async def test_exec_restore_tty_attached(docker, shell_container):
 
 
 @pytest.mark.asyncio
-async def test_exec_restore_tty_detached(docker, shell_container):
+async def test_exec_restore_tty_detached(
+    docker: Docker, shell_container: DockerContainer
+) -> None:
     exec1 = await shell_container.exec(
         stdout=True,
         stderr=True,
