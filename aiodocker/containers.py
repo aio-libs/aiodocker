@@ -3,7 +3,19 @@ from __future__ import annotations
 import json
 import shlex
 import tarfile
-from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    AsyncIterable,
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
 from multidict import MultiDict
 from yarl import URL
@@ -134,17 +146,42 @@ class DockerContainer:
     def id(self) -> str:
         return self._id
 
-    def log(self, *, stdout=False, stderr=False, follow=False, **kwargs):
+    @overload
+    async def log(
+        self,
+        *,
+        stdout: bool = False,
+        stderr: bool = False,
+        follow: Literal[False] = False,
+        **kwargs,
+    ) -> List[str]: ...
+
+    @overload
+    def log(
+        self,
+        *,
+        stdout: bool = False,
+        stderr: bool = False,
+        follow: Literal[True],
+        **kwargs,
+    ) -> AsyncIterable[str]: ...
+
+    def log(
+        self,
+        *,
+        stdout: bool = False,
+        stderr: bool = False,
+        follow: bool = False,
+        **kwargs,
+    ) -> Any:
         if stdout is False and stderr is False:
             raise TypeError("Need one of stdout or stderr")
 
         params = {"stdout": stdout, "stderr": stderr, "follow": follow}
         params.update(kwargs)
-
         cm = self.docker._query(
             f"containers/{self._id}/logs", method="GET", params=params
         )
-
         if follow:
             return self._logs_stream(cm)
         else:

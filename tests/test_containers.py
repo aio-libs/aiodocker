@@ -228,7 +228,57 @@ async def test_pause_unpause(shell_container):
 
 
 @pytest.mark.asyncio
-async def test_cancel_log(docker):
+async def test_capture_log_oneshot(docker, image_name) -> None:
+    container = await docker.containers.run(
+        config={
+            "Cmd": [
+                "python",
+                "-c",
+                "import time;time.sleep(0.2);print(1);time.sleep(0.2);print(2)",
+            ],
+            "Image": image_name,
+        }
+    )
+    try:
+        await asyncio.sleep(1)
+        log = await container.log(
+            stdout=True,
+            stderr=True,
+            follow=False,
+        )
+        assert ["1\n", "2\n"] == log
+    finally:
+        await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_capture_log_stream(docker, image_name) -> None:
+    container = await docker.containers.run(
+        config={
+            "Cmd": [
+                "python",
+                "-c",
+                "import time;time.sleep(0.2);print(1);time.sleep(0.2);print(2)",
+            ],
+            "Image": image_name,
+        }
+    )
+    try:
+        log_gen = container.log(
+            stdout=True,
+            stderr=True,
+            follow=True,
+        )
+        log = []
+        async for line in log_gen:
+            log.append(line)
+        assert ["1\n", "2\n"] == log
+    finally:
+        await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_cancel_log(docker) -> None:
     container = docker.containers.container("invalid_container_id")
 
     with pytest.raises(DockerError):
