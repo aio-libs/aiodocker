@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import sys
 import traceback
@@ -99,6 +100,8 @@ async def docker(testing_images):
         yield docker
     finally:
         await docker.close()
+        if sys.platform == "win32":
+            await asyncio.sleep(0.3)
 
 
 @pytest.fixture
