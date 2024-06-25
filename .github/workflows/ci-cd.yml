@@ -113,6 +113,22 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -e .[ci,dev]
+    # NOTE: Unfortunately the gain of image caching is too small,
+    #       and even it increases the latency of Linux jobs. :(
+    # - name: Cache Docker images
+    #   uses: ScribeMD/docker-cache@0.5.0
+    #   with:
+    #     key: docker-${{ runner.os }}
+    - name: Prepare Docker images (Linux)
+      if: ${{ runner.os == 'Linux' }}
+      run: |
+        docker pull python:3.12-alpine
+    - name: Prepare Docker images (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      # Unfortunately, there is no slim version for Windows.
+      # This may take more than 10 minutes as the image size is a few gigabytes.
+      run: |
+        docker pull python:3.12
     - name: Start Docker services
       if: ${{ matrix.registry == '1' }}
       run: |
@@ -134,6 +150,9 @@ jobs:
         path: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
         if-no-files-found: error
         retention-days: 1
+    - name: Clean up Docker images produced during tests
+      run: |
+        docker image list --filter 'reference=aiodocker-*' --format '{{.Repository}}:{{.Tag}}' | xargs -r docker rmi
 
   check:  # This job does nothing and is only used for the branch protection
     name: ✅ Ensure the required checks passing

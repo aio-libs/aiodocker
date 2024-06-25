@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import socket
 import struct
 import warnings
@@ -20,6 +22,8 @@ class Message(NamedTuple):
 
 
 class Stream:
+    _resp: aiohttp.ClientResponse | None
+
     def __init__(
         self,
         docker: "Docker",
@@ -121,7 +125,7 @@ class Stream:
             transport.write_eof()
         self._resp.close()
 
-    async def __aenter__(self) -> "Stream":
+    async def __aenter__(self) -> Stream:
         await self._init()
         return self
 
@@ -130,8 +134,9 @@ class Stream:
         exc_typ: Type[BaseException],
         exc_val: BaseException,
         exc_tb: TracebackType,
-    ) -> None:
+    ) -> Optional[bool]:
         await self.close()
+        return None
 
     def __del__(self, _warnings=warnings) -> None:
         if self._resp is not None:

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import json
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from .utils import clean_filters
 
@@ -8,7 +10,11 @@ class DockerNetworks:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Optional[Mapping] = None) -> List[Dict[str, Any]]:
+    async def list(
+        self,
+        *,
+        filters: Optional[Mapping[str, str | Sequence[str]]] = None,
+    ) -> List[Dict[str, Any]]:
         """
         Return a list of networks
 
@@ -29,14 +35,14 @@ class DockerNetworks:
         data = await self.docker._query_json("networks", params=params)
         return data
 
-    async def create(self, config: Dict[str, Any]) -> "DockerNetwork":
+    async def create(self, config: Dict[str, Any]) -> DockerNetwork:
         bconfig = json.dumps(config, sort_keys=True).encode("utf-8")
         data = await self.docker._query_json(
             "networks/create", method="POST", data=bconfig
         )
         return DockerNetwork(self.docker, data["Id"])
 
-    async def get(self, net_specs: str) -> "DockerNetwork":
+    async def get(self, net_specs: str) -> DockerNetwork:
         data = await self.docker._query_json(f"networks/{net_specs}", method="GET")
         return DockerNetwork(self.docker, data["Id"])
 

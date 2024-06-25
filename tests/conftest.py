@@ -1,13 +1,23 @@
+from __future__ import annotations
+
 import asyncio
 import os
 import sys
 import traceback
 import uuid
-from typing import Any, Dict
+from typing import (
+    Any,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Dict,
+)
 
 import pytest
 from packaging.version import parse as parse_version
+from typing_extensions import TypeAlias
 
+from aiodocker.containers import DockerContainer
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
@@ -21,18 +31,6 @@ API_VERSIONS = {
     "18.06": "v1.38",
     "18.09": "v1.39",
 }
-
-
-if sys.platform == "win32":
-    if sys.version_info < (3, 7):
-        # Python 3.6 has no WindowsProactorEventLoopPolicy class
-        from asyncio import events
-
-        class WindowsProactorEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
-            _loop_factory = asyncio.ProactorEventLoop
-
-    else:
-        WindowsProactorEventLoopPolicy = asyncio.WindowsProactorEventLoopPolicy
 
 
 def _random_name():
@@ -66,26 +64,25 @@ async def random_name():
 @pytest.fixture(scope="session")
 def image_name() -> str:
     if sys.platform == "win32":
-        return "python:latest"
-    else:
-        return "python:alpine"
+        return "python:3.12"
+    return "python:3.12-alpine"
 
 
 @pytest.fixture(scope="session")
 async def testing_images(image_name: str) -> None:
     # Prepare a small Linux image shared by most test cases.
     docker = Docker()
-    required_images = [image_name]
-    if image_name != "python:latest":
-        required_images.append("python:latest")
-    for img in required_images:
-        try:
-            await docker.images.inspect(img)
-        except DockerError as e:
-            assert e.status == 404
-            print(f'Pulling "{img}" for the testing session...')
-            await docker.pull(img)
-    await docker.close()
+    try:
+        required_images = [image_name]
+        for img in required_images:
+            try:
+                await docker.images.inspect(img)
+            except DockerError as e:
+                assert e.status == 404
+                print(f'Pulling "{img}" for the testing session...')
+                await docker.pull(img)
+    finally:
+        await docker.close()
 
 
 @pytest.fixture
@@ -101,16 +98,21 @@ async def docker(testing_images):
             raise RuntimeError(f"Cannot find docker API version for {version}")
 
     docker = Docker(**kwargs)
-    yield docker
-    await docker.close()
+    print(asyncio.get_running_loop())
+    try:
+        yield docker
+    finally:
+        await docker.close()
 
 
 @pytest.fixture
-async def requires_api_version(docker):
+async def requires_api_version(
+    docker: Docker,
+) -> AsyncIterator[Callable[[str, str], None]]:
     # Update version info from auto to the real value
     await docker.version()
 
-    def check(version, reason):
+    def check(version: str, reason: str) -> None:
         if parse_version(docker.api_version[1:]) < parse_version(version[1:]):
             pytest.skip(reason)
 
@@ -122,28 +124,47 @@ async def swarm(docker):
     if sys.platform == "win32":
         pytest.skip("swarm commands dont work on Windows")
     assert await docker.swarm.init()
-    yield docker
-    assert await docker.swarm.leave(force=True)
+    try:
+        yield docker
+    finally:
+        assert await docker.swarm.leave(force=True)
+
+
+AsyncContainerFactory: TypeAlias = Callable[
+    [Dict[str, Any], str], Awaitable[DockerContainer]
+]
 
 
 @pytest.fixture
-async def make_container(docker):
-    container = None
+async def make_container(
+    docker: Docker,
+) -> AsyncIterator[AsyncContainerFactory]:
+    container: DockerContainer | None = None
 
-    async def _spawn(config: Dict[str, Any], name=None):
+    async def _spawn(
+        config: Dict[str, Any],
+        name: str,
+    ) -> DockerContainer:
         nonlocal container
         container = await docker.containers.create_or_replace(config=config, name=name)
+        assert container is not None
         await container.start()
         return container
 
-    yield _spawn
-
-    if container is not None:
-        await container.delete(force=True)
+    try:
+        yield _spawn
+    finally:
+        if container is not None:
+            assert isinstance(container, DockerContainer)
+            await container.delete(force=True)
 
 
 @pytest.fixture
-async def shell_container(docker, make_container, image_name):
+async def shell_container(
+    docker: Docker,
+    make_container,
+    image_name: str,
+) -> AsyncContainerFactory:
     config = {
         "Cmd": ["python"],
         "Image": image_name,

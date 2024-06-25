@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -5,13 +7,24 @@ import os
 import re
 import ssl
 import sys
+from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Dict, Mapping, Optional, Type, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Dict,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import aiohttp
 from multidict import CIMultiDict
 from yarl import URL
+
+from aiodocker.types import JSONObject
 
 # Sub-API classes
 from .configs import DockerConfigs
@@ -27,11 +40,11 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .utils import _AsyncCM, httpize, parse_result
+from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
-__all__ = (
+__all__: Tuple[str, ...] = (
     "Docker",
     "DockerContainers",
     "DockerContainer",
@@ -77,21 +90,22 @@ class Docker:
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
         if docker_host is None:
-            for sockpath in _sock_search_paths:
-                if sockpath.is_socket():
-                    docker_host = "unix://" + str(sockpath)
-                    break
-        if docker_host is None and sys.platform == "win32":
-            try:
-                if Path("\\\\.\\pipe\\docker_engine").exists():
-                    docker_host = "npipe:////./pipe/docker_engine"
-            except OSError as ex:
-                if ex.winerror == 231:  # type: ignore
-                    # All pipe instances are busy
-                    # but the pipe definitely exists
-                    docker_host = "npipe:////./pipe/docker_engine"
-                else:
-                    raise
+            if sys.platform == "win32":
+                try:
+                    if Path("\\\\.\\pipe\\docker_engine").exists():
+                        docker_host = "npipe:////./pipe/docker_engine"
+                except OSError as ex:
+                    if ex.winerror == 231:  # type: ignore
+                        # All pipe instances are busy
+                        # but the pipe definitely exists
+                        docker_host = "npipe:////./pipe/docker_engine"
+                    else:
+                        raise
+            else:
+                for sockpath in _sock_search_paths:
+                    if sockpath.is_socket():
+                        docker_host = "unix://" + str(sockpath)
+                        break
         self.docker_host = docker_host
 
         if api_version != "auto" and _rx_version.search(api_version) is None:
@@ -153,7 +167,7 @@ class Docker:
         self.pull = self.images.pull
         self.push = self.images.push
 
-    async def __aenter__(self) -> "Docker":
+    async def __aenter__(self) -> Docker:
         return self
 
     async def __aexit__(
@@ -193,37 +207,37 @@ class Docker:
     async def _check_version(self) -> None:
         if self.api_version == "auto":
             ver = await self._query_json("version", versioned_api=False)
-            self.api_version = "v" + ver["ApiVersion"]
+            self.api_version = "v" + str(ver["ApiVersion"])
 
-    def _query(
+    @asynccontextmanager
+    async def _query(
         self,
         path: Union[str, URL],
         method: str = "GET",
         *,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
         timeout=None,
         chunked=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
-    ):
+    ) -> AsyncIterator[aiohttp.ClientResponse]:
         """
         Get the response object by performing the HTTP request.
-        The caller is responsible to finalize the response object.
+        The caller is responsible to finalize the response object
+        via the async context manager protocol.
         """
-        return _AsyncCM(
-            self._do_query(
-                path=path,
-                method=method,
-                params=params,
-                data=data,
-                headers=headers,
-                timeout=timeout,
-                chunked=chunked,
-                read_until_eof=read_until_eof,
-                versioned_api=versioned_api,
-            )
+        yield await self._do_query(
+            path=path,
+            method=method,
+            params=params,
+            data=data,
+            headers=headers,
+            timeout=timeout,
+            chunked=chunked,
+            read_until_eof=read_until_eof,
+            versioned_api=versioned_api,
         )
 
     async def _do_query(
@@ -231,14 +245,14 @@ class Docker:
         path: Union[str, URL],
         method: str,
         *,
-        params: Optional[Mapping[str, Any]],
+        params: Optional[JSONObject],
         data: Any,
         headers,
         timeout,
         chunked,
         read_until_eof: bool,
         versioned_api: bool,
-    ):
+    ) -> aiohttp.ClientResponse:
         if versioned_api:
             await self._check_version()
         url = self._canonicalize_url(path, versioned_api=versioned_api)
@@ -287,13 +301,13 @@ class Docker:
         path: Union[str, URL],
         method: str = "GET",
         *,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
-    ):
+    ) -> Any:
         """
         A shorthand of _query() that treats the input as JSON.
         """
@@ -320,13 +334,13 @@ class Docker:
         path: Union[str, URL],
         method: str = "POST",
         *,
-        params: Optional[Mapping[str, Any]] = None,
+        params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
         timeout=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
-    ):
+    ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:
         """
         A shorthand for uploading data by chunks
         """

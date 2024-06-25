@@ -1,5 +1,16 @@
+from __future__ import annotations
+
 import json
-from typing import Any, AsyncIterator, List, Mapping, MutableMapping, Optional, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    List,
+    Mapping,
+    MutableMapping,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .utils import (
@@ -15,7 +26,11 @@ class DockerServices:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Optional[Mapping] = None) -> List[Mapping]:
+    async def list(
+        self,
+        *,
+        filters: Optional[Mapping[str, str | Sequence[str]]] = None,
+    ) -> List[Mapping]:
         """
         Return a list of services
 

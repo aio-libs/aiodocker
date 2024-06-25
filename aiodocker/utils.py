@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import codecs
 import json
@@ -7,13 +9,17 @@ from io import BytesIO
 from typing import (
     IO,
     Any,
+    Dict,
     Iterable,
     Mapping,
-    MutableMapping,
     Optional,
+    Sequence,
     Tuple,
     Union,
+    cast,
 )
+
+from .types import JSONObject
 
 
 async def parse_result(response, response_type=None, *, encoding="utf-8"):
@@ -120,7 +126,7 @@ def human_bool(s) -> bool:
         return bool(s)
 
 
-def httpize(d: Optional[Mapping]) -> Optional[Mapping[str, Any]]:
+def httpize(d: Optional[JSONObject]) -> Optional[Mapping[str, str]]:
     if d is None:
         return None
     converted = {}
@@ -185,13 +191,15 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
     return f"{key}={value}"
 
 
-def clean_networks(networks: Optional[Iterable[str]] = None) -> Optional[Iterable[str]]:
+def clean_networks(
+    networks: Optional[Iterable[str]] = None,
+) -> Optional[Sequence[Dict[str, Any]]]:
     """
     Cleans the values inside `networks`
     Returns a new list
     """
     if not networks:
-        return networks
+        return []
     if not isinstance(networks, list):
         raise TypeError("networks parameter must be a list.")
 
@@ -203,19 +211,22 @@ def clean_networks(networks: Optional[Iterable[str]] = None) -> Optional[Iterabl
     return result
 
 
-def clean_filters(filters: Optional[Mapping] = None) -> str:
+def clean_filters(filters: Optional[Mapping[str, Any] | Sequence[str]] = None) -> str:
     """
-    Checks the values inside `filters`
-    https://docs.docker.com/engine/api/v1.29/#operation/ServiceList
-    Returns a new dictionary in the format `map[string][]string` jsonized
+    Ensures that the values inside `filters` are lists of string values, by
+    wrapping scalar values as a single-item lists.  Returns the result as the
+    jsonized form of `map[string][]string` as described in
+    https://docs.docker.com/engine/api/v1.29/#operation/ServiceList .
     """
-
-    if filters and isinstance(filters, dict):
+    if filters is None:
+        return "{}"
+    if isinstance(filters, dict):
         for k, v in filters.items():
             if not isinstance(v, list):
                 v = [v]
             filters[k] = v
-
+    else:
+        raise TypeError("filters must be a mapping")
     return json.dumps(filters)
 
 
@@ -246,7 +257,7 @@ def mktar_from_dockerfile(fileobj: Union[BytesIO, IO[bytes]]) -> IO[bytes]:
 
 
 def compose_auth_header(
-    auth: Union[MutableMapping, str, bytes], registry_addr: Optional[str] = None
+    auth: Union[JSONObject, str, bytes], registry_addr: Optional[str] = None
 ) -> str:
     """
     Validate and compose base64-encoded authentication header
@@ -261,15 +272,16 @@ def compose_auth_header(
         A base64-encoded X-Registry-Auth header value
     """
     if isinstance(auth, Mapping):
+        auth2 = dict(auth)
         # Validate the JSON format only.
         if "identitytoken" in auth:
             pass
         elif "auth" in auth:
-            return compose_auth_header(auth["auth"], registry_addr)
+            return compose_auth_header(cast(JSONObject, auth["auth"]), registry_addr)
         else:
             if registry_addr:
-                auth["serveraddress"] = registry_addr
-        auth_json = json.dumps(auth).encode("utf-8")
+                auth2["serveraddress"] = registry_addr
+        auth_json = json.dumps(auth2).encode("utf-8")
     elif isinstance(auth, (str, bytes)):
         # Parse simple "username:password"-formatted strings
         # and attach the server address specified.
@@ -286,24 +298,4 @@ def compose_auth_header(
         auth_json = json.dumps(config).encode("utf-8")
     else:
         raise TypeError("auth must be base64 encoded string/bytes or a dictionary")
-    auth = base64.b64encode(auth_json).decode("ascii")
-    return auth
-
-
-class _AsyncCM:
-    __slots__ = ("_coro", "_resp")
-
-    def __init__(self, coro):
-        self._coro = coro
-        self._resp = None
-
-    async def __aenter__(self):
-        resp = await self._coro
-        self._resp = resp
-        return await resp.__aenter__()
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        return await self._resp.__aexit__(exc_type, exc_val, exc_tb)
-
-    def cancel(self):
-        self._coro.close()
+    return base64.b64encode(auth_json).decode("ascii")

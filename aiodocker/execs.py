@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import (
     TYPE_CHECKING,
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
 
 
 class Exec:
-    def __init__(self, docker: "Docker", id: str, tty: Optional[bool]) -> None:
+    def __init__(self, docker: "Docker", id: str, tty: Optional[bool] = None) -> None:
         self.docker = docker
         self._id = id
         self._tty = tty
@@ -40,7 +42,8 @@ class Exec:
 
     async def inspect(self) -> Dict[str, Any]:
         ret = await self.docker._query_json(f"exec/{self._id}/json")
-        self._tty = ret["ProcessConfig"]["tty"]
+        assert isinstance(ret["ProcessConfig"], dict)
+        self._tty = bool(ret["ProcessConfig"]["tty"])
         return ret
 
     async def resize(self, *, h: Optional[int] = None, w: Optional[int] = None) -> None:
@@ -52,8 +55,8 @@ class Exec:
         if not dct:
             return
         url = URL(f"exec/{self._id}/resize").with_query(dct)
-        async with self.docker._query(url, method="POST") as resp:
-            resp
+        async with self.docker._query(url, method="POST"):
+            pass
 
     @overload
     def start(
@@ -73,7 +76,12 @@ class Exec:
     ) -> bytes:
         pass
 
-    def start(self, *, timeout=None, detach=False):
+    def start(
+        self,
+        *,
+        timeout: aiohttp.ClientTimeout | None = None,
+        detach: bool = False,
+    ) -> Any:
         """
         Start this exec instance.
         Args:
@@ -92,7 +100,10 @@ class Exec:
             from stdout or 2 if from stderr.
         """
         if detach:
-            return self._start_detached(timeout, self._tty)
+            return self._start_detached(
+                timeout,
+                self._tty if self._tty is not None else False,
+            )
         else:
 
             async def setup() -> Tuple[URL, bytes, bool]:

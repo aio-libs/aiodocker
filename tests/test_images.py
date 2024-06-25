@@ -1,21 +1,29 @@
+from __future__ import annotations
+
 import os
 import sys
 from io import BytesIO
+from typing import AsyncIterator, Callable
 
 import pytest
 
 from aiodocker import utils
+from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
 
 
-def skip_windows():
+def skip_windows() -> None:
     if sys.platform == "win32":
         # replaced xfail with skip for sake of tests speed
         pytest.skip("image operation fails on Windows")
 
 
 @pytest.mark.asyncio
-async def test_build_from_remote_file(docker, random_name, requires_api_version):
+async def test_build_from_remote_file(
+    docker: Docker,
+    random_name: Callable[[], str],
+    requires_api_version: Callable[[str, str], None],
+) -> None:
     skip_windows()
 
     requires_api_version(
@@ -30,15 +38,16 @@ async def test_build_from_remote_file(docker, random_name, requires_api_version)
     )
 
     tag = f"{random_name()}:1.0"
-    params = {"tag": tag, "remote": remote}
-    await docker.images.build(**params)
+    await docker.images.build(tag=tag, remote=remote, stream=False)
 
     image = await docker.images.inspect(tag)
     assert image
 
 
 @pytest.mark.asyncio
-async def test_build_from_remote_tar(docker, random_name):
+async def test_build_from_remote_tar(
+    docker: Docker, random_name: Callable[[], str]
+) -> None:
     skip_windows()
 
     remote = (
@@ -47,27 +56,28 @@ async def test_build_from_remote_tar(docker, random_name):
     )
 
     tag = f"{random_name()}:1.0"
-    params = {"tag": tag, "remote": remote}
-    await docker.images.build(**params)
+    await docker.images.build(tag=tag, remote=remote, stream=False)
 
     image = await docker.images.inspect(tag)
     assert image
 
 
 @pytest.mark.asyncio
-async def test_history(docker, image_name):
+async def test_history(docker: Docker, image_name: str) -> None:
     history = await docker.images.history(name=image_name)
     assert history
 
 
 @pytest.mark.asyncio
-async def test_list_images(docker, image_name):
+async def test_list_images(docker: Docker, image_name: str) -> None:
     images = await docker.images.list(filter=image_name)
     assert len(images) >= 1
 
 
 @pytest.mark.asyncio
-async def test_tag_image(docker, random_name, image_name):
+async def test_tag_image(
+    docker: Docker, random_name: Callable[[], str], image_name: str
+) -> None:
     repository = random_name()
     await docker.images.tag(name=image_name, repo=repository, tag="1.0")
     await docker.images.tag(name=image_name, repo=repository, tag="2.0")
@@ -76,14 +86,14 @@ async def test_tag_image(docker, random_name, image_name):
 
 
 @pytest.mark.asyncio
-async def test_push_image(docker, image_name):
+async def test_push_image(docker: Docker, image_name: str) -> None:
     repository = "localhost:5000/image"
     await docker.images.tag(name=image_name, repo=repository)
     await docker.images.push(name=repository)
 
 
 @pytest.mark.asyncio
-async def test_push_image_stream(docker, image_name):
+async def test_push_image_stream(docker: Docker, image_name: str) -> None:
     repository = "localhost:5000/image"
     await docker.images.tag(name=image_name, repo=repository)
     async for item in docker.images.push(name=repository, stream=True):
@@ -91,7 +101,7 @@ async def test_push_image_stream(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_delete_image(docker, image_name):
+async def test_delete_image(docker: Docker, image_name: str) -> None:
     repository = "localhost:5000/image"
     await docker.images.tag(name=image_name, repo=repository)
     assert await docker.images.inspect(repository)
@@ -99,7 +109,9 @@ async def test_delete_image(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_not_existing_image(docker, random_name):
+async def test_not_existing_image(
+    docker: Docker, random_name: Callable[[], str]
+) -> None:
     name = f"{random_name()}:latest"
     with pytest.raises(DockerError) as excinfo:
         await docker.images.inspect(name=name)
@@ -107,7 +119,7 @@ async def test_not_existing_image(docker, random_name):
 
 
 @pytest.mark.asyncio
-async def test_pull_image(docker, image_name):
+async def test_pull_image(docker: Docker, image_name: str) -> None:
     image = await docker.images.inspect(name=image_name)
     assert image
 
@@ -117,7 +129,7 @@ async def test_pull_image(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_pull_image_stream(docker, image_name):
+async def test_pull_image_stream(docker: Docker, image_name: str) -> None:
     image = await docker.images.inspect(name=image_name)
     assert image
 
@@ -126,7 +138,9 @@ async def test_pull_image_stream(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_build_from_tar(docker, random_name, image_name):
+async def test_build_from_tar(
+    docker: Docker, random_name: Callable[[], str], image_name: str
+) -> None:
     name = f"{random_name()}:latest"
     dockerfile = f"""
     # Shared Volume
@@ -141,7 +155,9 @@ async def test_build_from_tar(docker, random_name, image_name):
 
 
 @pytest.mark.asyncio
-async def test_build_from_tar_stream(docker, random_name, image_name):
+async def test_build_from_tar_stream(
+    docker: Docker, random_name: Callable[[], str], image_name: str
+) -> None:
     name = f"{random_name()}:latest"
     dockerfile = f"""
     # Shared Volume
@@ -159,7 +175,7 @@ async def test_build_from_tar_stream(docker, random_name, image_name):
 
 
 @pytest.mark.asyncio
-async def test_export_image(docker, image_name):
+async def test_export_image(docker: Docker, image_name: str) -> None:
     name = image_name
     async with docker.images.export_image(name=name) as exported_image:
         assert exported_image
@@ -168,10 +184,10 @@ async def test_export_image(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_import_image(docker):
+async def test_import_image(docker: Docker) -> None:
     skip_windows()
 
-    async def file_sender(file_name=None):
+    async def file_sender(file_name: str) -> AsyncIterator[bytes]:
         with open(file_name, "rb") as f:
             chunk = f.read(2**16)
             while chunk:
@@ -180,7 +196,8 @@ async def test_import_image(docker):
 
     dir = os.path.dirname(__file__)
     hello_world = os.path.join(dir, "docker/google-containers-pause.tar")
-    response = await docker.images.import_image(data=file_sender(file_name=hello_world))
+    # FIXME: improve annotation for chunked data generator
+    response = await docker.images.import_image(data=file_sender(hello_world))  # type: ignore
     for item in response:
         assert "error" not in item
 
@@ -193,7 +210,7 @@ async def test_import_image(docker):
 
 
 @pytest.mark.asyncio
-async def test_pups_image_auth(docker, image_name):
+async def test_pups_image_auth(docker: Docker, image_name: str) -> None:
     skip_windows()
 
     name = image_name
@@ -224,7 +241,7 @@ async def test_pups_image_auth(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_build_image_invalid_platform(docker, image_name):
+async def test_build_image_invalid_platform(docker: Docker, image_name: str) -> None:
     dockerfile = f"""
         FROM {image_name}
         """
@@ -244,7 +261,7 @@ async def test_build_image_invalid_platform(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_pull_image_invalid_platform(docker, image_name):
+async def test_pull_image_invalid_platform(docker: Docker, image_name: str) -> None:
     with pytest.raises(DockerError) as excinfo:
         await docker.images.pull("hello-world", platform="foo")
 

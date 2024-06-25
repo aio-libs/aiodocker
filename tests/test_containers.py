@@ -1,20 +1,21 @@
 import asyncio
-import os
 import sys
 
 import pytest
 
+from aiodocker.containers import DockerContainer
+from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerContainerError, DockerError
 
 
-async def _validate_hello(container):
+async def _validate_hello(container: DockerContainer) -> None:
     try:
         await container.start()
         response = await container.wait()
         assert response["StatusCode"] == 0
         await asyncio.sleep(5)  # wait for output in case of slow test container
         logs = await container.log(stdout=True)
-        assert "hello" + os.linesep in logs
+        assert "hello\n" in logs
 
         with pytest.raises(TypeError):
             await container.log()
@@ -23,7 +24,7 @@ async def _validate_hello(container):
 
 
 @pytest.mark.asyncio
-async def test_run_existing_container(docker, image_name):
+async def test_run_existing_container(docker: Docker, image_name: str) -> None:
     await docker.pull(image_name)
     container = await docker.containers.run(
         config={
@@ -37,7 +38,9 @@ async def test_run_existing_container(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_run_container_with_missing_image(docker, image_name):
+async def test_run_container_with_missing_image(
+    docker: Docker, image_name: str
+) -> None:
     try:
         await docker.images.delete(image_name)
     except DockerError as e:
@@ -61,7 +64,7 @@ async def test_run_container_with_missing_image(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_run_failing_start_container(docker, image_name):
+async def test_run_failing_start_container(docker: Docker, image_name: str) -> None:
     try:
         await docker.images.delete(image_name)
     except DockerError as e:
@@ -91,7 +94,7 @@ async def test_run_failing_start_container(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_restart(docker, image_name):
+async def test_restart(docker: Docker, image_name: str) -> None:
     # sleep for 10 min to emulate hanging container
     container = await docker.containers.run(
         config={
@@ -117,7 +120,7 @@ async def test_restart(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_container_stats_list(docker, image_name):
+async def test_container_stats_list(docker: Docker, image_name: str) -> None:
     container = await docker.containers.run(
         config={
             "Cmd": ["-c", "print('hello')"],
@@ -137,7 +140,7 @@ async def test_container_stats_list(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_container_stats_stream(docker, image_name):
+async def test_container_stats_stream(docker: Docker, image_name: str) -> None:
     container = await docker.containers.run(
         config={
             "Cmd": ["-c", "print('hello')"],
@@ -161,7 +164,7 @@ async def test_container_stats_stream(docker, image_name):
 
 
 @pytest.mark.asyncio
-async def test_resize(shell_container):
+async def test_resize(shell_container: DockerContainer) -> None:
     await shell_container.resize(w=120, h=10)
 
 
@@ -169,7 +172,9 @@ async def test_resize(shell_container):
     sys.platform == "win32", reason="Commit unpaused containers doesn't work on Windows"
 )
 @pytest.mark.asyncio
-async def test_commit(docker, image_name, shell_container):
+async def test_commit(
+    docker: Docker, image_name: str, shell_container: DockerContainer
+) -> None:
     """
     "Container" key was removed in v1.45.
     "ContainerConfig" is not present, although this information is now present in "Config"
@@ -192,7 +197,9 @@ async def test_commit(docker, image_name, shell_container):
     sys.platform == "win32", reason="Commit unpaused containers doesn't work on Windows"
 )
 @pytest.mark.asyncio
-async def test_commit_with_changes(docker, image_name, shell_container):
+async def test_commit_with_changes(
+    docker: Docker, image_name: str, shell_container: DockerContainer
+) -> None:
     ret = await shell_container.commit(changes=["EXPOSE 8000", 'CMD ["py"]'])
     img_id = ret["Id"]
     img = await docker.images.inspect(img_id)
@@ -203,7 +210,7 @@ async def test_commit_with_changes(docker, image_name, shell_container):
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Pause doesn't work on Windows")
 @pytest.mark.asyncio
-async def test_pause_unpause(shell_container):
+async def test_pause_unpause(shell_container: DockerContainer) -> None:
     await shell_container.pause()
     container_info = await shell_container.show()
     assert "State" in container_info
@@ -228,7 +235,57 @@ async def test_pause_unpause(shell_container):
 
 
 @pytest.mark.asyncio
-async def test_cancel_log(docker):
+async def test_capture_log_oneshot(docker: Docker, image_name: str) -> None:
+    container = await docker.containers.run(
+        config={
+            "Cmd": [
+                "python",
+                "-c",
+                "import time;time.sleep(0.2);print(1);time.sleep(0.2);print(2)",
+            ],
+            "Image": image_name,
+        }
+    )
+    try:
+        await asyncio.sleep(1)
+        log = await container.log(
+            stdout=True,
+            stderr=True,
+            follow=False,
+        )
+        assert ["1\n", "2\n"] == log
+    finally:
+        await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_capture_log_stream(docker: Docker, image_name: str) -> None:
+    container = await docker.containers.run(
+        config={
+            "Cmd": [
+                "python",
+                "-c",
+                "import time;time.sleep(0.2);print(1);time.sleep(0.2);print(2)",
+            ],
+            "Image": image_name,
+        }
+    )
+    try:
+        log_gen = container.log(
+            stdout=True,
+            stderr=True,
+            follow=True,
+        )
+        log = []
+        async for line in log_gen:
+            log.append(line)
+        assert ["1\n", "2\n"] == log
+    finally:
+        await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_cancel_log(docker: Docker) -> None:
     container = docker.containers.container("invalid_container_id")
 
     with pytest.raises(DockerError):
