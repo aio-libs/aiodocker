@@ -70,19 +70,26 @@ async def test_ssl_context(monkeypatch) -> None:
     monkeypatch.setenv("DOCKER_TLS_VERIFY", "1")
     monkeypatch.setenv("DOCKER_CERT_PATH", str(cert_dir))
     docker = Docker()
-    assert not isinstance(docker.connector, aiohttp.BaseConnector)
-    assert docker.connector._ssl
-    await docker.close()
-    with pytest.raises(TypeError):
-        docker = Docker(ssl_context="bad ssl context")  # type: ignore
+    try:
+        assert isinstance(docker.connector, aiohttp.TCPConnector)
+        assert docker.connector._ssl
+    finally:
+        await docker.close()
+
     ssl_ctx = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
     ssl_ctx.load_verify_locations(cafile=str(cert_dir / "ca.pem"))
     ssl_ctx.load_cert_chain(
         certfile=str(cert_dir / "cert.pem"), keyfile=str(cert_dir / "key.pem")
     )
     docker = Docker(ssl_context=ssl_ctx)
-    assert docker.connector._ssl
-    await docker.close()
+    try:
+        assert isinstance(docker.connector, aiohttp.TCPConnector)
+        assert docker.connector._ssl
+    finally:
+        await docker.close()
+
+    with pytest.raises(TypeError):
+        docker = Docker(ssl_context="bad ssl context")  # type: ignore
 
 
 @pytest.mark.skipif(
