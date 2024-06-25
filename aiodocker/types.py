@@ -18,6 +18,9 @@ class SupportsRead(Protocol[_T_co]):
     def read(self, length: int = ..., /) -> _T_co: ...
 
 
+# NOTE: Currently these types are used to annotate arguments only.
+# When returning values, we need extra type-narrowing for individual fields,
+# so it is better to define per-API typed DTOs.
 JSONValue: TypeAlias = Union[
     str,
     int,

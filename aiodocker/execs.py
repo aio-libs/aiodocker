@@ -14,8 +14,6 @@ from typing import (
 import aiohttp
 from yarl import URL
 
-from aiodocker.types import JSONObject
-
 from .stream import Stream
 
 
@@ -42,7 +40,7 @@ class Exec:
     def id(self) -> str:
         return self._id
 
-    async def inspect(self) -> JSONObject:
+    async def inspect(self) -> Dict[str, Any]:
         ret = await self.docker._query_json(f"exec/{self._id}/json")
         assert isinstance(ret["ProcessConfig"], dict)
         self._tty = bool(ret["ProcessConfig"]["tty"])

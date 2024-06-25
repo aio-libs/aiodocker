@@ -8,16 +8,16 @@ from typing import (
     Any,
     AsyncIterator,
     Dict,
+    List,
     Literal,
     Mapping,
     Optional,
     Union,
-    cast,
     overload,
 )
 
 from .jsonstream import json_stream_list, json_stream_stream
-from .types import JSONList, JSONObject, SupportsRead
+from .types import JSONObject, SupportsRead
 from .utils import clean_map, compose_auth_header
 
 
@@ -29,14 +29,14 @@ class DockerImages:
     def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def list(self, **params) -> JSONObject:
+    async def list(self, **params) -> Dict[str, Any]:
         """
         List of images
         """
         response = await self.docker._query_json("images/json", "GET", params=params)
         return response
 
-    async def inspect(self, name: str) -> JSONObject:
+    async def inspect(self, name: str) -> Dict[str, Any]:
         """
         Return low-level information about an image
 
@@ -46,7 +46,7 @@ class DockerImages:
         response = await self.docker._query_json(f"images/{name}/json")
         return response
 
-    async def get(self, name: str) -> JSONObject:
+    async def get(self, name: str) -> Dict[str, Any]:
         warnings.warn(
             """images.get is deprecated and will be removed in the next release,
             please use images.inspect instead.""",
@@ -55,7 +55,7 @@ class DockerImages:
         )
         return await self.inspect(name)
 
-    async def history(self, name: str) -> JSONObject:
+    async def history(self, name: str) -> Dict[str, Any]:
         response = await self.docker._query_json(f"images/{name}/history")
         return response
 
@@ -215,7 +215,7 @@ class DockerImages:
 
     async def delete(
         self, name: str, *, force: bool = False, noprune: bool = False
-    ) -> JSONList:
+    ) -> List[Any]:
         """
         Remove an image along with any untagged parent
         images that were referenced by that image
@@ -233,7 +233,7 @@ class DockerImages:
         response = await self.docker._query_json(
             f"images/{name}", "DELETE", params=params
         )
-        return cast(JSONList, response)
+        return response
 
     @staticmethod
     async def _stream(fileobj: SupportsRead[bytes]) -> AsyncIterator[bytes]:

@@ -13,6 +13,7 @@ from types import TracebackType
 from typing import (
     Any,
     AsyncIterator,
+    Dict,
     Optional,
     Tuple,
     Type,
@@ -181,11 +182,11 @@ class Docker:
         await self.events.stop()
         await self.session.close()
 
-    async def auth(self, **credentials: Any) -> JSONObject:
+    async def auth(self, **credentials: Any) -> Dict[str, Any]:
         response = await self._query_json("auth", "POST", data=credentials)
         return response
 
-    async def version(self) -> JSONObject:
+    async def version(self) -> Dict[str, Any]:
         data = await self._query_json("version")
         return data
 
@@ -306,7 +307,7 @@ class Docker:
         timeout=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
-    ) -> JSONObject:
+    ) -> Any:
         """
         A shorthand of _query() that treats the input as JSON.
         """
