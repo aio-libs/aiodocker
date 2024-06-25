@@ -4,8 +4,9 @@ import json
 import shlex
 import tarfile
 from typing import (
+    TYPE_CHECKING,
     Any,
-    AsyncIterable,
+    AsyncIterator,
     Dict,
     List,
     Literal,
@@ -17,6 +18,7 @@ from typing import (
     overload,
 )
 
+from aiohttp import ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
@@ -28,14 +30,19 @@ from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
+from .types import PortInfo
 from .utils import identical, parse_result
 
 
+if TYPE_CHECKING:
+    from .docker import Docker
+
+
 class DockerContainers:
-    def __init__(self, docker):
+    def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def list(self, **kwargs) -> Sequence[DockerContainer]:
+    async def list(self, **kwargs) -> List[DockerContainer]:
         data = await self.docker._query_json(
             "containers/json", method="GET", params=kwargs
         )
@@ -101,7 +108,7 @@ class DockerContainers:
         except DockerError as err:
             # image not found, try pulling it
             if err.status == 404 and "Image" in config:
-                await self.docker.pull(config["Image"], auth=auth)
+                await self.docker.pull(str(config["Image"]), auth=auth)
                 container = await self.create(config, name=name)
             else:
                 raise err
@@ -134,7 +141,9 @@ class DockerContainers:
 
 
 class DockerContainer:
-    def __init__(self, docker, **kwargs):
+    _container: Dict[str, Any]
+
+    def __init__(self, docker: Docker, **kwargs) -> None:
         self.docker = docker
         self._container = kwargs
         self._id = self._container.get(
@@ -164,7 +173,7 @@ class DockerContainer:
         stderr: bool = False,
         follow: Literal[True],
         **kwargs,
-    ) -> AsyncIterable[str]: ...
+    ) -> AsyncIterator[str]: ...
 
     def log(
         self,
@@ -229,20 +238,20 @@ class DockerContainer:
             data = await parse_result(response)
             return data
 
-    async def show(self, **kwargs):
+    async def show(self, **kwargs) -> Dict[str, Any]:
         data = await self.docker._query_json(
             f"containers/{self._id}/json", method="GET", params=kwargs
         )
         self._container = data
         return data
 
-    async def stop(self, **kwargs):
+    async def stop(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}/stop", method="POST", params=kwargs
         ):
             pass
 
-    async def start(self, **kwargs):
+    async def start(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}/start",
             method="POST",
@@ -251,7 +260,7 @@ class DockerContainer:
         ):
             pass
 
-    async def restart(self, timeout=None):
+    async def restart(self, timeout=None) -> None:
         params = {}
         if timeout is not None:
             params["t"] = timeout
@@ -262,13 +271,13 @@ class DockerContainer:
         ):
             pass
 
-    async def kill(self, **kwargs):
+    async def kill(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}/kill", method="POST", params=kwargs
         ):
             pass
 
-    async def wait(self, *, timeout=None, **kwargs):
+    async def wait(self, *, timeout=None, **kwargs) -> Dict[str, Any]:
         data = await self.docker._query_json(
             f"containers/{self._id}/wait",
             method="POST",
@@ -277,13 +286,13 @@ class DockerContainer:
         )
         return data
 
-    async def delete(self, **kwargs):
+    async def delete(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}", method="DELETE", params=kwargs
         ):
             pass
 
-    async def rename(self, newname):
+    async def rename(self, newname) -> None:
         async with self.docker._query(
             f"containers/{self._id}/rename",
             method="POST",
@@ -292,7 +301,7 @@ class DockerContainer:
         ):
             pass
 
-    async def websocket(self, **params):
+    async def websocket(self, **params) -> ClientWebSocketResponse:
         if not params:
             params = {"stdin": True, "stdout": True, "stderr": True, "stream": True}
         path = f"containers/{self._id}/attach/ws"
@@ -328,7 +337,7 @@ class DockerContainer:
 
         return Stream(self.docker, setup, None)
 
-    async def port(self, private_port):
+    async def port(self, private_port: int | str) -> List[PortInfo] | None:
         if "NetworkSettings" not in self._container:
             await self.show()
 
@@ -350,7 +359,25 @@ class DockerContainer:
 
         return h_ports
 
-    def stats(self, *, stream=True):
+    @overload
+    def stats(
+        self,
+        *,
+        stream: Literal[True] = True,
+    ) -> AsyncIterator[Dict[str, Any]]: ...
+
+    @overload
+    async def stats(
+        self,
+        *,
+        stream: Literal[False],
+    ) -> List[Dict[str, Any]]: ...
+
+    def stats(
+        self,
+        *,
+        stream: bool = True,
+    ) -> Any:
         cm = self.docker._query(
             f"containers/{self._id}/stats",
             params={"stream": "1" if stream else "0"},
@@ -381,7 +408,7 @@ class DockerContainer:
         environment: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
         workdir: Optional[str] = None,
         detach_keys: Optional[str] = None,
-    ):
+    ) -> Exec:
         if isinstance(cmd, str):
             cmd = shlex.split(cmd)
         if environment is None:
@@ -466,8 +493,8 @@ class DockerContainer:
         async with self.docker._query(f"containers/{self._id}/unpause", method="POST"):
             pass
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._container[key]
 
-    def __hasitem__(self, key):
+    def __hasitem__(self, key: str) -> bool:
         return key in self._container

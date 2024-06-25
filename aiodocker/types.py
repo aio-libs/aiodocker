@@ -4,6 +4,7 @@ from typing import (
     Mapping,
     Protocol,
     Sequence,
+    TypedDict,
     TypeVar,
     Union,
 )
@@ -32,3 +33,8 @@ JSONValue: TypeAlias = Union[
 ]
 JSONObject: TypeAlias = Mapping[str, "JSONValue"]
 JSONList: TypeAlias = Sequence["JSONValue"]
+
+
+class PortInfo(TypedDict):
+    HostIp: str
+    HostPort: str
