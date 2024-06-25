@@ -70,17 +70,17 @@ def image_name() -> str:
 async def testing_images(image_name: str) -> None:
     # Prepare a small Linux image shared by most test cases.
     docker = Docker()
-    required_images = [image_name]
-    if image_name != "python:latest":
-        required_images.append("python:latest")
-    for img in required_images:
-        try:
-            await docker.images.inspect(img)
-        except DockerError as e:
-            assert e.status == 404
-            print(f'Pulling "{img}" for the testing session...')
-            await docker.pull(img)
-    await docker.close()
+    try:
+        required_images = [image_name]
+        for img in required_images:
+            try:
+                await docker.images.inspect(img)
+            except DockerError as e:
+                assert e.status == 404
+                print(f'Pulling "{img}" for the testing session...')
+                await docker.pull(img)
+    finally:
+        await docker.close()
 
 
 @pytest.fixture
