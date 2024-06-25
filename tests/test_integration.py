@@ -46,7 +46,7 @@ def skip_windows() -> None:
 
 
 @pytest.mark.asyncio
-async def test_autodetect_host(monkeypatch) -> None:
+async def test_autodetect_host(monkeypatch: pytest.MonkeyPatch) -> None:
     docker = Docker()
     if "DOCKER_HOST" in os.environ:
         if (
@@ -64,7 +64,7 @@ async def test_autodetect_host(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
-async def test_ssl_context(monkeypatch) -> None:
+async def test_ssl_context(monkeypatch: pytest.MonkeyPatch) -> None:
     cert_dir = pathlib.Path(__file__).parent / "certs"
     monkeypatch.setenv("DOCKER_HOST", "tcp://127.0.0.1:3456")
     monkeypatch.setenv("DOCKER_TLS_VERIFY", "1")
@@ -108,7 +108,7 @@ async def test_connect_invalid_unix_socket() -> None:
     sys.platform == "win32", reason="Unix sockets are not supported on Windows"
 )
 @pytest.mark.asyncio
-async def test_connect_envvar(monkeypatch) -> None:
+async def test_connect_envvar(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DOCKER_HOST", "unix:///var/run/does-not-exist-docker.sock")
     docker = Docker()
     assert isinstance(docker.connector, aiohttp.UnixConnector)
