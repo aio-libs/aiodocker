@@ -64,6 +64,8 @@ def test_clean_filters() -> None:
     result = {"a": ["1", "2", "3", "4"], "b": ["string"]}
     assert utils.clean_filters(filters=filters) == json.dumps(result)
 
-    filters2: Sequence[str] = ()
-    result2: Dict[str, Any] = {}
-    assert utils.clean_filters(filters=filters2) == json.dumps(result2)
+    empty_filter: Dict[str, Any] = {}
+    assert utils.clean_filters(filters=empty_filter) == "{}"
+
+    with pytest.raises(TypeError):
+        assert utils.clean_filters(filters=())

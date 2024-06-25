@@ -213,17 +213,19 @@ def clean_networks(
 
 def clean_filters(filters: Optional[Mapping[str, Any] | Sequence[str]] = None) -> str:
     """
-    Checks the values inside `filters`
-    https://docs.docker.com/engine/api/v1.29/#operation/ServiceList
-    Returns a new dictionary in the format `map[string][]string` jsonized
+    Ensures that the values inside `filters` are lists of string values, by
+    wrapping scalar values as a single-item lists.  Returns the result as the
+    jsonized form of `map[string][]string` as described in
+    https://docs.docker.com/engine/api/v1.29/#operation/ServiceList .
     """
 
-    if filters and isinstance(filters, dict):
+    if isinstance(filters, dict):
         for k, v in filters.items():
             if not isinstance(v, list):
                 v = [v]
             filters[k] = v
-
+    else:
+        raise TypeError("filters must be a mapping")
     return json.dumps(filters)
 
 
