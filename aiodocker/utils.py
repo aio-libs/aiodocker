@@ -218,7 +218,8 @@ def clean_filters(filters: Optional[Mapping[str, Any] | Sequence[str]] = None) -
     jsonized form of `map[string][]string` as described in
     https://docs.docker.com/engine/api/v1.29/#operation/ServiceList .
     """
-
+    if filters is None:
+        return "{}"
     if isinstance(filters, dict):
         for k, v in filters.items():
             if not isinstance(v, list):
