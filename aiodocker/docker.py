@@ -181,6 +181,7 @@ class Docker:
     async def close(self) -> None:
         await self.events.stop()
         await self.session.close()
+        await self.connector.close()
 
     async def auth(self, **credentials: Any) -> Dict[str, Any]:
         response = await self._query_json("auth", "POST", data=credentials)

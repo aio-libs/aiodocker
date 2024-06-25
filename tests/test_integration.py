@@ -119,7 +119,7 @@ async def test_connect_envvar(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_connect_with_connector(monkeypatch):
+async def test_connect_with_connector():
     connector = aiohttp.BaseConnector()
     docker = Docker(connector=connector)
     assert docker.connector == connector
