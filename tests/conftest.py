@@ -63,6 +63,8 @@ async def random_name():
 
 @pytest.fixture(scope="session")
 def image_name() -> str:
+    if sys.platform == "win32":
+        return "python:3.12"
     return "python:3.12-alpine"
 
 

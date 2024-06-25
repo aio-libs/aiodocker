@@ -113,9 +113,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         python -m pip install -e .[ci,dev]
-    - name: Prepare Docker images
+    - name: Prepare Docker images (Linux)
+      if: ${{ runner.os == 'Linux' }}
       run: |
         docker pull python:3.12-alpine
+    - name: Prepare Docker images (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      run: |
+        docker pull python:3.12
     - name: Start Docker services
       if: ${{ matrix.registry == '1' }}
       run: |
