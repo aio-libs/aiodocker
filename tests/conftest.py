@@ -98,8 +98,10 @@ async def docker(testing_images):
             raise RuntimeError(f"Cannot find docker API version for {version}")
 
     docker = Docker(**kwargs)
-    yield docker
-    await docker.close()
+    try:
+        yield docker
+    finally:
+        await docker.close()
 
 
 @pytest.fixture
@@ -119,8 +121,10 @@ async def swarm(docker):
     if sys.platform == "win32":
         pytest.skip("swarm commands dont work on Windows")
     assert await docker.swarm.init()
-    yield docker
-    assert await docker.swarm.leave(force=True)
+    try:
+        yield docker
+    finally:
+        assert await docker.swarm.leave(force=True)
 
 
 AsyncContainerFactory: TypeAlias = Callable[
@@ -144,11 +148,12 @@ async def make_container(
         await container.start()
         return container
 
-    yield _spawn
-
-    if container is not None:
-        assert isinstance(container, DockerContainer)
-        await container.delete(force=True)
+    try:
+        yield _spawn
+    finally:
+        if container is not None:
+            assert isinstance(container, DockerContainer)
+            await container.delete(force=True)
 
 
 @pytest.fixture
