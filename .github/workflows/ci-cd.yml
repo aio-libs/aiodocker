@@ -148,6 +148,9 @@ jobs:
         path: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
         if-no-files-found: error
         retention-days: 1
+    - name: Clean up Docker images produced during tests
+      run: |
+        docker image list --filter 'reference=aiodocker-*' --format '{{.Repository}}:{{.Tag}}' | xargs docker rmi
 
   check:  # This job does nothing and is only used for the branch protection
     name: ✅ Ensure the required checks passing
