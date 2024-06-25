@@ -119,6 +119,8 @@ jobs:
         docker pull python:3.12-alpine
     - name: Prepare Docker images (Windows)
       if: ${{ runner.os == 'Windows' }}
+      # Unfortunately, there is no slim version for Windows.
+      # This may take more than 10 minutes as the image size is a few gigabytes.
       run: |
         docker pull python:3.12
     - name: Start Docker services

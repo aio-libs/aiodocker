@@ -86,7 +86,6 @@ class Docker:
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
     ) -> None:
-        self._init = False
         docker_host = url  # rename
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
@@ -167,7 +166,6 @@ class Docker:
         # legacy aliases
         self.pull = self.images.pull
         self.push = self.images.push
-        self._init = True
 
     async def __aenter__(self) -> "Docker":
         return self
@@ -183,10 +181,6 @@ class Docker:
     async def close(self) -> None:
         await self.events.stop()
         await self.session.close()
-
-    def __del__(self) -> None:
-        if self._init and not self.session.closed:
-            raise RuntimeError("A Docker instance must be explicitly closed")
 
     async def auth(self, **credentials: Any) -> Dict[str, Any]:
         response = await self._query_json("auth", "POST", data=credentials)
