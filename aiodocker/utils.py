@@ -211,7 +211,7 @@ def clean_networks(
     return result
 
 
-def clean_filters(filters: Optional[Mapping] = None) -> str:
+def clean_filters(filters: Optional[Mapping[str, Any] | Sequence[str]] = None) -> str:
     """
     Checks the values inside `filters`
     https://docs.docker.com/engine/api/v1.29/#operation/ServiceList

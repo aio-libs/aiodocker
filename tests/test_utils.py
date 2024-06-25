@@ -64,6 +64,6 @@ def test_clean_filters() -> None:
     result = {"a": ["1", "2", "3", "4"], "b": ["string"]}
     assert utils.clean_filters(filters=filters) == json.dumps(result)
 
-    filters = {}
-    result = {"a": ["1", "2", "3", "4"], "b": ["string"]}
-    assert utils.clean_filters(filters=filters) == json.dumps(result)
+    filters2: Sequence[str] = ()
+    result2: Sequence[str] = []
+    assert utils.clean_filters(filters=filters2) == json.dumps(result2)
