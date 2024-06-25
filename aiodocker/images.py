@@ -29,7 +29,7 @@ class DockerImages:
     def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def list(self, **params) -> Dict[str, Any]:
+    async def list(self, **params) -> List[Any]:
         """
         List of images
         """
