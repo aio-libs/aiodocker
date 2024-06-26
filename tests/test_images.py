@@ -34,7 +34,7 @@ async def test_build_from_remote_file(
 
     remote = (
         "https://raw.githubusercontent.com/aio-libs/"
-        "aiodocker/master/tests/docker/Dockerfile"
+        "aiodocker/main/tests/docker/Dockerfile"
     )
 
     tag = f"{random_name()}:1.0"
@@ -52,7 +52,7 @@ async def test_build_from_remote_tar(
 
     remote = (
         "https://github.com/aio-libs/aiodocker/"
-        "raw/master/tests/docker/docker_context.tar"
+        "raw/main/tests/docker/docker_context.tar"
     )
 
     tag = f"{random_name()}:1.0"
