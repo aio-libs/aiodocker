@@ -5,10 +5,10 @@ name: CI/CD
 on:
   merge_group:
   push:
-    branches: [ master ]
+    branches: [ main ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   schedule:
     - cron:  '0 6 * * *'  # Daily 6AM UTC build
 
