@@ -12,6 +12,32 @@ Changes
 
 .. towncrier release notes start
 
+0.22.0 (2024-06-26)
+===================
+
+NOTICE: This release drops support for Python 3.7 and older. Please upgrade your Python version or keep using prior releases.
+
+Features
+--------
+
+- Adds the force parameter to `DockerVolume.delete()` (#690)
+- Migrate from setuptools to hatch.  To install the package and all dependencies, use "pip install .[dev,doc]". (#848)
+
+
+Bugfixes
+--------
+
+- Support additional parameters in swarm init (#323)
+- Fixes unittests that don't run locally due to deprecations in later versions of Docker. Tested with 26.00, v1.45. (#849)
+- Fix never-awaited coroutines of `_AsyncCM` to close when handling errors (#861)
+
+
+Misc
+----
+
+- #850
+
+
 0.22.0a1 (2024-05-21)
 =====================
 
