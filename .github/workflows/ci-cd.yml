@@ -122,13 +122,13 @@ jobs:
     - name: Prepare Docker images (Linux)
       if: ${{ runner.os == 'Linux' }}
       run: |
-        docker pull python:3.12-alpine
+        docker pull python:alpine
     - name: Prepare Docker images (Windows)
       if: ${{ runner.os == 'Windows' }}
       # Unfortunately, there is no slim version for Windows.
       # This may take more than 10 minutes as the image size is a few gigabytes.
       run: |
-        docker pull python:3.12
+        docker pull python:latest
     - name: Start Docker services
       if: ${{ matrix.registry == '1' }}
       run: |
