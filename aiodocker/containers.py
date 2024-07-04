@@ -200,7 +200,6 @@ class DockerContainer:
         try:
             inspect_info = await self.show()
         except DockerError:
-            cm.cancel()
             raise
         is_tty = inspect_info["Config"]["Tty"]
 
