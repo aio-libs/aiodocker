@@ -43,8 +43,8 @@ dev = [
     "pytest-asyncio==0.23.7",
     "pytest-cov==5.0.0",
     "pytest-sugar==1.0.0",
-    "ruff==0.4.10",
-    "ruff-lsp==0.0.53",
+    "ruff==0.5.0",
+    "ruff-lsp==0.0.54",
     "towncrier==23.11.0"
 ]
 doc = [
