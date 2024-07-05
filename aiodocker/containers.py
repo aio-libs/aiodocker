@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import shlex
 import tarfile
+from contextlib import AbstractAsyncContextManager
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -18,7 +19,7 @@ from typing import (
     overload,
 )
 
-from aiohttp import ClientWebSocketResponse
+from aiohttp import ClientResponse, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
@@ -196,7 +197,9 @@ class DockerContainer:
         else:
             return self._logs_list(cm)
 
-    async def _logs_stream(self, cm):
+    async def _logs_stream(
+        self, cm: AbstractAsyncContextManager[ClientResponse]
+    ) -> AsyncIterator[str]:
         try:
             inspect_info = await self.show()
         except DockerError:
@@ -207,7 +210,9 @@ class DockerContainer:
             async for item in multiplexed_result_stream(response, is_tty=is_tty):
                 yield item
 
-    async def _logs_list(self, cm):
+    async def _logs_list(
+        self, cm: AbstractAsyncContextManager[ClientResponse]
+    ) -> Sequence[str]:
         try:
             inspect_info = await self.show()
         except DockerError:
@@ -224,6 +229,7 @@ class DockerContainer:
             params={"path": path},
         ) as response:
             data = await parse_result(response)
+            assert isinstance(data, tarfile.TarFile)
             return data
 
     async def put_archive(self, path, data):
