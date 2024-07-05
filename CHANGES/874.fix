@@ -1,0 +1,1 @@
+Fix a missing removal of the legacy `AsyncCM` interface usage and update type annotations to avoid this in the future
