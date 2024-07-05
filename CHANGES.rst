@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.22.1 (2024-07-05)
+===================
+
+Bugfixes
+--------
+
+- Fix a missing removal of the legacy `AsyncCM` interface usage and update type annotations to avoid this in the future (#874)
+
+
 0.22.0 (2024-06-26)
 ===================
 
