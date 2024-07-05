@@ -14,7 +14,7 @@ on:
 
 
 env:
-  PYTHON_LATEST: 3.12
+  PYTHON_LATEST: '3.12'
   PROJECT_NAME: aiodocker
 
   # For re-actors/checkout-python-sdist
