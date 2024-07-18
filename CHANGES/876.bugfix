@@ -1,1 +1,0 @@
-Use ``TYPE_CHECKING`` flag to avoid importing from ``typing_extensions`` at run time

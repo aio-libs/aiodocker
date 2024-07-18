@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.22.2 (2024-07-18)
+===================
+
+Bugfixes
+--------
+
+- Use ``TYPE_CHECKING`` flag to avoid importing from ``typing_extensions`` at run time (#876)
+
+
 0.22.1 (2024-07-05)
 ===================
 
