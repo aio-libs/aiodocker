@@ -37,7 +37,7 @@ ci = [
 dev = [
     "async-timeout==4.0.3",
     "codecov==2.1.13",
-    "mypy==1.10.1",
+    "mypy==1.11.1",
     "packaging==24.1",
     "pre-commit>=3.5.0",
     "pytest==8.2.2",
