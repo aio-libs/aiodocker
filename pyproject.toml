@@ -49,7 +49,7 @@ dev = [
     "towncrier==23.11.0"
 ]
 doc = [
-    "alabaster==0.7.16",
+    "alabaster==1.0.0",
     "sphinx==7.3.7",
     "sphinx-autodoc-typehints==2.2.2",
     "sphinxcontrib-asyncio==0.3.0"
