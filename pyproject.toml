@@ -46,7 +46,7 @@ dev = [
     "pytest-sugar==1.0.0",
     "ruff==0.5.0",
     "ruff-lsp==0.0.54",
-    "towncrier==23.11.0"
+    "towncrier==24.7.1"
 ]
 doc = [
     "alabaster==0.7.16",
