@@ -51,7 +51,7 @@ dev = [
 doc = [
     "alabaster==0.7.16",
     "sphinx==7.3.7",
-    "sphinx-autodoc-typehints==2.2.2",
+    "sphinx-autodoc-typehints==2.2.3",
     "sphinxcontrib-asyncio==0.3.0"
 ]
 
