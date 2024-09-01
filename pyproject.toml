@@ -32,7 +32,7 @@ ci = [
     "aiohttp==3.9.5",
     "async-timeout==4.0.3",
     "multidict==6.0.5",
-    "yarl==1.9.4",
+    "yarl==1.9.6",
 ]
 dev = [
     "async-timeout==4.0.3",
