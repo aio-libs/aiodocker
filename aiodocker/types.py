@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 from typing import (
     Mapping,
     Protocol,
@@ -40,8 +41,8 @@ class PortInfo(TypedDict):
     HostPort: str
 
 
-class Sentinel:
-    pass
+class Sentinel(enum.Enum):
+    TOKEN = enum.auto()
 
 
-SENTINEL = Sentinel()
+SENTINEL = Sentinel.TOKEN
