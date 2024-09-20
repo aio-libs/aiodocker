@@ -17,7 +17,7 @@ from typing import (
 )
 
 from .jsonstream import json_stream_list, json_stream_stream
-from .types import JSONObject, SupportsRead
+from .types import JSONObject, SENTINEL, Sentinel, SupportsRead
 from .utils import clean_map, compose_auth_header
 
 
@@ -69,6 +69,7 @@ class DockerImages:
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: Literal[False] = False,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Dict[str, Any]: ...
 
     @overload
@@ -81,6 +82,7 @@ class DockerImages:
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: Literal[True],
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def pull(
@@ -92,6 +94,7 @@ class DockerImages:
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: bool = False,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Any:
         """
         Similar to `docker pull`, pull an image locally
@@ -122,7 +125,13 @@ class DockerImages:
                 )
             # TODO: assert registry == repo?
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
-        cm = self.docker._query("images/create", "POST", params=params, headers=headers)
+        cm = self.docker._query(
+            "images/create",
+            "POST",
+            params=params,
+            headers=headers,
+            timeout=timeout,
+        )
         return self._handle_response(cm, stream)
 
     def _handle_response(self, cm, stream):

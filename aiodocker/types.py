@@ -38,3 +38,9 @@ JSONList: TypeAlias = Sequence["JSONValue"]
 class PortInfo(TypedDict):
     HostIp: str
     HostPort: str
+
+
+class Sentinel:
+    pass
+
+SENTINEL = Sentinel()
