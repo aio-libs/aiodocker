@@ -17,7 +17,7 @@ from typing import (
 )
 
 from .jsonstream import json_stream_list, json_stream_stream
-from .types import JSONObject, SENTINEL, Sentinel, SupportsRead
+from .types import SENTINEL, JSONObject, Sentinel, SupportsRead
 from .utils import clean_map, compose_auth_header
 
 

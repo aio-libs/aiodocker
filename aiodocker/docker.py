@@ -40,7 +40,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .types import Sentinel, SENTINEL
+from .types import SENTINEL, Sentinel
 from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 

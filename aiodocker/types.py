@@ -43,4 +43,5 @@ class PortInfo(TypedDict):
 class Sentinel:
     pass
 
+
 SENTINEL = Sentinel()
