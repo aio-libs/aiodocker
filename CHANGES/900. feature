@@ -1,1 +1,0 @@
-Add a sentinel value to allow a 'None' timeout when querying.
