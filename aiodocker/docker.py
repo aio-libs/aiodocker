@@ -261,11 +261,11 @@ class Docker:
             headers = CIMultiDict(headers)
             if "Content-Type" not in headers:
                 headers["Content-Type"] = "application/json"
-        if isinstance(timeout, (int, float)):
-            timeout = aiohttp.ClientTimeout(timeout)
-        elif timeout is SENTINEL:
+        if timeout is SENTINEL:
             timeout = self.session.timeout
         assert not isinstance(timeout, Sentinel)
+        if not isinstance(timeout, aiohttp.ClientTimeout):
+            timeout = aiohttp.ClientTimeout(timeout)
         try:
             real_params = httpize(params)
             response = await self.session.request(
