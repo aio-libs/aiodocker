@@ -219,7 +219,7 @@ class Docker:
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         chunked=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
@@ -249,7 +249,7 @@ class Docker:
         params: Optional[JSONObject],
         data: Any,
         headers,
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         chunked,
         read_until_eof: bool,
         versioned_api: bool,
@@ -261,8 +261,11 @@ class Docker:
             headers = CIMultiDict(headers)
             if "Content-Type" not in headers:
                 headers["Content-Type"] = "application/json"
-        if timeout is SENTINEL:
+        if isinstance(timeout, (int, float)):
+            timeout = aiohttp.ClientTimeout(timeout)
+        elif timeout is SENTINEL:
             timeout = self.session.timeout
+        assert not isinstance(timeout, Sentinel)
         try:
             real_params = httpize(params)
             response = await self.session.request(
@@ -305,7 +308,7 @@ class Docker:
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
-        timeout=None,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> Any:
@@ -338,7 +341,7 @@ class Docker:
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
-        timeout=None,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:
