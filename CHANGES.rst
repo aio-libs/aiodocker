@@ -12,6 +12,15 @@ Changes
 
 .. towncrier release notes start
 
+0.23.0 (2024-09-23)
+===================
+
+Features
+--------
+
+- Introduce a sentinel value to `_do_query()` and its friend methods to allow configuring per-request infinite timeouts instead of always falling back to the session-level default timeout when setting the timeout argument to `None`, and add the timeout arguments to image-related API wrappers (#900)
+
+
 0.22.2 (2024-07-18)
 ===================
 
