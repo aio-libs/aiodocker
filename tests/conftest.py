@@ -6,6 +6,7 @@ import sys
 import traceback
 import uuid
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncIterator,
     Awaitable,
@@ -15,11 +16,17 @@ from typing import (
 
 import pytest
 from packaging.version import parse as parse_version
-from typing_extensions import TypeAlias
 
 from aiodocker.containers import DockerContainer
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+
+
+if TYPE_CHECKING:
+    if sys.version_info < (3, 10):
+        from typing_extensions import TypeAlias
+    else:
+        from typing import TypeAlias
 
 
 API_VERSIONS = {

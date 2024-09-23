@@ -12,6 +12,24 @@ Changes
 
 .. towncrier release notes start
 
+0.22.2 (2024-07-18)
+===================
+
+Bugfixes
+--------
+
+- Use ``TYPE_CHECKING`` flag to avoid importing from ``typing_extensions`` at run time (#876)
+
+
+0.22.1 (2024-07-05)
+===================
+
+Bugfixes
+--------
+
+- Fix a missing removal of the legacy `AsyncCM` interface usage and update type annotations to avoid this in the future (#874)
+
+
 0.22.0 (2024-06-26)
 ===================
 

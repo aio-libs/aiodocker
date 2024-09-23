@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import enum
+import sys
 from typing import (
+    TYPE_CHECKING,
     Mapping,
     Protocol,
     Sequence,
@@ -10,7 +12,12 @@ from typing import (
     Union,
 )
 
-from typing_extensions import TypeAlias
+
+if TYPE_CHECKING:
+    if sys.version_info < (3, 10):
+        from typing_extensions import TypeAlias
+    else:
+        from typing import TypeAlias
 
 
 _T_co = TypeVar("_T_co", covariant=True)
