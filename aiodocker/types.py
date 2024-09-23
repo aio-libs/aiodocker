@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import sys
 from typing import (
     TYPE_CHECKING,
@@ -45,3 +46,10 @@ JSONList: TypeAlias = Sequence["JSONValue"]
 class PortInfo(TypedDict):
     HostIp: str
     HostPort: str
+
+
+class Sentinel(enum.Enum):
+    TOKEN = enum.auto()
+
+
+SENTINEL = Sentinel.TOKEN

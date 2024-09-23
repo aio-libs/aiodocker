@@ -40,6 +40,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
+from .types import SENTINEL, Sentinel
 from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
@@ -218,7 +219,7 @@ class Docker:
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
-        timeout=None,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         chunked=None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
@@ -248,7 +249,7 @@ class Docker:
         params: Optional[JSONObject],
         data: Any,
         headers,
-        timeout,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         chunked,
         read_until_eof: bool,
         versioned_api: bool,
@@ -260,8 +261,11 @@ class Docker:
             headers = CIMultiDict(headers)
             if "Content-Type" not in headers:
                 headers["Content-Type"] = "application/json"
-        if timeout is None:
+        if timeout is SENTINEL:
             timeout = self.session.timeout
+        assert not isinstance(timeout, Sentinel)
+        if not isinstance(timeout, aiohttp.ClientTimeout):
+            timeout = aiohttp.ClientTimeout(timeout)
         try:
             real_params = httpize(params)
             response = await self.session.request(
@@ -304,7 +308,7 @@ class Docker:
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
-        timeout=None,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> Any:
@@ -337,7 +341,7 @@ class Docker:
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers=None,
-        timeout=None,
+        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:

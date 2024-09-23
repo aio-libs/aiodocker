@@ -1,0 +1,1 @@
+Introduce a sentinel value to `_do_query()` and its friend methods to allow configuring per-request infinite timeouts instead of always falling back to the session-level default timeout when setting the timeout argument to `None`, and add the timeout arguments to image-related API wrappers
