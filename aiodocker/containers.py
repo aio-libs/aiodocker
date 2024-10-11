@@ -19,7 +19,7 @@ from typing import (
     overload,
 )
 
-from aiohttp import ClientResponse, ClientWebSocketResponse
+from aiohttp import ClientResponse, ClientWebSocketResponse, ClientTimeout
 from multidict import MultiDict
 from yarl import URL
 
@@ -189,8 +189,11 @@ class DockerContainer:
 
         params = {"stdout": stdout, "stderr": stderr, "follow": follow}
         params.update(kwargs)
+
+        timeout = ClientTimeout(total=None, connect=30, sock_connect=30, sock_read=None)
+
         cm = self.docker._query(
-            f"containers/{self._id}/logs", method="GET", params=params
+            f"containers/{self._id}/logs", method="GET", params=params, timeout=timeout
         )
         if follow:
             return self._logs_stream(cm)
