@@ -70,7 +70,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[False] = False,
         timeout: Union[float, Sentinel, None] = SENTINEL,
-    ) -> Dict[str, Any]: ...
+    ) -> List[Dict[str, Any]]: ...
 
     @overload
     def pull(
@@ -157,7 +157,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]: ...
+    ) -> List[Dict[str, Any]]: ...
 
     @overload
     def push(
@@ -269,7 +269,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[False] = False,
         encoding: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> List[Dict[str, Any]]:
         pass
 
     @overload
