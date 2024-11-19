@@ -31,7 +31,7 @@ ci = [
     # pinned for reproducible CI
     "aiohttp==3.10.5",
     "async-timeout==4.0.3",
-    "multidict==6.0.5",
+    "multidict==6.1.0",
     "yarl==1.11.1",
 ]
 dev = [
