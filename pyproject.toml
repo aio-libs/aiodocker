@@ -30,12 +30,12 @@ dependencies = [
 ci = [
     # pinned for reproducible CI
     "aiohttp==3.11.6",
-    "async-timeout==4.0.3",
+    "async-timeout==5.0.1",
     "multidict==6.1.0",
     "yarl==1.17.2",
 ]
 dev = [
-    "async-timeout==4.0.3",
+    "async-timeout==5.0.1",
     "codecov==2.1.13",
     "mypy==1.11.2",
     "packaging==24.1",
