@@ -44,7 +44,7 @@ dev = [
     "pytest-cov==5.0.0",
     "pytest-sugar==1.0.0",
     "ruff==0.7.1",
-    "ruff-lsp==0.0.54",
+    "ruff-lsp==0.0.58",
     "towncrier==24.8.0"
 ]
 doc = [
