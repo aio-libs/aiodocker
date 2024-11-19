@@ -19,7 +19,7 @@ from typing import (
     overload,
 )
 
-from aiohttp import ClientResponse, ClientWebSocketResponse, ClientTimeout
+from aiohttp import ClientResponse, ClientTimeout, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
