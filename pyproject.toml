@@ -11,12 +11,11 @@ dynamic = ["version"]
 readme = "README.rst"
 description = "A simple Docker HTTP API wrapper written with asyncio and aiohttp."
 license = { text = "Apache 2.0" }
-requires-python = ">=3.8.0"
+requires-python = ">=3.9.0"
 
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
