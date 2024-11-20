@@ -157,6 +157,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[False] = False,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Dict[str, Any]: ...
 
     @overload
@@ -167,6 +168,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[True],
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def push(
@@ -176,6 +178,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: bool = False,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Any:
         params = {}
         headers = {
@@ -197,6 +200,7 @@ class DockerImages:
             "POST",
             params=params,
             headers=headers,
+            timeout=timeout,
         )
         return self._handle_response(cm, stream)
 
