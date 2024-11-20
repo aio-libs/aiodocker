@@ -1,0 +1,1 @@
+Fix `DockerImages.build()`, `DockerImages.pull()`, `DockerImages.push()` methods' incorrect return type declarations.
