@@ -6,6 +6,7 @@ ifdef CI
 else
 	pre-commit run --all-files
 endif
+	mypy
 
 
 develop:
