@@ -90,6 +90,8 @@ preview = true  # enable the black's preview style
 [tool.mypy]
 files = ["aiodocker", "examples", "tests"]
 ignore_missing_imports = true
+# strict = true
+pretty = true
 
 [tool.pytest.ini_options]
 addopts = "--cov-branch --cov-report xml --cov=aiodocker -v"
