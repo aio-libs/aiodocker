@@ -182,6 +182,7 @@ class DockerContainer:
         stdout: bool = False,
         stderr: bool = False,
         follow: bool = False,
+        timeout: Optional[ClientTimeout] = None,
         **kwargs,
     ) -> Any:
         if stdout is False and stderr is False:
@@ -190,11 +191,12 @@ class DockerContainer:
         params = {"stdout": stdout, "stderr": stderr, "follow": follow}
         params.update(kwargs)
 
-        timeout = ClientTimeout(total=None, connect=30, sock_connect=30, sock_read=None)
+        query_args = {"method": "GET", "params": params}
+        if isinstance(timeout, ClientTimeout):
+            query_args["timeout"] = timeout
 
-        cm = self.docker._query(
-            f"containers/{self._id}/logs", method="GET", params=params, timeout=timeout
-        )
+        cm = self.docker._query(f"containers/{self._id}/logs", **query_args)
+
         if follow:
             return self._logs_stream(cm)
         else:
