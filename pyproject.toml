@@ -29,7 +29,7 @@ dependencies = [
 [project.optional-dependencies]
 ci = [
     # pinned for reproducible CI
-    "aiohttp==3.11.6",
+    "aiohttp==3.11.8",
     "async-timeout==5.0.1",
     "multidict==6.1.0",
     "yarl==1.17.2",
