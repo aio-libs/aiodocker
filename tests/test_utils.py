@@ -72,4 +72,7 @@ def test_clean_filters() -> None:
 
 def test_compose_auth_header():
     auth = {"username": "alice", "password": "~"}
-    assert utils.compose_auth_header(auth) == "eyJ1c2VybmFtZSI6ICJhbGljZSIsICJwYXNzd29yZCI6ICJ-In0="
+    assert (
+        utils.compose_auth_header(auth)
+        == "eyJ1c2VybmFtZSI6ICJhbGljZSIsICJwYXNzd29yZCI6ICJ-In0="
+    )
