@@ -298,4 +298,4 @@ def compose_auth_header(
         auth_json = json.dumps(config).encode("utf-8")
     else:
         raise TypeError("auth must be base64 encoded string/bytes or a dictionary")
-    return base64.b64encode(auth_json).decode("ascii")
+    return base64.urlsafe_b64encode(auth_json).decode("ascii")

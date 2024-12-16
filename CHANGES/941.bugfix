@@ -1,0 +1,1 @@
+Fix issue authenticating against private registries where the `X-Registry-Auth` header would require URL-safe substitutions.
