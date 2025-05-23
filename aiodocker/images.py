@@ -273,6 +273,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[False] = False,
         encoding: Optional[str] = None,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> List[Dict[str, Any]]:
         pass
 
@@ -294,6 +295,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[True],
         encoding: Optional[str] = None,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
@@ -314,6 +316,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: bool = False,
         encoding: Optional[str] = None,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Any:
         """
         Build an image given a remote Dockerfile
@@ -378,6 +381,7 @@ class DockerImages:
             params=clean_map(params),
             headers=headers,
             data=data,
+            timeout=timeout,
         )
         return self._handle_response(cm, stream)
 
