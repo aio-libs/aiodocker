@@ -389,9 +389,7 @@ class Docker:
         context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)  # type: ignore
         certs_path = os.environ.get("DOCKER_CERT_PATH", None)
         if certs_path is None:
-            raise ValueError(
-                "Cannot create ssl context, " "DOCKER_CERT_PATH is not set!"
-            )
+            raise ValueError("Cannot create ssl context, DOCKER_CERT_PATH is not set!")
         certs_path2 = Path(certs_path)
         context.load_verify_locations(cafile=str(certs_path2 / "ca.pem"))
         context.load_cert_chain(
