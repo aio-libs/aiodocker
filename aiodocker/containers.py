@@ -19,7 +19,7 @@ from typing import (
     overload,
 )
 
-from aiohttp import ClientResponse, ClientWebSocketResponse
+from aiohttp import ClientResponse, ClientTimeout, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
@@ -31,7 +31,7 @@ from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
-from .types import PortInfo
+from .types import SENTINEL, PortInfo, Sentinel
 from .utils import identical, parse_result
 
 
@@ -467,6 +467,7 @@ class DockerContainer:
         changes: Optional[Union[str, Sequence[str]]] = None,
         config: Optional[Dict[str, Any]] = None,
         pause: bool = True,
+        timeout: Union[float, ClientTimeout, Sentinel, None] = SENTINEL,
     ) -> Dict[str, Any]:
         """
         Commit a container to an image. Similar to the ``docker commit``
@@ -487,7 +488,11 @@ class DockerContainer:
             params["changes"] = changes
 
         return await self.docker._query_json(
-            "commit", method="POST", params=params, data=config
+            "commit",
+            method="POST",
+            params=params,
+            data=config,
+            timeout=timeout,
         )
 
     async def pause(self) -> None:
