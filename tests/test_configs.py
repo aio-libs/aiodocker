@@ -1,4 +1,5 @@
 import secrets
+
 import pytest
 
 from aiodocker.exceptions import DockerError
