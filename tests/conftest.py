@@ -4,12 +4,13 @@ import asyncio
 import os
 import secrets
 import sys
-import traceback
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from typing import Any, Callable
 
 import pytest
 from packaging.version import parse as parse_version
+from testcontainers.core.container import DockerContainer as TempContainer
+from testcontainers.core.wait_strategies import HttpWaitStrategy
 
 from aiodocker.containers import DockerContainer
 from aiodocker.docker import Docker
@@ -17,46 +18,79 @@ from aiodocker.exceptions import DockerError
 from aiodocker.types import AsyncContainerFactory
 
 
-def _random_name():
-    return "aiodocker-" + secrets.token_hex(4)
-
-
 @pytest.fixture(scope="session")
 async def random_name():
-    yield _random_name
-
-    # If some test cases have used randomly-named temporary images,
-    # we need to clean up them!
-    if os.environ.get("CI") is not None:
-        # But inside the CI server, we don't need clean up!
-        return
+    random_image_name = "aiodocker-" + secrets.token_hex(4)
+    yield random_image_name
 
     docker = Docker()
-    images = await docker.images.list()
-    for img in images:
-        if not img["RepoTags"]:
-            continue
-        try:
-            if img["RepoTags"][0].startswith("aiodocker-"):
-                print("Deleting image id: {}".format(img["Id"]))
-                await docker.images.delete(img["Id"], force=True)
-        except DockerError:
-            traceback.print_exc()
-    await docker.close()
+    try:
+        image = await docker.images.inspect(random_image_name)
+        print(f"Deleting image: {random_image_name} ({image['Id']})")
+        await docker.images.delete(random_image_name, force=True)
+    except DockerError as e:
+        if e.status == 404:
+            pass
+        else:
+            raise
+    finally:
+        await docker.close()
+
+
+@pytest.fixture(scope="module")
+def plain_registry() -> Iterator[TempContainer]:
+    with TempContainer(
+        "registry:2",
+        name="aiodocker-test-registry",
+        ports=[5000],
+        _wait_strategy=HttpWaitStrategy(5000).for_status_code(200),
+    ) as plain_registry:
+        yield plain_registry
+
+
+@pytest.fixture(scope="module")
+def secure_registry() -> Iterator[TempContainer]:
+    with TempContainer(
+        "registry:2",
+        name="aiodocker-test-registry2",
+        ports=[5001],
+        volumes=[(f"{os.getcwd()}/tests/certs", "/certs", "ro")],
+        env={
+            "REGISTRY_AUTH": "htpasswd",
+            "REGISTRY_AUTH_HTPASSWD_REALM": "Registry Realm",
+            "REGISTRY_AUTH_HTPASSWD_PATH": "/certs/htpasswd",
+            "REGISTRY_HTTP_ADDR": "0.0.0.0:5001",
+            "REGISTRY_HTTP_TLS_CERTIFICATE": "/certs/registry.crt",
+            "REGISTRY_HTTP_TLS_KEY": "/certs/registry.key",
+        },
+        _wait_strategy=(
+            HttpWaitStrategy(5001).using_tls(insecure=True).for_status_code(200)
+        ),
+    ) as secure_registry:
+        yield secure_registry
 
 
 @pytest.fixture(scope="session")
 def image_name() -> str:
     if sys.platform == "win32":
-        return "python:latest"
-    return "python:alpine"
+        return "python:3.13"
+    return "python:3.13-alpine"
 
 
 @pytest.fixture(scope="session")
-async def testing_images(image_name: str) -> None:
-    # Prepare a small Linux image shared by most test cases.
-    proc = await asyncio.create_subprocess_exec("docker", "pull", image_name)
-    await proc.wait()
+def image_name_updated() -> str:
+    if sys.platform == "win32":
+        return "python:3.14"
+    return "python:3.14-alpine"
+
+
+@pytest.fixture(scope="session")
+async def testing_images(image_name: str, image_name_updated: str) -> list[str]:
+    images = [image_name, image_name_updated]
+    for ref in images:
+        proc = await asyncio.create_subprocess_exec("docker", "pull", ref)
+        await proc.wait()
+    return images
 
 
 @pytest.fixture

@@ -49,7 +49,7 @@ def skip_windows() -> None:
 
 
 @pytest.mark.asyncio
-async def test_autodetect_host(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_autodetect_host() -> None:
     docker = Docker()
     if "DOCKER_HOST" in os.environ:
         if (
@@ -178,7 +178,9 @@ async def test_container_lifecycles(docker: Docker, image_name: str) -> None:
     reason="Docker for Mac and Windows has a bug with websocket",
 )
 async def test_stdio_stdin(
-    docker: Docker, testing_images: List[str], shell_container: DockerContainer
+    docker: Docker,
+    testing_images: List[str],
+    shell_container: DockerContainer,
 ) -> None:
     # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
@@ -226,7 +228,6 @@ async def test_stdio_stdin(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
 async def test_attach_nontty(
-    docker: Docker,
     image_name: str,
     make_container: AsyncContainerFactory,
     stderr: bool,
@@ -261,7 +262,6 @@ async def test_attach_nontty(
 
 @pytest.mark.asyncio
 async def test_attach_nontty_wait_for_exit(
-    docker: Docker,
     image_name: str,
     make_container: AsyncContainerFactory,
 ) -> None:
@@ -288,7 +288,6 @@ async def test_attach_nontty_wait_for_exit(
 @pytest.mark.asyncio
 @pytest.mark.xfail(reason="Failing since Oct 8th 2024 for unknown reasons")
 async def test_attach_tty(
-    docker: Docker,
     image_name: str,
     make_container: AsyncContainerFactory,
 ) -> None:
@@ -329,8 +328,6 @@ async def test_attach_tty(
 
 @pytest.mark.asyncio
 async def test_wait_timeout(
-    docker: Docker,
-    testing_images: List[str],
     shell_container: DockerContainer,
 ) -> None:
     t1 = datetime.datetime.now()

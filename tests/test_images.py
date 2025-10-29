@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import AsyncIterator
 from io import BytesIO
-from typing import AsyncIterator, Callable
+from typing import Callable
 
 import pytest
+from testcontainers.core.container import DockerContainer as TempContainer
 
 from aiodocker import utils
 from aiodocker.docker import Docker
@@ -21,7 +23,7 @@ def skip_windows() -> None:
 @pytest.mark.asyncio
 async def test_build_from_remote_file(
     docker: Docker,
-    random_name: Callable[[], str],
+    random_name: str,
     requires_api_version: Callable[[str, str], None],
 ) -> None:
     skip_windows()
@@ -37,7 +39,7 @@ async def test_build_from_remote_file(
         "aiodocker/main/tests/docker/Dockerfile"
     )
 
-    tag = f"{random_name()}:1.0"
+    tag = f"{random_name}:1.0"
     await docker.images.build(tag=tag, remote=remote, stream=False)
 
     image = await docker.images.inspect(tag)
@@ -45,16 +47,14 @@ async def test_build_from_remote_file(
 
 
 @pytest.mark.asyncio
-async def test_build_from_remote_tar(
-    docker: Docker, random_name: Callable[[], str]
-) -> None:
+async def test_build_from_remote_tar(docker: Docker, random_name: str) -> None:
     skip_windows()
 
     remote = (
         "https://github.com/aio-libs/aiodocker/raw/main/tests/docker/docker_context.tar"
     )
 
-    tag = f"{random_name()}:1.0"
+    tag = f"{random_name}:1.0"
     await docker.images.build(tag=tag, remote=remote, stream=False)
 
     image = await docker.images.inspect(tag)
@@ -74,10 +74,8 @@ async def test_list_images(docker: Docker, image_name: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_tag_image(
-    docker: Docker, random_name: Callable[[], str], image_name: str
-) -> None:
-    repository = random_name()
+async def test_tag_image(docker: Docker, random_name: str, image_name: str) -> None:
+    repository = random_name
     await docker.images.tag(name=image_name, repo=repository, tag="1.0")
     await docker.images.tag(name=image_name, repo=repository, tag="2.0")
     image = await docker.images.inspect(image_name)
@@ -85,33 +83,46 @@ async def test_tag_image(
 
 
 @pytest.mark.asyncio
-async def test_push_image(docker: Docker, image_name: str) -> None:
-    repository = "localhost:5000/image"
+async def test_push_image(
+    docker: Docker,
+    plain_registry: TempContainer,
+    image_name: str,
+) -> None:
+    registry_addr = f"{plain_registry.get_container_host_ip()}:{plain_registry.get_exposed_port(5000)}"
+    repository = f"{registry_addr}/image"
     await docker.images.tag(name=image_name, repo=repository)
     await docker.images.push(name=repository)
 
 
 @pytest.mark.asyncio
-async def test_push_image_stream(docker: Docker, image_name: str) -> None:
-    repository = "localhost:5000/image"
+async def test_push_image_stream(
+    docker: Docker,
+    plain_registry: TempContainer,
+    image_name: str,
+) -> None:
+    registry_addr = f"{plain_registry.get_container_host_ip()}:{plain_registry.get_exposed_port(5000)}"
+    repository = f"{registry_addr}/image"
     await docker.images.tag(name=image_name, repo=repository)
     async for item in docker.images.push(name=repository, stream=True):
         pass
 
 
 @pytest.mark.asyncio
-async def test_delete_image(docker: Docker, image_name: str) -> None:
-    repository = "localhost:5000/image"
+async def test_delete_image(
+    docker: Docker,
+    plain_registry: TempContainer,
+    image_name: str,
+) -> None:
+    registry_addr = f"{plain_registry.get_container_host_ip()}:{plain_registry.get_exposed_port(5000)}"
+    repository = f"{registry_addr}/image"
     await docker.images.tag(name=image_name, repo=repository)
     assert await docker.images.inspect(repository)
     await docker.images.delete(name=repository)
 
 
 @pytest.mark.asyncio
-async def test_not_existing_image(
-    docker: Docker, random_name: Callable[[], str]
-) -> None:
-    name = f"{random_name()}:latest"
+async def test_not_existing_image(docker: Docker, random_name: str) -> None:
+    name = f"{random_name}:latest"
     with pytest.raises(DockerError) as excinfo:
         await docker.images.inspect(name=name)
     assert excinfo.value.status == 404
@@ -138,9 +149,9 @@ async def test_pull_image_stream(docker: Docker, image_name: str) -> None:
 
 @pytest.mark.asyncio
 async def test_build_from_tar(
-    docker: Docker, random_name: Callable[[], str], image_name: str
+    docker: Docker, random_name: str, image_name: str
 ) -> None:
-    name = f"{random_name()}:latest"
+    name = f"{random_name}:latest"
     dockerfile = f"""
     # Shared Volume
     FROM {image_name}
@@ -155,9 +166,9 @@ async def test_build_from_tar(
 
 @pytest.mark.asyncio
 async def test_build_from_tar_stream(
-    docker: Docker, random_name: Callable[[], str], image_name: str
+    docker: Docker, random_name: str, image_name: str
 ) -> None:
-    name = f"{random_name()}:latest"
+    name = f"{random_name}:latest"
     dockerfile = f"""
     # Shared Volume
     FROM {image_name}
@@ -209,12 +220,18 @@ async def test_import_image(docker: Docker) -> None:
 
 
 @pytest.mark.asyncio
-async def test_pups_image_auth(docker: Docker, image_name: str) -> None:
+async def test_pups_image_auth(
+    docker: Docker,
+    secure_registry: TempContainer,
+    image_name: str,
+) -> None:
     skip_windows()
 
     name = image_name
     await docker.images.pull(from_image=name)
-    repository = "localhost:5001/image:latest"
+
+    registry_addr = f"{secure_registry.get_container_host_ip()}:{secure_registry.get_exposed_port(5001)}"
+    repository = f"{registry_addr}/image:latest"
     image, tag = repository.rsplit(":", 1)
     registry_addr, image_name = image.split("/", 1)
     await docker.images.tag(name=name, repo=image, tag=tag)
