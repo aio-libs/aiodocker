@@ -2,18 +2,25 @@ from __future__ import annotations
 
 import enum
 from collections.abc import (
+    Awaitable,
     Mapping,
     MutableMapping,
     MutableSequence,
     Sequence,
 )
 from typing import (
+    Any,
+    Callable,
     Protocol,
     TypeAlias,
     TypedDict,
     TypeVar,
     Union,
+    TYPE_CHECKING,
 )
+
+if TYPE_CHECKING:
+    from .containers import DockerContainer
 
 
 _T_co = TypeVar("_T_co", covariant=True)
@@ -50,6 +57,10 @@ MutableJSONValue: TypeAlias = Union[
 ]
 MutableJSONObject: TypeAlias = MutableMapping[str, MutableJSONValue]
 MutableJSONList: TypeAlias = MutableSequence[MutableJSONValue]
+
+
+class AsyncContainerFactory(Protocol):
+    async def __call__(self, config: dict[str, Any], name: str) -> DockerContainer: ...
 
 
 class PortInfo(TypedDict):

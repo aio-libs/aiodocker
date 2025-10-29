@@ -2,17 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import os
+import secrets
 import sys
 import traceback
-import uuid
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-)
+from collections.abc import AsyncIterator
+from typing import Any, Callable
 
 import pytest
 from packaging.version import parse as parse_version
@@ -20,28 +14,11 @@ from packaging.version import parse as parse_version
 from aiodocker.containers import DockerContainer
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
-
-
-if TYPE_CHECKING:
-    if sys.version_info < (3, 10):
-        from typing_extensions import TypeAlias
-    else:
-        from typing import TypeAlias
-
-
-API_VERSIONS = {
-    "17.06": "v1.30",
-    "17.09": "v1.32",
-    "17.12": "v1.35",
-    "18.02": "v1.36",
-    "18.03": "v1.37",
-    "18.06": "v1.38",
-    "18.09": "v1.39",
-}
+from aiodocker.types import AsyncContainerFactory
 
 
 def _random_name():
-    return "aiodocker-" + uuid.uuid4().hex[:7]
+    return "aiodocker-" + secrets.token_hex(4)
 
 
 @pytest.fixture(scope="session")
@@ -78,34 +55,14 @@ def image_name() -> str:
 @pytest.fixture(scope="session")
 async def testing_images(image_name: str) -> None:
     # Prepare a small Linux image shared by most test cases.
-    docker = Docker()
-    try:
-        required_images = [image_name]
-        for img in required_images:
-            try:
-                await docker.images.inspect(img)
-            except DockerError as e:
-                assert e.status == 404
-                print(f'Pulling "{img}" for the testing session...')
-                await docker.pull(img)
-    finally:
-        await docker.close()
+    proc = await asyncio.create_subprocess_exec("docker", "pull", image_name)
+    await proc.wait()
 
 
 @pytest.fixture
 async def docker(testing_images):
-    kwargs = {}
-    version = os.environ.get("DOCKER_VERSION")
-    if version:
-        for k, v in API_VERSIONS.items():
-            if version.startswith(k):
-                kwargs["api_version"] = v
-                break
-        else:
-            raise RuntimeError(f"Cannot find docker API version for {version}")
-
-    docker = Docker(**kwargs)
-    print(asyncio.get_running_loop())
+    # Create a new Docker client with the default configuration.
+    docker = Docker()
     try:
         yield docker
     finally:
@@ -137,11 +94,6 @@ async def swarm(docker):
         assert await docker.swarm.leave(force=True)
 
 
-AsyncContainerFactory: TypeAlias = Callable[
-    [Dict[str, Any], str], Awaitable[DockerContainer]
-]
-
-
 @pytest.fixture
 async def make_container(
     docker: Docker,
@@ -149,7 +101,7 @@ async def make_container(
     container: DockerContainer | None = None
 
     async def _spawn(
-        config: Dict[str, Any],
+        config: dict[str, Any],
         name: str,
     ) -> DockerContainer:
         nonlocal container
@@ -162,16 +114,15 @@ async def make_container(
         yield _spawn
     finally:
         if container is not None:
-            assert isinstance(container, DockerContainer)
             await container.delete(force=True)
 
 
 @pytest.fixture
 async def shell_container(
     docker: Docker,
-    make_container,
+    make_container: AsyncContainerFactory,
     image_name: str,
-) -> AsyncContainerFactory:
+) -> DockerContainer:
     config = {
         "Cmd": ["python"],
         "Image": image_name,
@@ -181,5 +132,4 @@ async def shell_container(
         "Tty": True,
         "OpenStdin": True,
     }
-
-    return await make_container(config, name="aiodocker-testing-shell")
+    return await make_container(config, "aiodocker-testing-shell")
