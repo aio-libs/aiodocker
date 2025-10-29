@@ -16,7 +16,7 @@ docker run -d \
 	-e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
 
 # this assumes you are in venv.
-python3 -m pytest $@
+python3 -m pytest "$@"
 
 echo delete:
 docker rm -f aiodocker-test-registry
