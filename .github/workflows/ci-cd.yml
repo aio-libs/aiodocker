@@ -119,22 +119,7 @@ jobs:
     #   uses: ScribeMD/docker-cache@0.5.0
     #   with:
     #     key: docker-${{ runner.os }}
-    - name: Prepare Docker images (Linux)
-      if: ${{ runner.os == 'Linux' }}
-      run: |
-        docker pull python:alpine
-    - name: Prepare Docker images (Windows)
-      if: ${{ runner.os == 'Windows' }}
-      # Unfortunately, there is no slim version for Windows.
-      # This may take more than 10 minutes as the image size is a few gigabytes.
-      run: |
-        docker pull python:latest
-    - name: Start Docker services
-      if: ${{ matrix.registry == '1' }}
-      run: |
-        docker run -d --name ${{ env.PROJECT_NAME }}-test-registry -p 5000:5000 registry:2
-        docker run -d -p 5001:5001 --name ${{ env.PROJECT_NAME }}-test-registry2 -v `pwd`/tests/certs:/certs -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/certs/htpasswd -e REGISTRY_HTTP_ADDR=0.0.0.0:5001 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
-    - name: Run unittests
+    - name: Run tests
       env:
         COLOR: 'yes'
         DOCKER_VERSION: ${{ matrix.docker }}
