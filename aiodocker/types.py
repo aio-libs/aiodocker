@@ -2,22 +2,21 @@ from __future__ import annotations
 
 import enum
 from collections.abc import (
-    Awaitable,
     Mapping,
     MutableMapping,
     MutableSequence,
     Sequence,
 )
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Callable,
     Protocol,
     TypeAlias,
     TypedDict,
     TypeVar,
     Union,
-    TYPE_CHECKING,
 )
+
 
 if TYPE_CHECKING:
     from .containers import DockerContainer

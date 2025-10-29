@@ -9,7 +9,7 @@ import ssl
 import sys
 import tarfile
 import time
-from typing import Any, Dict, List
+from typing import Any, List
 
 import aiohttp
 import pytest
