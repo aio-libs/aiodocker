@@ -28,9 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
@@ -57,14 +57,14 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Download all the dists
       uses: actions/download-artifact@v4
       with:
         name: ${{ env.dists-artifact-name }}
         path: dist
     - name: Setup Python ${{ env.PYTHON_LATEST }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
@@ -90,12 +90,12 @@ jobs:
     - build
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         os: [ubuntu]
         registry: ['1']
         pytest-arg: ['']
         include:
-          - python-version: '3.12'
+          - python-version: '3.14'
             os: windows
             registry: '0'
             pytest-arg: '-k test_integration'
@@ -103,9 +103,9 @@ jobs:
     timeout-minutes: 30
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
@@ -167,7 +167,7 @@ jobs:
       with:
         jobs: ${{ toJSON(needs) }}
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.sha }}
     - name: Download coverage artifact
