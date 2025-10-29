@@ -80,7 +80,7 @@ async def test_run_failing_start_container(docker: Docker, image_name: str) -> N
             config={
                 # we want to raise an error
                 # `executable file not found`
-                "Cmd": ["pytohon", "-c" "print('hello')"],
+                "Cmd": ["pytohon", "-cprint('hello')"],
                 "Image": image_name,
             }
         )

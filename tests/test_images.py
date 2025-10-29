@@ -51,8 +51,7 @@ async def test_build_from_remote_tar(
     skip_windows()
 
     remote = (
-        "https://github.com/aio-libs/aiodocker/"
-        "raw/main/tests/docker/docker_context.tar"
+        "https://github.com/aio-libs/aiodocker/raw/main/tests/docker/docker_context.tar"
     )
 
     tag = f"{random_name()}:1.0"
