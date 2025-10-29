@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-import sys
 from collections.abc import (
     Mapping,
     MutableMapping,
@@ -9,7 +8,6 @@ from collections.abc import (
     Sequence,
 )
 from typing import (
-    TYPE_CHECKING,
     Protocol,
     TypeAlias,
     TypedDict,

@@ -150,7 +150,9 @@ class DockerContainer:
             "id", self._container.get("ID", self._container.get("Id"))
         )
         if _id is None:
-            raise ValueError("DockerContainer should be initialized with explicit container ID.")
+            raise ValueError(
+                "DockerContainer should be initialized with explicit container ID."
+            )
         self._id = _id
         self.logs = DockerLog(docker, self)
 
