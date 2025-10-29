@@ -90,7 +90,7 @@ def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
 
 
 def identical(d1, d2):
-    if type(d1) != type(d2):
+    if type(d1) is not type(d2):
         return False
 
     if isinstance(d1, dict):
