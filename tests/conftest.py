@@ -41,7 +41,7 @@ async def random_name():
 def plain_registry() -> Iterator[TempContainer]:
     with TempContainer(
         "registry:2",
-        name="aiodocker-test-registry",
+        name=f"aiodocker-test-registry-plain-{secrets.token_hex(4)}",
         ports=[5000],
         _wait_strategy=HttpWaitStrategy(5000).for_status_code(200),
     ) as plain_registry:
@@ -52,7 +52,7 @@ def plain_registry() -> Iterator[TempContainer]:
 def secure_registry() -> Iterator[TempContainer]:
     with TempContainer(
         "registry:2",
-        name="aiodocker-test-registry2",
+        name=f"aiodocker-test-registry-secure-{secrets.token_hex(4)}",
         ports=[5001],
         volumes=[(f"{os.getcwd()}/tests/certs", "/certs", "ro")],
         env={
