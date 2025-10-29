@@ -37,15 +37,14 @@ ci = [
 dev = [
     "async-timeout==5.0.1",
     "codecov==2.1.13",
-    "mypy==1.14.1",
-    "packaging==24.2",
+    "mypy==1.18.2",
+    "packaging==25.0",
     "pre-commit>=3.5.0",
-    "pytest==8.3.4",
-    "pytest-asyncio==0.25.0",
-    "pytest-cov==6.1.1",
-    "pytest-sugar==1.0.0",
-    "ruff==0.11.7",
-    "ruff-lsp==0.0.59",
+    "pytest==8.4.2",
+    "pytest-asyncio==1.2.0",
+    "pytest-cov==7.0.0",
+    "pytest-sugar==1.1.1",
+    "ruff==0.14.2",
     "towncrier==24.8.0"
 ]
 doc = [
