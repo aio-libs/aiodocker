@@ -95,6 +95,9 @@ class Docker:
                 try:
                     if Path("\\\\.\\pipe\\docker_engine").exists():
                         docker_host = "npipe:////./pipe/docker_engine"
+                    else:
+                        # The default address used by Docker Client on Windows
+                        docker_host = "tcp://127.0.0.1:2376"
                 except OSError as ex:
                     if ex.winerror == 231:  # type: ignore
                         # All pipe instances are busy
@@ -107,6 +110,8 @@ class Docker:
                     if sockpath.is_socket():
                         docker_host = "unix://" + str(sockpath)
                         break
+
+        assert docker_host is not None
         self.docker_host = docker_host
 
         if api_version != "auto" and _rx_version.search(api_version) is None:

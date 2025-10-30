@@ -78,8 +78,12 @@ async def test_tag_image(docker: Docker, random_name: str, image_name: str) -> N
     repository = random_name
     await docker.images.tag(name=image_name, repo=repository, tag="1.0")
     await docker.images.tag(name=image_name, repo=repository, tag="2.0")
-    image = await docker.images.inspect(image_name)
-    assert len([x for x in image["RepoTags"] if x.startswith(repository)]) == 2
+    try:
+        image = await docker.images.inspect(image_name)
+        assert len([x for x in image["RepoTags"] if x.startswith(repository)]) == 2
+    finally:
+        await docker.images.delete(f"{image_name}:1.0"))
+        await docker.images.delete(f"{image_name}:2.0"))
 
 
 @pytest.mark.asyncio
