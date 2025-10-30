@@ -2,6 +2,12 @@
 
 name: CI/CD
 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+
 on:
   merge_group:
   push:
@@ -14,7 +20,7 @@ on:
 
 
 env:
-  PYTHON_LATEST: '3.12'
+  PYTHON_LATEST: '3.14'
   PROJECT_NAME: aiodocker
 
   # For re-actors/checkout-python-sdist
