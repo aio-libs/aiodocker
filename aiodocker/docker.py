@@ -93,7 +93,13 @@ class Docker:
         if docker_host is None:
             if sys.platform == "win32":
                 try:
-                    if Path("\\\\.\\pipe\\docker_engine").exists():
+                    for pipe_path in Path(r"\\.\pipe").iterdir():
+                        if pipe_path.name.lower().startswith("docker"):
+                            print(
+                                pipe_path,
+                                f"{pipe_path.exists()=} {pipe_path.is_fifo()=}",
+                            )
+                    if Path(r"\\.\pipe\docker_engine").exists():
                         docker_host = "npipe:////./pipe/docker_engine"
                     else:
                         # The default address used by Docker Client on Windows
