@@ -100,6 +100,7 @@ junit_family = "xunit2"
 filterwarnings = [
     "error",
     "ignore::ResourceWarning:asyncio",
+    "ignore:'asyncio.iscoroutinefunction' is deprecated",
     "ignore:The @wait_container_is_ready decorator is deprecated.*:DeprecationWarning",
 ]
 asyncio_mode = "auto"
