@@ -130,9 +130,8 @@ jobs:
     - name: Run tests
       env:
         COLOR: 'yes'
-        DOCKER_VERSION: ${{ matrix.docker }}
       run: |
-        python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
+        python -m pytest -s -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Rename coverage logs
       run: |
         mv coverage.xml "coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
