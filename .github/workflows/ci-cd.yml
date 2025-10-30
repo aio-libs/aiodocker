@@ -106,6 +106,10 @@ jobs:
     runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 30
     steps:
+    - name: Show environment info
+      run: |
+        docker context inspect
+        docker version
     - name: Checkout
       uses: actions/checkout@v5
     - name: Setup Python ${{ matrix.python-version }}
