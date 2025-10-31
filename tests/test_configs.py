@@ -1,13 +1,14 @@
+import secrets
+
 import pytest
 
 from aiodocker.exceptions import DockerError
 
 
 @pytest.fixture
-async def tmp_config(swarm, random_name):
-    config = await swarm.configs.create(
-        name="config-" + random_name(), data=random_name()
-    )
+async def tmp_config(swarm):
+    random_name = f"aiodocker-{secrets.token_hex(4)}"
+    config = await swarm.configs.create(name="config-" + random_name, data=random_name)
     yield config["ID"]
     await swarm.configs.delete(config["ID"])
 

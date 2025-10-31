@@ -23,15 +23,13 @@ from aiohttp import ClientResponse, ClientTimeout, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
-from aiodocker.types import JSONObject
-
 from .exceptions import DockerContainerError, DockerError
 from .execs import Exec
 from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
-from .types import SENTINEL, PortInfo, Sentinel
+from .types import SENTINEL, JSONObject, MutableJSONObject, PortInfo, Sentinel
 from .utils import identical, parse_result
 
 
@@ -142,14 +140,20 @@ class DockerContainers:
 
 
 class DockerContainer:
-    _container: Dict[str, Any]
+    _container: dict[str, Any]
+    _id: str
 
     def __init__(self, docker: Docker, **kwargs) -> None:
         self.docker = docker
         self._container = kwargs
-        self._id = self._container.get(
+        _id = self._container.get(
             "id", self._container.get("ID", self._container.get("Id"))
         )
+        if _id is None:
+            raise ValueError(
+                "DockerContainer should be initialized with explicit container ID."
+            )
+        self._id = _id
         self.logs = DockerLog(docker, self)
 
     @property
@@ -164,7 +168,7 @@ class DockerContainer:
         stderr: bool = False,
         follow: Literal[False] = False,
         **kwargs,
-    ) -> List[str]: ...
+    ) -> list[str]: ...
 
     @overload
     def log(
@@ -473,7 +477,7 @@ class DockerContainer:
         Commit a container to an image. Similar to the ``docker commit``
         command.
         """
-        params = {"container": self._id, "pause": pause}
+        params: MutableJSONObject = {"container": self._id, "pause": pause}
         if repository is not None:
             params["repo"] = repository
         if tag is not None:

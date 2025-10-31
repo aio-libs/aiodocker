@@ -11,48 +11,45 @@ dynamic = ["version"]
 readme = "README.rst"
 description = "A simple Docker HTTP API wrapper written with asyncio and aiohttp."
 license = { text = "Apache 2.0" }
-requires-python = ">=3.9.0"
+requires-python = ">=3.10.0"
 
 classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
-    "aiohttp>=3.8",
+    "aiohttp>=3.10",
 ]
 
 [project.optional-dependencies]
 ci = [
     # pinned for reproducible CI
-    "aiohttp==3.11.11",
-    "async-timeout==5.0.1",
-    "multidict==6.1.0",
-    "yarl==1.18.3",
+    "aiohttp==3.10.11",      # oldest minor release compatible with async-timeout 5.0
+    "async-timeout==5.0.1",  # required to ensure compatibility with Python 3.11+ stdlib
 ]
 dev = [
     "async-timeout==5.0.1",
     "codecov==2.1.13",
-    "mypy==1.14.1",
-    "packaging==24.2",
+    "mypy==1.18.2",
+    "packaging==25.0",
     "pre-commit>=3.5.0",
-    "pytest==8.3.4",
-    "pytest-asyncio==0.25.0",
-    "pytest-cov==6.0.0",
-    "pytest-sugar==1.0.0",
-    "ruff==0.8.4",
-    "ruff-lsp==0.0.59",
-    "towncrier==24.8.0"
+    "pytest==8.4.2",
+    "pytest-asyncio==1.2.0",
+    "pytest-cov==7.0.0",
+    "pytest-sugar==1.1.1",
+    "ruff==0.14.2",
+    "towncrier==24.8.0",
+    "testcontainers==4.13.2",
 ]
 doc = [
     "alabaster==1.0.0",
     "sphinx==8.1.3",
     "sphinx-autodoc-typehints==2.5.0",
-    "sphinxcontrib-asyncio==0.3.0"
+    "sphinxcontrib-asyncio==0.3.0",
 ]
 
 [tool.hatch.version]
@@ -100,5 +97,10 @@ minversion = "3.8.2"
 testpaths = ["tests"]
 junit_suite_name = "aiodocker_test_suite"
 junit_family = "xunit2"
-filterwarnings = ["error", "ignore::ResourceWarning:asyncio"]
+filterwarnings = [
+    "error",
+    "ignore::ResourceWarning:asyncio",
+    "ignore:'asyncio.iscoroutinefunction' is deprecated",
+    "ignore:The @wait_container_is_ready decorator is deprecated.*:DeprecationWarning",
+]
 asyncio_mode = "auto"
