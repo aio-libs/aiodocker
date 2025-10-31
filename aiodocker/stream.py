@@ -35,7 +35,7 @@ class Stream:
         self._resp = None
         self._closed = False
         self._timeout = timeout
-        self._queue = None
+        self._queue: Optional[aiohttp.FlowControlDataQueue[Message]] = None
 
     async def _init(self) -> None:
         if self._resp is not None:
@@ -80,6 +80,8 @@ class Stream:
             )
         protocol = conn.protocol
         loop = resp._loop
+        assert protocol is not None
+        assert protocol.transport is not None
         sock = protocol.transport.get_extra_info("socket")
         if sock is not None:
             # set TCP keepalive for vendored socket
@@ -108,9 +110,12 @@ class Stream:
             raise RuntimeError("Cannot write to closed transport")
         await self._init()
         assert self._resp is not None
+        assert self._resp.connection is not None
         transport = self._resp.connection.transport
+        assert transport is not None
         transport.write(data)
         protocol = self._resp.connection.protocol
+        assert protocol is not None
         if protocol.transport is not None:
             await protocol._drain_helper()
 
@@ -120,6 +125,7 @@ class Stream:
         if self._closed:
             return
         self._closed = True
+        assert self._resp.connection is not None
         transport = self._resp.connection.transport
         if transport and transport.can_write_eof():
             transport.write_eof()

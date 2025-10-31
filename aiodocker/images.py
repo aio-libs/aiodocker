@@ -70,7 +70,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[False] = False,
         timeout: Union[float, Sentinel, None] = SENTINEL,
-    ) -> Dict[str, Any]: ...
+    ) -> List[Dict[str, Any]]: ...
 
     @overload
     def pull(
@@ -120,8 +120,7 @@ class DockerImages:
             registry, has_registry_host, _ = image.partition("/")
             if not has_registry_host:
                 raise ValueError(
-                    "Image should have registry host "
-                    "when auth information is provided"
+                    "Image should have registry host when auth information is provided"
                 )
             # TODO: assert registry == repo?
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
@@ -157,7 +156,8 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]: ...
+        timeout: Union[float, Sentinel, None] = SENTINEL,
+    ) -> List[Dict[str, Any]]: ...
 
     @overload
     def push(
@@ -167,6 +167,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[True],
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def push(
@@ -176,6 +177,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: bool = False,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Any:
         params = {}
         headers = {
@@ -188,8 +190,7 @@ class DockerImages:
             registry, has_registry_host, _ = name.partition("/")
             if not has_registry_host:
                 raise ValueError(
-                    "Image should have registry host "
-                    "when auth information is provided"
+                    "Image should have registry host when auth information is provided"
                 )
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
         cm = self.docker._query(
@@ -197,6 +198,7 @@ class DockerImages:
             "POST",
             params=params,
             headers=headers,
+            timeout=timeout,
         )
         return self._handle_response(cm, stream)
 
@@ -269,7 +271,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[False] = False,
         encoding: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> List[Dict[str, Any]]:
         pass
 
     @overload

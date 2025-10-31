@@ -12,6 +12,28 @@ Changes
 
 .. towncrier release notes start
 
+0.24.0 (2024-11-21)
+===================
+
+Features
+--------
+
+- Added Python 3.13 support (#927)
+- Added timeout parameter for push method (#929)
+
+
+Bugfixes
+--------
+
+- Fix `DockerImages.build()`, `DockerImages.pull()`, `DockerImages.push()` methods' incorrect return type declarations. (#909)
+
+
+Deprecations and Removals
+-------------------------
+
+- Removed Python 3.8 support as it has reached end of life. (#924)
+
+
 0.23.0 (2024-09-23)
 ===================
 

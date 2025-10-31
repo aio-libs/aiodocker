@@ -1,4 +1,5 @@
 import asyncio
+import secrets
 import sys
 
 import pytest
@@ -80,7 +81,7 @@ async def test_run_failing_start_container(docker: Docker, image_name: str) -> N
             config={
                 # we want to raise an error
                 # `executable file not found`
-                "Cmd": ["pytohon", "-c" "print('hello')"],
+                "Cmd": ["pytohon", "-cprint('hello')"],
                 "Image": image_name,
             }
         )
@@ -173,24 +174,29 @@ async def test_resize(shell_container: DockerContainer) -> None:
 )
 @pytest.mark.asyncio
 async def test_commit(
-    docker: Docker, image_name: str, shell_container: DockerContainer
+    docker: Docker,
+    image_name: str,
+    shell_container: DockerContainer,
 ) -> None:
-    """
-    "Container" key was removed in v1.45.
-    "ContainerConfig" is not present, although this information is now present in "Config"
-    These changes have been verified against v1.45.
-    """
-    ret = await shell_container.commit()
+    # "Container" key was removed in v1.45.
+    # "ContainerConfig" is not present, although this information is now present in "Config"
+    # These changes have been verified against v1.45.
+    #
+    # "Image" key was removed in v1.50.
+    # "RepoTags" key was added in v1.21.
+    repo_name = f"aiodocker-commit-{secrets.token_hex(8)}"
+    tag = "latest"
+    ret = await shell_container.commit(repository=repo_name, tag=tag)
     img_id = ret["Id"]
     img = await docker.images.inspect(img_id)
-
-    assert "Image" in img["Config"]
-    assert image_name == img["Config"]["Image"]
-    python_img = await docker.images.inspect(image_name)
-    python_id = python_img["Id"]
-    assert "Parent" in img
-    assert img["Parent"] == python_id
-    await docker.images.delete(img_id)
+    try:
+        assert f"{repo_name}:{tag}" in img["RepoTags"]
+        python_img = await docker.images.inspect(image_name)
+        python_id = python_img["Id"]
+        assert "Parent" in img
+        assert img["Parent"] == python_id
+    finally:
+        await docker.images.delete(img_id)
 
 
 @pytest.mark.skipif(
@@ -198,7 +204,9 @@ async def test_commit(
 )
 @pytest.mark.asyncio
 async def test_commit_with_changes(
-    docker: Docker, image_name: str, shell_container: DockerContainer
+    docker: Docker,
+    image_name: str,
+    shell_container: DockerContainer,
 ) -> None:
     ret = await shell_container.commit(changes=["EXPOSE 8000", 'CMD ["py"]'])
     img_id = ret["Id"]

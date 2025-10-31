@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections import ChainMap
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import aiohttp
 
@@ -19,7 +19,7 @@ class DockerLog:
         self.docker = docker
         self.channel = Channel()
         self.container = container
-        self.response = None
+        self.response: Optional[aiohttp.ClientResponse] = None
 
     def listen(self) -> ChannelSubscriber:
         warnings.warn(
@@ -32,7 +32,7 @@ class DockerLog:
 
     async def run(self, **params: Any) -> None:
         if self.response:
-            warnings.warn("already running", RuntimeWarning, stackelevel=2)
+            warnings.warn("already running", RuntimeWarning, stackelevel=2)  # type: ignore
             return
         forced_params = {"follow": True}
         default_params = {"stdout": True, "stderr": True}

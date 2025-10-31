@@ -2,6 +2,12 @@
 
 name: CI/CD
 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+
 on:
   merge_group:
   push:
@@ -14,7 +20,7 @@ on:
 
 
 env:
-  PYTHON_LATEST: '3.12'
+  PYTHON_LATEST: '3.14'
   PROJECT_NAME: aiodocker
 
   # For re-actors/checkout-python-sdist
@@ -28,9 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
@@ -57,14 +63,14 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Download all the dists
       uses: actions/download-artifact@v4
       with:
         name: ${{ env.dists-artifact-name }}
         path: dist
     - name: Setup Python ${{ env.PYTHON_LATEST }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
@@ -90,22 +96,29 @@ jobs:
     - build
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         os: [ubuntu]
-        registry: ['1']
         pytest-arg: ['']
-        include:
-          - python-version: '3.12'
-            os: windows
-            registry: '0'
-            pytest-arg: '-k test_integration'
+        # NOTE: Temporarily disabled due to mismatch of:
+        #       - Path(r"\\.\pipe").iterdir()
+        #       - Path(r"\\.\pipe\docker_engine").exists()
+        #       which works fine in my local Windows machine
+        #       but not in GitHub Action's Windows runner.
+        # include:
+        #   - python-version: '3.14'
+        #     os: windows
+        #     pytest-arg: '-k test_integration'
     runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 30
     steps:
+    - name: Show environment info
+      run: |
+        docker context inspect
+        docker version
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
@@ -119,27 +132,11 @@ jobs:
     #   uses: ScribeMD/docker-cache@0.5.0
     #   with:
     #     key: docker-${{ runner.os }}
-    - name: Prepare Docker images (Linux)
-      if: ${{ runner.os == 'Linux' }}
-      run: |
-        docker pull python:alpine
-    - name: Prepare Docker images (Windows)
-      if: ${{ runner.os == 'Windows' }}
-      # Unfortunately, there is no slim version for Windows.
-      # This may take more than 10 minutes as the image size is a few gigabytes.
-      run: |
-        docker pull python:latest
-    - name: Start Docker services
-      if: ${{ matrix.registry == '1' }}
-      run: |
-        docker run -d --name ${{ env.PROJECT_NAME }}-test-registry -p 5000:5000 registry:2
-        docker run -d -p 5001:5001 --name ${{ env.PROJECT_NAME }}-test-registry2 -v `pwd`/tests/certs:/certs -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/certs/htpasswd -e REGISTRY_HTTP_ADDR=0.0.0.0:5001 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
-    - name: Run unittests
+    - name: Run tests
       env:
         COLOR: 'yes'
-        DOCKER_VERSION: ${{ matrix.docker }}
       run: |
-        python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
+        python -m pytest -s -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Rename coverage logs
       run: |
         mv coverage.xml "coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
@@ -167,7 +164,7 @@ jobs:
       with:
         jobs: ${{ toJSON(needs) }}
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.sha }}
     - name: Download coverage artifact
