@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import datetime
 import io
@@ -7,7 +9,7 @@ import ssl
 import sys
 import tarfile
 import time
-from typing import Any, Dict, List
+from typing import Any, List
 
 import aiohttp
 import pytest
@@ -17,6 +19,7 @@ import aiodocker
 from aiodocker.containers import DockerContainer
 from aiodocker.docker import Docker
 from aiodocker.execs import Stream
+from aiodocker.types import AsyncContainerFactory
 
 
 async def expect_prompt(stream: Stream) -> bytes:
@@ -46,7 +49,7 @@ def skip_windows() -> None:
 
 
 @pytest.mark.asyncio
-async def test_autodetect_host(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_autodetect_host() -> None:
     docker = Docker()
     if "DOCKER_HOST" in os.environ:
         if (
@@ -139,7 +142,7 @@ async def test_container_lifecycles(docker: Docker, image_name: str) -> None:
     containers = await docker.containers.list(all=True)
     orig_count = len(containers)
 
-    config: Dict[str, Any] = {
+    config: dict[str, Any] = {
         "Cmd": ["python"],
         "Image": image_name,
         "AttachStdin": False,
@@ -175,7 +178,9 @@ async def test_container_lifecycles(docker: Docker, image_name: str) -> None:
     reason="Docker for Mac and Windows has a bug with websocket",
 )
 async def test_stdio_stdin(
-    docker: Docker, testing_images: List[str], shell_container: DockerContainer
+    docker: Docker,
+    testing_images: List[str],
+    shell_container: DockerContainer,
 ) -> None:
     # echo of the input.
     ws = await shell_container.websocket(stdin=True, stdout=True, stream=True)
@@ -223,7 +228,9 @@ async def test_stdio_stdin(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stderr", [True, False], ids=lambda x: f"stderr={x}")
 async def test_attach_nontty(
-    docker: Docker, image_name: str, make_container, stderr: bool
+    image_name: str,
+    make_container: AsyncContainerFactory,
+    stderr: bool,
 ) -> None:
     if stderr:
         cmd = [
@@ -233,8 +240,7 @@ async def test_attach_nontty(
         ]
     else:
         cmd = ["python", "-c", "import time; time.sleep(3); print('Hello')"]
-
-    config: Dict[str, Any] = {
+    config: dict[str, Any] = {
         "Cmd": cmd,
         "Image": image_name,
         "AttachStdin": False,
@@ -244,10 +250,7 @@ async def test_attach_nontty(
         "OpenStdin": False,
         "StdinOnce": False,
     }
-
-    container: DockerContainer = await make_container(
-        config, name="aiodocker-testing-attach-nontty"
-    )
+    container = await make_container(config, name="aiodocker-testing-attach-nontty")
 
     async with container.attach(stdin=False, stdout=True, stderr=True) as stream:
         msg = await stream.read_out()
@@ -259,11 +262,11 @@ async def test_attach_nontty(
 
 @pytest.mark.asyncio
 async def test_attach_nontty_wait_for_exit(
-    docker: Docker, image_name: str, make_container
+    image_name: str,
+    make_container: AsyncContainerFactory,
 ) -> None:
     cmd = ["python", "-c", "import time; time.sleep(3); print('Hello')"]
-
-    config: Dict[str, Any] = {
+    config: dict[str, Any] = {
         "Cmd": cmd,
         "Image": image_name,
         "AttachStdin": False,
@@ -273,7 +276,6 @@ async def test_attach_nontty_wait_for_exit(
         "OpenStdin": False,
         "StdinOnce": False,
     }
-
     container: DockerContainer = await make_container(
         config,
         name="aiodocker-testing-attach-nontty-wait-for-exit",
@@ -285,9 +287,12 @@ async def test_attach_nontty_wait_for_exit(
 
 @pytest.mark.asyncio
 @pytest.mark.xfail(reason="Failing since Oct 8th 2024 for unknown reasons")
-async def test_attach_tty(docker: Docker, image_name: str, make_container) -> None:
+async def test_attach_tty(
+    image_name: str,
+    make_container: AsyncContainerFactory,
+) -> None:
     skip_windows()
-    config: Dict[str, Any] = {
+    config: dict[str, Any] = {
         "Cmd": ["python", "-q"],
         "Image": image_name,
         "AttachStdin": True,
@@ -297,7 +302,6 @@ async def test_attach_tty(docker: Docker, image_name: str, make_container) -> No
         "OpenStdin": True,
         "StdinOnce": False,
     }
-
     container: DockerContainer = await make_container(
         config, name="aiodocker-testing-attach-tty"
     )
@@ -324,7 +328,7 @@ async def test_attach_tty(docker: Docker, image_name: str, make_container) -> No
 
 @pytest.mark.asyncio
 async def test_wait_timeout(
-    docker: Docker, testing_images: List[str], shell_container: DockerContainer
+    shell_container: DockerContainer,
 ) -> None:
     t1 = datetime.datetime.now()
     with pytest.raises(asyncio.TimeoutError):
@@ -338,7 +342,7 @@ async def test_wait_timeout(
 async def test_put_archive(docker: Docker, image_name: str) -> None:
     skip_windows()
 
-    config: Dict[str, Any] = {
+    config: dict[str, Any] = {
         "Cmd": ["python", "-c", "print(open('tmp/bar/foo.txt').read())"],
         "Image": image_name,
         "AttachStdin": False,
@@ -377,10 +381,13 @@ async def test_put_archive(docker: Docker, image_name: str) -> None:
 
 
 @pytest.mark.asyncio
-async def test_get_archive(image_name: str, make_container) -> None:
+async def test_get_archive(
+    image_name: str,
+    make_container: AsyncContainerFactory,
+) -> None:
     skip_windows()
 
-    config: Dict[str, Any] = {
+    config: dict[str, Any] = {
         "Cmd": [
             "python",
             "-c",
@@ -394,9 +401,7 @@ async def test_get_archive(image_name: str, make_container) -> None:
         "OpenStdin": False,
     }
 
-    container: DockerContainer = await make_container(
-        config=config, name="aiodocker-testing-get-archive"
-    )
+    container = await make_container(config, name="aiodocker-testing-get-archive")
     await container.start()
     await asyncio.sleep(1)
     tar_archive = await container.get_archive("tmp/foo.txt")
@@ -412,8 +417,12 @@ async def test_get_archive(image_name: str, make_container) -> None:
 @pytest.mark.skipif(
     sys.platform == "win32", reason="Port is not exposed on Windows by some reason"
 )
-async def test_port(docker: Docker, image_name: str) -> None:
-    config: Dict[str, Any] = {
+async def test_port(
+    docker: Docker,
+    image_name: str,
+    make_container: AsyncContainerFactory,
+) -> None:
+    config: dict[str, Any] = {
         "Cmd": [
             "python",
             "-c",
@@ -425,18 +434,13 @@ async def test_port(docker: Docker, image_name: str) -> None:
         ],
         "Image": image_name,
         "ExposedPorts": {"5678/tcp": {}},
-        "PublishAllPorts": True,
+        "HostConfig": {
+            "PublishAllPorts": True,
+        },
     }
-    container = await docker.containers.create_or_replace(
-        config=config, name="aiodocker-testing-temp"
-    )
-    await container.start()
-
-    try:
-        port = await container.port(5678)
-        assert port
-    finally:
-        await container.delete(force=True)
+    container = await make_container(config, name="aiodocker-testing-port")
+    port = await container.port(5678)
+    assert port is not None
 
 
 @pytest.mark.asyncio
@@ -448,7 +452,7 @@ async def test_events(docker: Docker, image_name: str) -> None:
     subscriber = docker.events.subscribe()
 
     # Do some stuffs to generate events.
-    config: Dict[str, Any] = {"Cmd": ["python"], "Image": image_name}
+    config: dict[str, Any] = {"Cmd": ["python"], "Image": image_name}
     container = await docker.containers.create_or_replace(
         config=config, name="aiodocker-testing-temp"
     )

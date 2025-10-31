@@ -18,9 +18,7 @@ async def _wait_service(swarm, service_id):
 
 @pytest.fixture
 async def tmp_service(swarm, random_name):
-    service = await swarm.services.create(
-        task_template=TaskTemplate, name=random_name()
-    )
+    service = await swarm.services.create(task_template=TaskTemplate, name=random_name)
     await _wait_service(swarm, service["ID"])
     yield service["ID"]
     await swarm.services.delete(service["ID"])
@@ -52,10 +50,10 @@ async def test_service_tasks_list_with_filters(swarm, tmp_service):
 
 
 @pytest.mark.asyncio
-async def test_logs_services(swarm):
+async def test_logs_services(swarm, image_name):
     TaskTemplate = {
         "ContainerSpec": {
-            "Image": "python:3.6.1",
+            "Image": image_name,
             "Args": ["python", "-c", "for _ in range(10): print('Hello Python')"],
         },
         "RestartPolicy": {"Condition": "none"},
@@ -82,10 +80,10 @@ async def test_logs_services(swarm):
 
 
 @pytest.mark.asyncio
-async def test_logs_services_stream(swarm):
+async def test_logs_services_stream(swarm, image_name):
     TaskTemplate = {
         "ContainerSpec": {
-            "Image": "python:3.6.1",
+            "Image": image_name,
             "Args": ["python", "-c", "for _ in range(10): print('Hello Python')"],
         },
         "RestartPolicy": {"Condition": "none"},
@@ -123,10 +121,10 @@ async def test_logs_services_stream(swarm):
 
 
 @pytest.mark.asyncio
-async def test_service_update(swarm):
+async def test_service_update(swarm, image_name, image_name_updated):
     name = "service-update"
-    initial_image = "python:3.6.1"
-    image_after_update = "python:3.7.4"
+    initial_image = image_name
+    image_after_update = image_name_updated
     TaskTemplate = {"ContainerSpec": {"Image": initial_image}}
 
     await swarm.services.create(name=name, task_template=TaskTemplate)
