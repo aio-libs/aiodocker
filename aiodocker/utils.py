@@ -35,8 +35,7 @@ async def parse_result(response, response_type=None, *, encoding="utf-8"):
             if cl is None or cl == "0":
                 return ""
             raise TypeError(
-                "Cannot auto-detect response type "
-                "due to missing Content-Type header."
+                "Cannot auto-detect response type due to missing Content-Type header."
             )
         main_type, sub_type, extras = parse_content_type(ct)
         if sub_type == "json":
@@ -91,7 +90,7 @@ def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
 
 
 def identical(d1, d2):
-    if type(d1) != type(d2):
+    if type(d1) is not type(d2):
         return False
 
     if isinstance(d1, dict):
