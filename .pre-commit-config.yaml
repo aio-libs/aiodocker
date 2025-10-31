@@ -4,7 +4,7 @@ ci:
   autoupdate_schedule: quarterly
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: check-yaml
   - id: end-of-file-fixer
@@ -20,7 +20,7 @@ repos:
   - id: detect-private-key
     exclude: ^tests/certs/
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.2
+  rev: v0.14.3
   hooks:
   - id: ruff
     args: ['--fix']
