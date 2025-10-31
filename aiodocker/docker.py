@@ -75,7 +75,7 @@ _sock_search_paths = [
 ]
 
 _rx_version = re.compile(r"^v\d+\.\d+$")
-_rx_tcp_schemes = re.compile(r"^(tcp|http)://")
+_rx_tcp_schemes = re.compile(r"^(tcp|http|https)://")
 
 
 class Docker:
@@ -93,8 +93,11 @@ class Docker:
         if docker_host is None:
             if sys.platform == "win32":
                 try:
-                    if Path("\\\\.\\pipe\\docker_engine").exists():
+                    if Path(r"\\.\pipe\docker_engine").exists():
                         docker_host = "npipe:////./pipe/docker_engine"
+                    else:
+                        # The default address used by Docker Client on Windows
+                        docker_host = "https://127.0.0.1:2376"
                 except OSError as ex:
                     if ex.winerror == 231:  # type: ignore
                         # All pipe instances are busy
@@ -107,6 +110,8 @@ class Docker:
                     if sockpath.is_socket():
                         docker_host = "unix://" + str(sockpath)
                         break
+
+        assert docker_host is not None
         self.docker_host = docker_host
 
         if api_version != "auto" and _rx_version.search(api_version) is None:
@@ -126,12 +131,12 @@ class Docker:
             WIN_PRE = "npipe://"
             WIN_PRE_LEN = len(WIN_PRE)
             if _rx_tcp_schemes.search(docker_host):
-                if os.environ.get("DOCKER_TLS_VERIFY", "0") == "1":
-                    if ssl_context is None:
-                        ssl_context = self._docker_machine_ssl_context()
-                        docker_host = _rx_tcp_schemes.sub("https://", docker_host)
-                else:
-                    ssl_context = None
+                if (
+                    os.environ.get("DOCKER_TLS_VERIFY", "0") == "1"
+                    and ssl_context is None
+                ):
+                    ssl_context = self._docker_machine_ssl_context()
+                    docker_host = _rx_tcp_schemes.sub("https://", docker_host)
                 connector = aiohttp.TCPConnector(ssl=ssl_context)  # type: ignore[arg-type]
                 self.docker_host = docker_host
             elif docker_host.startswith(UNIX_PRE):
