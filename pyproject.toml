@@ -42,7 +42,7 @@ dev = [
     "pytest-cov==7.0.0",
     "pytest-sugar==1.1.1",
     "ruff==0.14.2",
-    "towncrier==24.8.0",
+    "towncrier==25.8.0",
     "testcontainers==4.13.2",
 ]
 doc = [
@@ -60,6 +60,11 @@ package = "aiodocker"
 filename = "CHANGES.rst"
 directory = "CHANGES"
 title_format = "{version} ({project_date})"
+
+[[tool.towncrier.type]]
+directory = "breaking"
+name = "Breaking Changes"
+showcontent = true
 
 [tool.ruff]
 line-length = 88
