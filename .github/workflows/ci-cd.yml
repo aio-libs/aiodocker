@@ -99,10 +99,15 @@ jobs:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
         os: [ubuntu]
         pytest-arg: ['']
-        include:
-          - python-version: '3.14'
-            os: windows
-            pytest-arg: '-k test_integration'
+        # NOTE: Temporarily disabled due to mismatch of:
+        #       - Path(r"\\.\pipe").iterdir()
+        #       - Path(r"\\.\pipe\docker_engine").exists()
+        #       which works fine in my local Windows machine
+        #       but not in GitHub Action's Windows runner.
+        # include:
+        #   - python-version: '3.14'
+        #     os: windows
+        #     pytest-arg: '-k test_integration'
     runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 30
     steps:
