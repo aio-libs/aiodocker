@@ -64,7 +64,15 @@ title_format = "{version} ({project_date})"
 [[tool.towncrier.type]]
 directory = "breaking"
 name = "Breaking Changes"
-showcontent = true
+[[tool.towncrier.type]]
+directory = "bugfix"
+name = "Bug Fixes"
+[[tool.towncrier.type]]
+directory = "feature"
+name = "New Features"
+[[tool.towncrier.type]]
+directory = "misc"
+name = "Miscellaneous"
 
 [tool.ruff]
 line-length = 88
