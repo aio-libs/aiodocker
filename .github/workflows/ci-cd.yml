@@ -35,6 +35,11 @@ jobs:
     steps:
     - name: Checkout project
       uses: actions/checkout@v5
+      with:
+        # Fetch all history but without their actual contents,
+        # so that dynamic version for build work correctly.
+        fetch-depth: 0
+        filter: 'blob:none'
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
