@@ -141,12 +141,12 @@ jobs:
         python -m pytest -s -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Rename coverage logs
       run: |
-        mv coverage.xml "coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
+        mv coverage.xml "coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}
-        path: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
+        name: coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}
+        path: coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
         if-no-files-found: error
         retention-days: 1
     - name: Clean up Docker images produced during tests
