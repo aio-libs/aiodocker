@@ -41,7 +41,7 @@ dev = [
     "pytest-asyncio==1.2.0",
     "pytest-cov==7.0.0",
     "pytest-sugar==1.1.1",
-    "ruff==0.14.2",
+    "ruff==0.14.3",
     "towncrier==25.8.0",
     "testcontainers==4.13.2",
 ]
