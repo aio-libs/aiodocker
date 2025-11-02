@@ -28,7 +28,6 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "aiohttp==3.13.2",
-    "async-timeout==5.0.1",
     "towncrier==25.8.0",
 ]
 lint = [
@@ -37,6 +36,7 @@ lint = [
     "mypy==1.18.2",
 ]
 test = [
+    "async-timeout~=5.0.1",
     "codecov==2.1.13",
     "packaging==25.0",
     "pytest==8.4.2",
