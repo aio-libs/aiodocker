@@ -97,7 +97,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
-        aiohttp-version: ['3.10.0', '3.13.0']
+        aiohttp-version: ['3.10', '3.13']
         os: [ubuntu]
         pytest-arg: ['']
         # NOTE: Temporarily disabled due to mismatch of:
@@ -127,7 +127,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}'
+        python -m pip install -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}.0'
     # NOTE: Unfortunately the gain of image caching is too small,
     #       and even it increases the latency of Linux jobs. :(
     # - name: Cache Docker images
