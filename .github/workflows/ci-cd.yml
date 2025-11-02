@@ -35,15 +35,20 @@ jobs:
     steps:
     - name: Checkout project
       uses: actions/checkout@v5
+      with:
+        # Fetch all history but without their actual contents,
+        # so that dynamic version for build work correctly.
+        fetch-depth: 0
+        filter: 'blob:none'
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
     - name: Install core libraries for build
-      run: python -Im pip install build
+      run: python -m pip install build
     - name: Build artifacts
-      run: python -Im build
+      run: python -m build
     - name: Upload built artifacts for testing
       uses: actions/upload-artifact@v4
       with:
@@ -55,12 +60,34 @@ jobs:
 
   lint:
     name: Linter
-    needs:
-    - build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     outputs:
       version: ${{ steps.version.outputs.version }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+    - name: Setup Python ${{ env.PYTHON_LATEST }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ env.PYTHON_LATEST }}
+        cache: pip
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e '.[lint]'
+    - uses: actions/cache@v4
+      with:
+        path: ~/.cache/pre-commit/
+        key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
+    - name: Run linters
+      run: |
+        make lint
+
+  twine-check:
+    name: Twine check
+    runs-on: ubuntu-latest
+    needs:
+    - build
     steps:
     - name: Checkout
       uses: actions/checkout@v5
@@ -74,29 +101,19 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install -e .[ci,dev]
-    - uses: actions/cache@v4
-      with:
-        path: ~/.cache/pre-commit/
-        key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
-    - name: Run linters
-      run: |
-        make lint
     - name: Run twine checker
       run: |
         pip install twine
         twine check --strict dist/*
 
   test:
-    name: test
+    name: 'test (Python ${{ matrix.python-version }}, aiohttp ${{ matrix.aiohttp-version }}, ${{ matrix.os }})'
     needs:
     - build
     strategy:
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        aiohttp-version: ['3.10', '3.13']
         os: [ubuntu]
         pytest-arg: ['']
         # NOTE: Temporarily disabled due to mismatch of:
@@ -106,6 +123,7 @@ jobs:
         #       but not in GitHub Action's Windows runner.
         # include:
         #   - python-version: '3.14'
+        #     aiohttp-version: ['3.10', '3.13']
         #     os: windows
         #     pytest-arg: '-k test_integration'
     runs-on: ${{ matrix.os }}-latest
@@ -122,10 +140,18 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: dist
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -e .[ci,dev]
+        python -m pip install -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}.0'
+    - name: Install the build artifact
+      run: |
+        python -m pip install dist/aiodocker*.whl
     # NOTE: Unfortunately the gain of image caching is too small,
     #       and even it increases the latency of Linux jobs. :(
     # - name: Cache Docker images
@@ -139,12 +165,12 @@ jobs:
         python -m pytest -s -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Rename coverage logs
       run: |
-        mv coverage.xml "coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
+        mv coverage.xml "coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}
-        path: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
+        name: coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}
+        path: coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
         if-no-files-found: error
         retention-days: 1
     - name: Clean up Docker images produced during tests
@@ -156,6 +182,7 @@ jobs:
     if: always()
     needs:
     - lint
+    - twine-check
     - test
     runs-on: ubuntu-latest
     steps:
