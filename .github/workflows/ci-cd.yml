@@ -81,6 +81,8 @@ jobs:
   twine-check:
     name: Twine check
     runs-on: ubuntu-latest
+    needs:
+    - build
     steps:
     - name: Download all the dists
       uses: actions/download-artifact@v4
