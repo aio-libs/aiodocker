@@ -26,12 +26,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ci = [
-    # pinned for reproducible CI
-    "aiohttp==3.10.11",      # oldest minor release compatible with async-timeout 5.0
-    "async-timeout==5.0.1",  # required to ensure compatibility with Python 3.11+ stdlib
-]
 dev = [
+    "aiohttp==3.13.2",
     "async-timeout==5.0.1",
     "codecov==2.1.13",
     "mypy==1.18.2",
