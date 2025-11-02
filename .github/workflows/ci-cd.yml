@@ -110,6 +110,7 @@ jobs:
         #     aiohttp-version: ['3.10.0', '3.13.0']
         #     os: windows
         #     pytest-arg: '-k test_integration'
+    name: Python ${{ matrix.python-version }} - aiohttp ${{ matrix.aiohttp-version }} (${{ matrix.os }})
     runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 30
     steps:
