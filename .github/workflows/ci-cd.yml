@@ -41,9 +41,9 @@ jobs:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
     - name: Install core libraries for build
-      run: python -Im pip install build
+      run: python -m pip install build
     - name: Build artifacts
-      run: python -Im build
+      run: python -m build
     - name: Upload built artifacts for testing
       uses: actions/upload-artifact@v4
       with:
