@@ -151,9 +151,8 @@ def dind_docker_host() -> Iterator[str]:
         ],
         check=True,
         capture_output=True,
-        text=True,
     )
-    container_id = result.stdout.strip()
+    container_id = result.stdout.decode().strip()
 
     # Wait for Docker daemon to be ready
     for _ in range(30):
@@ -186,10 +185,11 @@ def dind_docker_host() -> Iterator[str]:
         ["docker", "port", container_id, "2375"],
         check=True,
         capture_output=True,
-        text=True,
     )
     # Take only the first line (IPv4) and clean it up
-    dind_host = result.stdout.strip().split("\n")[0].replace("0.0.0.0", "localhost")
+    dind_host = (
+        result.stdout.decode().strip().split("\n")[0].replace("0.0.0.0", "localhost")
+    )
     docker_host = f"tcp://{dind_host}"
 
     try:
