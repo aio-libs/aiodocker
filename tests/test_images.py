@@ -277,10 +277,20 @@ async def test_import_image(docker: Docker) -> None:
 
     repository = "gcr.io/google-containers/pause"
 
-    for tag in ["1.0", "go", "latest", "test", "test2"]:
-        name = f"{repository}:{tag}"
-        image = await docker.images.inspect(name=name)
-        assert image
+    tags = ["1.0", "go", "latest", "test", "test2"]
+    try:
+        for tag in tags:
+            name = f"{repository}:{tag}"
+            image = await docker.images.inspect(name=name)
+            assert image
+    finally:
+        # Cleanup imported images
+        for tag in tags:
+            name = f"{repository}:{tag}"
+            try:
+                await docker.images.delete(name=name)
+            except DockerError:
+                pass  # Image might already be deleted
 
 
 @pytest.mark.asyncio

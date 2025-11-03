@@ -61,22 +61,25 @@ async def test_logs_services(swarm, image_name):
     service = await swarm.services.create(task_template=TaskTemplate)
     service_id = service["ID"]
 
-    filters = {"service": service_id}
+    try:
+        filters = {"service": service_id}
 
-    # wait till task status is `complete`
-    async with timeout(60):
-        while True:
-            await asyncio.sleep(2)
-            task = await swarm.tasks.list(filters=filters)
-            if task:
-                status = task[0]["Status"]["State"]
-                if status == "complete":
-                    break
+        # wait till task status is `complete`
+        async with timeout(60):
+            while True:
+                await asyncio.sleep(2)
+                task = await swarm.tasks.list(filters=filters)
+                if task:
+                    status = task[0]["Status"]["State"]
+                    if status == "complete":
+                        break
 
-    logs = await swarm.services.logs(service_id, stdout=True)
+        logs = await swarm.services.logs(service_id, stdout=True)
 
-    assert len(logs) == 10
-    assert logs[0] == "Hello Python\n"
+        assert len(logs) == 10
+        assert logs[0] == "Hello Python\n"
+    finally:
+        await swarm.services.delete(service_id)
 
 
 @pytest.mark.asyncio
@@ -91,33 +94,36 @@ async def test_logs_services_stream(swarm, image_name):
     service = await swarm.services.create(task_template=TaskTemplate)
     service_id = service["ID"]
 
-    filters = {"service": service_id}
-
-    # wait till task status is `complete`
-    async with timeout(60):
-        while True:
-            await asyncio.sleep(2)
-            task = await swarm.tasks.list(filters=filters)
-            if task:
-                status = task[0]["Status"]["State"]
-                if status == "complete":
-                    break
-
-    # the service printed 10 `Hello Python`
-    # let's check for them
-    count = 0
     try:
-        async with timeout(2):
-            while True:
-                async for log in swarm.services.logs(
-                    service_id, stdout=True, follow=True
-                ):
-                    if "Hello Python\n" in log:
-                        count += 1
-    except asyncio.TimeoutError:
-        pass
+        filters = {"service": service_id}
 
-    assert count == 10
+        # wait till task status is `complete`
+        async with timeout(60):
+            while True:
+                await asyncio.sleep(2)
+                task = await swarm.tasks.list(filters=filters)
+                if task:
+                    status = task[0]["Status"]["State"]
+                    if status == "complete":
+                        break
+
+        # the service printed 10 `Hello Python`
+        # let's check for them
+        count = 0
+        try:
+            async with timeout(2):
+                while True:
+                    async for log in swarm.services.logs(
+                        service_id, stdout=True, follow=True
+                    ):
+                        if "Hello Python\n" in log:
+                            count += 1
+        except asyncio.TimeoutError:
+            pass
+
+        assert count == 10
+    finally:
+        await swarm.services.delete(service_id)
 
 
 @pytest.mark.asyncio
@@ -181,12 +187,17 @@ async def test_service_create_error(swarm):
 async def test_service_create_service_with_auth(swarm):
     name = "service-test-with-auth"
     TaskTemplate = {"ContainerSpec": {"Image": "python"}}
-    assert await swarm.services.create(
+    service = await swarm.services.create(
         name=name,
         task_template=TaskTemplate,
         auth={"username": "username", "password": "password"},
         registry="random.registry.com",
     )
+    assert service
+    try:
+        await _wait_service(swarm, service["ID"])
+    finally:
+        await swarm.services.delete(service["ID"])
 
 
 @pytest.mark.asyncio
