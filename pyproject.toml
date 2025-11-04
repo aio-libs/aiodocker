@@ -26,6 +26,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+ssh = [
+    "asyncssh>=2.14.0",
+    "paramiko>=2.9.0",
+]
 dev = [
     "aiohttp==3.13.2",
     "towncrier==25.8.0",

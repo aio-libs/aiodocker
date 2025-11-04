@@ -126,6 +126,7 @@ It's *Apache 2* licensed and freely available.
    images
    secrets
    services
+   ssh
    swarm
    system
    volumes
