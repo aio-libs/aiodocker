@@ -49,6 +49,9 @@ test = [
     "pytest-cov==7.0.0",
     "pytest-sugar==1.1.1",
     "testcontainers==4.13.2",
+    # SSH dependencies for testing SSH functionality
+    "asyncssh>=2.14.0",
+    "paramiko>=2.9.0",
 ]
 doc = [
     "alabaster==1.0.0",
