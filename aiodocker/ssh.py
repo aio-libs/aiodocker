@@ -261,7 +261,7 @@ class SSHConnector(aiohttp.UnixConnector):
         await self._ensure_ssh_tunnel()
         return await super().connect(req, traces, timeout)
 
-    async def close(self) -> None:
+    async def close(self) -> None:  # type: ignore[override]
         """Close SSH connection and clean up resources with proper error handling."""
         await super().close()
 

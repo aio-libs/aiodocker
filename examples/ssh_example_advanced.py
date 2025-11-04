@@ -105,7 +105,7 @@ async def demonstrate_ssh_docker(docker_host: str):
 
             # 5. Run a container
             print("Running a new container...")
-            container = None
+            container = None  # type: ignore
             try:
                 container = await docker.containers.run(
                     config={
