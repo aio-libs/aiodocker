@@ -31,9 +31,9 @@ log = logging.getLogger(__name__)
 # Constants
 DEFAULT_SSH_PORT = 22
 DEFAULT_DOCKER_SOCKET = "/var/run/docker.sock"
-DANGEROUS_ENV_VARS = ['LD_LIBRARY_PATH', 'SSL_CERT_FILE', 'SSL_CERT_DIR', 'PYTHONPATH']
+DANGEROUS_ENV_VARS = ["LD_LIBRARY_PATH", "SSL_CERT_FILE", "SSL_CERT_DIR", "PYTHONPATH"]
 
-__all__ = ['SSHConnector', 'parse_ssh_url']
+__all__ = ["SSHConnector", "parse_ssh_url"]
 
 
 class SSHConnector(aiohttp.UnixConnector):
@@ -107,7 +107,7 @@ class SSHConnector(aiohttp.UnixConnector):
             self._local_socket_path = str(self._temp_dir / "docker.sock")
         except Exception:
             # Clean up if temp directory creation fails
-            if hasattr(self, '_temp_dir') and self._temp_dir.exists():
+            if hasattr(self, "_temp_dir") and self._temp_dir.exists():
                 shutil.rmtree(self._temp_dir, ignore_errors=True)
             raise
 
@@ -121,7 +121,7 @@ class SSHConnector(aiohttp.UnixConnector):
             return {}
 
         config_options = {}
-        ssh_config_path = Path.home() / '.ssh' / 'config'
+        ssh_config_path = Path.home() / ".ssh" / "config"
 
         if ssh_config_path.exists():
             try:
@@ -132,16 +132,16 @@ class SSHConnector(aiohttp.UnixConnector):
 
                 # Map SSH config options to asyncssh parameters
                 # Only use config port if not specified in URL
-                if 'port' in host_config and self._ssh_port == DEFAULT_SSH_PORT:
-                    self._ssh_port = int(host_config['port'])
+                if "port" in host_config and self._ssh_port == DEFAULT_SSH_PORT:
+                    self._ssh_port = int(host_config["port"])
                 # Only use config user if not specified in URL
-                if 'user' in host_config and not self._ssh_username:
-                    self._ssh_username = host_config['user']
+                if "user" in host_config and not self._ssh_username:
+                    self._ssh_username = host_config["user"]
                 # Map file paths directly
-                if 'identityfile' in host_config:
-                    config_options['client_keys'] = host_config['identityfile']
-                if 'userknownhostsfile' in host_config:
-                    config_options['known_hosts'] = host_config['userknownhostsfile']
+                if "identityfile" in host_config:
+                    config_options["client_keys"] = host_config["identityfile"]
+                if "userknownhostsfile" in host_config:
+                    config_options["known_hosts"] = host_config["userknownhostsfile"]
 
                 log.debug(f"Loaded SSH config for {self._ssh_host}")
 
@@ -152,13 +152,13 @@ class SSHConnector(aiohttp.UnixConnector):
 
     def _setup_host_key_verification(self) -> None:
         """Setup host key verification following docker-py security principles."""
-        known_hosts = self._ssh_options.get('known_hosts')
+        known_hosts = self._ssh_options.get("known_hosts")
 
         # If no known_hosts specified in config, use default location
         if known_hosts is None:
-            default_known_hosts = Path.home() / '.ssh' / 'known_hosts'
+            default_known_hosts = Path.home() / ".ssh" / "known_hosts"
             if default_known_hosts.exists():
-                self._ssh_options['known_hosts'] = str(default_known_hosts)
+                self._ssh_options["known_hosts"] = str(default_known_hosts)
                 known_hosts = str(default_known_hosts)
 
         if known_hosts is None and self._strict_host_keys:
@@ -175,7 +175,7 @@ class SSHConnector(aiohttp.UnixConnector):
                 f"SECURITY WARNING: Host key verification disabled for {self._ssh_host}. "
                 "Connection is vulnerable to man-in-the-middle attacks. "
                 "Add host to ~/.ssh/known_hosts or run: ssh-keyscan -H %s >> ~/.ssh/known_hosts",
-                self._ssh_host
+                self._ssh_host,
             )
 
     def _sanitize_error_message(self, error: Exception) -> str:
@@ -184,13 +184,11 @@ class SSHConnector(aiohttp.UnixConnector):
 
         # Remove password from error messages
         if self._ssh_password:
-            message = message.replace(self._ssh_password, '***REDACTED***')
+            message = message.replace(self._ssh_password, "***REDACTED***")
 
         # Remove password from SSH URLs in error messages
         message = re.sub(
-            r'ssh://([^:/@]+):([^@]+)@',
-            r'ssh://\1:***REDACTED***@',
-            message
+            r"ssh://([^:/@]+):([^@]+)@", r"ssh://\1:***REDACTED***@", message
         )
 
         return message
@@ -208,7 +206,9 @@ class SSHConnector(aiohttp.UnixConnector):
         async with self._tunnel_lock:
             # Re-check condition after acquiring lock
             if self._ssh_conn is None or self._ssh_conn.is_closed():
-                log.debug(f"Establishing SSH connection to {self._ssh_username}@{self._ssh_host}:{self._ssh_port}")
+                log.debug(
+                    f"Establishing SSH connection to {self._ssh_username}@{self._ssh_host}:{self._ssh_port}"
+                )
 
                 try:
                     # Clean environment like docker-py does
@@ -221,16 +221,17 @@ class SSHConnector(aiohttp.UnixConnector):
                         username=self._ssh_username,
                         password=self._ssh_password,
                         env=clean_env,
-                        **self._ssh_options
+                        **self._ssh_options,
                     )
                     self._ssh_conn = await self._ssh_context.__aenter__()
 
                     # Forward local socket to remote Docker socket
                     await self._ssh_conn.forward_local_path(
-                        self._local_socket_path,
-                        self._socket_path
+                        self._local_socket_path, self._socket_path
                     )
-                    log.debug(f"SSH tunnel established: local socket -> {self._socket_path}")
+                    log.debug(
+                        f"SSH tunnel established: local socket -> {self._socket_path}"
+                    )
 
                     # Clear password from memory after successful connection
                     if self._ssh_password:
@@ -243,14 +244,18 @@ class SSHConnector(aiohttp.UnixConnector):
                     # Clean up context if it was created
                     if self._ssh_context:
                         try:
-                            await self._ssh_context.__aexit__(type(e), e, e.__traceback__)
+                            await self._ssh_context.__aexit__(
+                                type(e), e, e.__traceback__
+                            )
                         except Exception:
                             pass
                         self._ssh_context = None
                         self._ssh_conn = None
                     raise
 
-    async def connect(self, req: aiohttp.ClientRequest, traces: Any, timeout: aiohttp.ClientTimeout) -> aiohttp.ClientResponse:
+    async def connect(
+        self, req: aiohttp.ClientRequest, traces: Any, timeout: aiohttp.ClientTimeout
+    ) -> aiohttp.ClientResponse:
         """Connect through SSH tunnel."""
         await self._ensure_ssh_tunnel()
         return await super().connect(req, traces, timeout)
@@ -277,7 +282,9 @@ class SSHConnector(aiohttp.UnixConnector):
         except Exception as e:
             # Don't log full path for security
             temp_name = self._temp_dir.name[-8:] if self._temp_dir.name else "unknown"
-            log.warning(f"Failed to clean up temporary directory <temp-{temp_name}>: {type(e).__name__}")
+            log.warning(
+                f"Failed to clean up temporary directory <temp-{temp_name}>: {type(e).__name__}"
+            )
 
         # Clear any remaining sensitive data
         self._ssh_password = None

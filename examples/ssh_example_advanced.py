@@ -16,7 +16,7 @@ async def demonstrate_ssh_docker(docker_host: str):
     # Configure logging to see detailed operations
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
     # SECURITY NOTE: This example assumes the remote host is already in ~/.ssh/known_hosts
@@ -48,15 +48,17 @@ async def demonstrate_ssh_docker(docker_host: str):
             # 2. List containers
             print("Listing containers...")
             try:
-                containers = await docker.containers.list(all=True)  # Include stopped containers
+                containers = await docker.containers.list(
+                    all=True
+                )  # Include stopped containers
                 print(f"Found {len(containers)} containers:")
 
                 if containers:
                     for container in containers:
                         container_info = await container.show()
-                        name = container_info['Name'].lstrip('/')
-                        image = container_info['Config']['Image']
-                        state = container_info['State']['Status']
+                        name = container_info["Name"].lstrip("/")
+                        image = container_info["Config"]["Image"]
+                        state = container_info["State"]["Status"]
                         print(f"   • {name:<20} | {image:<30} | {state}")
                 else:
                     print("   No containers found")
@@ -74,13 +76,13 @@ async def demonstrate_ssh_docker(docker_host: str):
                 if images:
                     for image in images:
                         # Get image details
-                        image_id = image['Id'][:12]  # Short ID
-                        repo_tags = image.get('RepoTags', ['<none>:<none>'])
-                        if repo_tags and repo_tags[0] != '<none>:<none>':
+                        image_id = image["Id"][:12]  # Short ID
+                        repo_tags = image.get("RepoTags", ["<none>:<none>"])
+                        if repo_tags and repo_tags[0] != "<none>:<none>":
                             tag = repo_tags[0]
                         else:
-                            tag = '<none>:<none>'
-                        size = image.get('Size', 0) / (1024**2)  # MB
+                            tag = "<none>:<none>"
+                        size = image.get("Size", 0) / (1024**2)  # MB
 
                         print(f"   • {image_id} | {tag:<40} | {size:>8.1f} MB")
                 else:
@@ -112,7 +114,7 @@ async def demonstrate_ssh_docker(docker_host: str):
                         "AttachStdout": True,
                         "AttachStderr": True,
                     },
-                    name="ssh-test-container"
+                    name="ssh-test-container",
                 )
                 print("Container created and started")
 
@@ -139,9 +141,9 @@ async def demonstrate_ssh_docker(docker_host: str):
                 print(f"Found {len(containers)} containers:")
                 for container_item in containers:
                     container_info = await container_item.show()
-                    name = container_info['Name'].lstrip('/')
-                    image = container_info['Config']['Image']
-                    state = container_info['State']['Status']
+                    name = container_info["Name"].lstrip("/")
+                    image = container_info["Config"]["Image"]
+                    state = container_info["State"]["Status"]
                     print(f"   • {name:<25} | {image:<30} | {state}")
                 print()
             except Exception as e:
@@ -159,7 +161,7 @@ async def demonstrate_ssh_docker(docker_host: str):
                     containers = await docker.containers.list(all=True)
                     for c in containers:
                         info = await c.show()
-                        if info['Name'] == '/ssh-test-container':
+                        if info["Name"] == "/ssh-test-container":
                             await c.delete()
                             print("Test container found and deleted")
                             break
@@ -174,13 +176,13 @@ async def demonstrate_ssh_docker(docker_host: str):
                 images = await docker.images.list()
                 print(f"Found {len(images)} images:")
                 for image in images:
-                    image_id = image['Id'][:12]
-                    repo_tags = image.get('RepoTags', ['<none>:<none>'])
-                    if repo_tags and repo_tags[0] != '<none>:<none>':
+                    image_id = image["Id"][:12]
+                    repo_tags = image.get("RepoTags", ["<none>:<none>"])
+                    if repo_tags and repo_tags[0] != "<none>:<none>":
                         tag = repo_tags[0]
                     else:
-                        tag = '<none>:<none>'
-                    size = image.get('Size', 0) / (1024**2)
+                        tag = "<none>:<none>"
+                    size = image.get("Size", 0) / (1024**2)
                     print(f"   • {image_id} | {tag:<40} | {size:>8.1f} MB")
                 print()
             except Exception as e:
@@ -208,7 +210,8 @@ async def demonstrate_ssh_docker(docker_host: str):
             hostname = parsed.hostname
             port = parsed.port if parsed.port else 22
 
-            print(textwrap.dedent(f"""
+            print(
+                textwrap.dedent(f"""
                 SSH Host Key Verification Failed
                 ==================================================
                 Security Issue: The remote host is not in your known_hosts file.
@@ -226,12 +229,14 @@ async def demonstrate_ssh_docker(docker_host: str):
 
                 SECURITY WARNING: Never disable host key verification in production!
                    This protects against man-in-the-middle attacks.
-                """).strip())
+                """).strip()
+            )
         else:
             print(f"Configuration Error: {e}")
         sys.exit(1)
     except ConnectionError as e:
-        print(textwrap.dedent(f"""
+        print(
+            textwrap.dedent(f"""
             SSH Connection Failed
             ==============================
             Network Issue: {e}
@@ -241,15 +246,18 @@ async def demonstrate_ssh_docker(docker_host: str):
                2. Check if SSH service is running on the remote host
                3. Ensure you have network connectivity
                4. Verify your SSH credentials/keys are set up
-            """).strip())
+            """).strip()
+        )
         sys.exit(1)
     except Exception as e:
-        print(textwrap.dedent(f"""
+        print(
+            textwrap.dedent(f"""
             Unexpected Error: {e}
 
             For debugging, try running with verbose mode:
                python {sys.argv[0]} -v {docker_host}
-            """).strip())
+            """).strip()
+        )
         sys.exit(1)
 
 
@@ -268,16 +276,13 @@ Security Notes:
   - Ensure the remote host is in your ~/.ssh/known_hosts file
   - Use SSH key authentication for better security
   - Add host keys with: ssh-keyscan -H hostname >> ~/.ssh/known_hosts
-        """
+        """,
     )
     parser.add_argument(
-        "docker_host",
-        help="SSH URL for Docker host (e.g., ssh://user@host:port)"
+        "docker_host", help="SSH URL for Docker host (e.g., ssh://user@host:port)"
     )
     parser.add_argument(
-        "-v", "--verbose",
-        action="store_true",
-        help="Enable verbose logging"
+        "-v", "--verbose", action="store_true", help="Enable verbose logging"
     )
 
     args = parser.parse_args()

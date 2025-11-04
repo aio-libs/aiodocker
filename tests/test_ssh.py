@@ -47,6 +47,7 @@ class TestSSHSupport:
 
         try:
             from aiodocker.ssh import SSHConnector
+
             with pytest.raises(ImportError, match="asyncssh is required"):
                 SSHConnector("ssh://user@host")
         finally:
@@ -56,26 +57,31 @@ class TestSSHSupport:
         """Test SSH connector rejects invalid URL schemes."""
         with pytest.raises(ValueError, match="Invalid SSH URL scheme"):
             from aiodocker.ssh import SSHConnector
+
             SSHConnector("http://user@host")
 
     def test_ssh_connector_missing_hostname(self):
         """Test SSH connector requires hostname."""
         with pytest.raises(ValueError, match="SSH URL must include hostname"):
             from aiodocker.ssh import SSHConnector
+
             SSHConnector("ssh://user@")
 
     def test_ssh_connector_missing_username(self):
         """Test SSH connector requires username."""
         with pytest.raises(ValueError, match="SSH URL must include username"):
             from aiodocker.ssh import SSHConnector
+
             SSHConnector("ssh://host:22")
 
     def test_ssh_connector_invalid_port(self):
         """Test SSH connector validates port range."""
         with pytest.raises(ValueError, match="Port out of range"):
             from aiodocker.ssh import SSHConnector
+
             SSHConnector("ssh://user@host:70000")
 
         with pytest.raises(ValueError, match="Port could not be cast to integer"):
             from aiodocker.ssh import SSHConnector
+
             SSHConnector("ssh://user@host:-1")
