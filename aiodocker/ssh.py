@@ -13,18 +13,19 @@ from typing import Any, Dict, Optional, Tuple
 from urllib.parse import urlparse
 
 import aiohttp
+from aiohttp.connector import Connection
 
 
 try:
     import asyncssh
 except ImportError:
-    asyncssh = None
+    asyncssh = None  # type: ignore
 
 # Try to import SSH config parser (preferably paramiko like docker-py)
 try:
     from paramiko import SSHConfig
 except ImportError:
-    SSHConfig = None
+    SSHConfig = None  # type: ignore
 
 log = logging.getLogger(__name__)
 
@@ -255,7 +256,7 @@ class SSHConnector(aiohttp.UnixConnector):
 
     async def connect(
         self, req: aiohttp.ClientRequest, traces: Any, timeout: aiohttp.ClientTimeout
-    ) -> aiohttp.ClientResponse:
+    ) -> Connection:
         """Connect through SSH tunnel."""
         await self._ensure_ssh_tunnel()
         return await super().connect(req, traces, timeout)

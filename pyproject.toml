@@ -38,6 +38,7 @@ lint = [
     "pre-commit>=3.5.0",
     "ruff==0.14.3",
     "mypy==1.18.2",
+    "types-paramiko",
 ]
 test = [
     "async-timeout~=5.0.1",
