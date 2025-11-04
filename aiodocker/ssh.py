@@ -126,9 +126,7 @@ class SSHConnector(aiohttp.UnixConnector):
 
         if ssh_config_path.exists():
             try:
-                config = SSHConfig()
-                with ssh_config_path.open() as f:
-                    config.parse(f)
+                config = SSHConfig.from_path(ssh_config_path)
                 host_config = config.lookup(self._ssh_host)
 
                 # Map SSH config options to asyncssh parameters
