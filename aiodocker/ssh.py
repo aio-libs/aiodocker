@@ -103,14 +103,8 @@ class SSHConnector(aiohttp.UnixConnector):
         self._tunnel_lock = asyncio.Lock()
 
         # Create secure temporary directory (system chooses location and sets permissions)
-        try:
-            self._temp_dir = Path(tempfile.mkdtemp())
-            self._local_socket_path = str(self._temp_dir / "docker.sock")
-        except Exception:
-            # Clean up if temp directory creation fails
-            if hasattr(self, "_temp_dir") and self._temp_dir.exists():
-                shutil.rmtree(self._temp_dir, ignore_errors=True)
-            raise
+        self._temp_dir = tempfile.TemporaryDirectory()
+        self._local_socket_path = os.path.join(self._temp_dir.name, "docker.sock")
 
         # Initialize as Unix connector with our local socket
         super().__init__(path=self._local_socket_path)
@@ -276,8 +270,7 @@ class SSHConnector(aiohttp.UnixConnector):
 
         # Clean up temporary directory (removes socket file automatically)
         try:
-            if self._temp_dir.exists():
-                shutil.rmtree(self._temp_dir, ignore_errors=True)
+            self._temp_dir.cleanup()
         except Exception as e:
             # Don't log full path for security
             temp_name = self._temp_dir.name[-8:] if self._temp_dir.name else "unknown"
