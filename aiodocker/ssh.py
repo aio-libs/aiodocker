@@ -136,10 +136,10 @@ class SSHConnector(aiohttp.UnixConnector):
                 if "userknownhostsfile" in host_config:
                     config_options["known_hosts"] = host_config["userknownhostsfile"]
 
-                log.debug(f"Loaded SSH config for {self._ssh_host}")
+                log.debug("Loaded SSH config for %s", self._ssh_host)
 
-            except Exception as e:
-                log.warning(f"Failed to parse SSH config: {e}")
+            except Exception:
+                log.exception("Failed to parse SSH config")
 
         return config_options
 
@@ -165,10 +165,10 @@ class SSHConnector(aiohttp.UnixConnector):
         elif known_hosts is None:
             # Allow but warn (similar to docker-py's WarningPolicy)
             log.warning(
-                f"SECURITY WARNING: Host key verification disabled for {self._ssh_host}. "
+                "SECURITY WARNING: Host key verification disabled for %(ssh_host)s. "
                 "Connection is vulnerable to man-in-the-middle attacks. "
-                "Add host to ~/.ssh/known_hosts or run: ssh-keyscan -H %s >> ~/.ssh/known_hosts",
-                self._ssh_host,
+                "Add host to ~/.ssh/known_hosts or run: ssh-keyscan -H %(ssh_host)s >> ~/.ssh/known_hosts",
+                {"ssh_host": self._ssh_host},
             )
 
     def _sanitize_error_message(self, error: Exception) -> str:
@@ -200,7 +200,10 @@ class SSHConnector(aiohttp.UnixConnector):
             # Re-check condition after acquiring lock
             if self._ssh_conn is None or self._ssh_conn.is_closed():
                 log.debug(
-                    f"Establishing SSH connection to {self._ssh_username}@{self._ssh_host}:{self._ssh_port}"
+                    "Establishing SSH connection to %s@%s:%s",
+                    self._ssh_username,
+                    self._ssh_host,
+                    self._ssh_port,
                 )
 
                 try:
@@ -223,7 +226,7 @@ class SSHConnector(aiohttp.UnixConnector):
                         self._local_socket_path, self._socket_path
                     )
                     log.debug(
-                        f"SSH tunnel established: local socket -> {self._socket_path}"
+                        "SSH tunnel established: local socket -> %s", self._socket_path
                     )
 
                     # Clear password from memory after successful connection
@@ -232,7 +235,7 @@ class SSHConnector(aiohttp.UnixConnector):
 
                 except Exception as e:
                     sanitized_error = self._sanitize_error_message(e)
-                    log.error(f"Failed to establish SSH connection: {sanitized_error}")
+                    log.error("Failed to establish SSH connection: %s", sanitized_error)
 
                     # Clean up context if it was created
                     if self._ssh_context:
@@ -263,7 +266,7 @@ class SSHConnector(aiohttp.UnixConnector):
                 await self._ssh_context.__aexit__(None, None, None)
             except Exception as e:
                 sanitized_error = self._sanitize_error_message(e)
-                log.warning(f"Error closing SSH connection: {sanitized_error}")
+                log.warning("Error closing SSH connection: %s", sanitized_error)
             finally:
                 self._ssh_context = None
                 self._ssh_conn = None
@@ -275,7 +278,9 @@ class SSHConnector(aiohttp.UnixConnector):
             # Don't log full path for security
             temp_name = self._temp_dir.name[-8:] if self._temp_dir.name else "unknown"
             log.warning(
-                f"Failed to clean up temporary directory <temp-{temp_name}>: {type(e).__name__}"
+                "Failed to clean up temporary directory <temp-%s>: %s",
+                temp_name,
+                type(e).__name__,
             )
 
         # Clear any remaining sensitive data
