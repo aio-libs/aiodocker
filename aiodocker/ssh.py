@@ -79,10 +79,6 @@ class SSHConnector(aiohttp.UnixConnector):
         self._socket_path = socket_path
         self._strict_host_keys = strict_host_keys
 
-        # Validate port range
-        if not (1 <= self._ssh_port <= 65535):
-            raise ValueError(f"Invalid SSH port: {self._ssh_port}")
-
         # Load SSH config and merge with provided options
         ssh_config = self._load_ssh_config()
         self._ssh_options = {**ssh_config, **kwargs}
