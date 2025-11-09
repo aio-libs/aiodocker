@@ -7,15 +7,19 @@ from collections.abc import (
     MutableSequence,
     Sequence,
 )
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
+    Optional,
     Protocol,
     TypeAlias,
     TypedDict,
     TypeVar,
     Union,
 )
+
+import aiohttp
 
 
 if TYPE_CHECKING:
@@ -60,6 +64,17 @@ MutableJSONList: TypeAlias = MutableSequence[MutableJSONValue]
 
 class AsyncContainerFactory(Protocol):
     async def __call__(self, config: dict[str, Any], name: str) -> DockerContainer: ...
+
+
+@dataclass(slots=True)
+class Timeout:
+    connect: Optional[float] = None
+
+    def to_aiohttp_client_timeout(self) -> aiohttp.ClientTimeout:
+        return aiohttp.ClientTimeout(
+            connect=self.connect,
+            total=None,
+        )
 
 
 class PortInfo(TypedDict):

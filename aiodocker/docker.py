@@ -40,7 +40,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .types import SENTINEL, Sentinel
+from .types import SENTINEL, Sentinel, Timeout
 from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
@@ -84,6 +84,7 @@ class Docker:
         url: Optional[str] = None,
         connector: Optional[aiohttp.BaseConnector] = None,
         session: Optional[aiohttp.ClientSession] = None,
+        timeout: Optional[Timeout] = None,
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
     ) -> None:
@@ -117,6 +118,8 @@ class Docker:
         if api_version != "auto" and _rx_version.search(api_version) is None:
             raise ValueError("Invalid API version format")
         self.api_version = api_version
+
+        self._timeout = timeout or Timeout()
 
         if docker_host is None:
             raise ValueError(
@@ -153,7 +156,10 @@ class Docker:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector
         if session is None:
-            session = aiohttp.ClientSession(connector=self.connector)
+            session = aiohttp.ClientSession(
+                connector=self.connector,
+                timeout=self._timeout.to_aiohttp_client_timeout(),
+            )
         self.session = session
 
         self.events = DockerEvents(self)
