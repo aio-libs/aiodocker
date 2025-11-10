@@ -30,17 +30,17 @@ from importlib.metadata import version
 _docs_path = os.path.dirname(__file__)
 try:
     _version_str = version("aiodocker")
-    print(_version_str)
     _version_match = re.search(
         r"^(?P<major>\d+)"
         r"\.(?P<minor>\d+)"
         r"\.(?P<patch>\d+)"
-        r"(?P<tag>.*)?$",
+        r"(?:\.?)(?P<tag>.*)?$",
         _version_str,
         flags=re.M,
     )
     if _version_match is None:
         raise ValueError
+    print(f"{_version_str} -> {_version_match.groupdict()}")
     _version_info = _version_match.groupdict()
 except (IndexError, ValueError):
     raise RuntimeError("Unable to determine version.")

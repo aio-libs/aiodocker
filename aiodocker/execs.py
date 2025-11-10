@@ -84,6 +84,7 @@ class Exec:
     ) -> Any:
         """
         Start this exec instance.
+
         Args:
             timeout: The timeout in seconds for the request to start the exec instance.
             detach: Indicates whether we should detach from the command (like the `-d`

@@ -123,7 +123,9 @@ It's *Apache 2* licensed and freely available.
    client
    configs
    containers
+   exec
    images
+   networks
    secrets
    services
    ssh
