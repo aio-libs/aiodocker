@@ -7,6 +7,7 @@ import os
 import re
 import ssl
 import sys
+from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from types import TracebackType
@@ -24,8 +25,6 @@ import aiohttp
 from multidict import CIMultiDict
 from yarl import URL
 
-from aiodocker.types import JSONObject
-
 # Sub-API classes
 from .configs import DockerConfigs
 from .containers import DockerContainer, DockerContainers
@@ -40,7 +39,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .types import SENTINEL, Sentinel, Timeout
+from .types import SENTINEL, JSONObject, Sentinel, Timeout
 from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
@@ -224,14 +223,14 @@ class Docker:
     @asynccontextmanager
     async def _query(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str = "GET",
         *,
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
-        headers=None,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
-        chunked=None,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
+        chunked: Optional[bool] = None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> AsyncIterator[aiohttp.ClientResponse]:
@@ -254,36 +253,44 @@ class Docker:
 
     async def _do_query(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str,
         *,
-        params: Optional[JSONObject],
-        data: Any,
-        headers,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
-        chunked,
-        read_until_eof: bool,
-        versioned_api: bool,
+        params: Optional[JSONObject] = None,
+        data: Any = None,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
+        chunked: Optional[bool] = None,
+        read_until_eof: bool = True,
+        versioned_api: bool = True,
     ) -> aiohttp.ClientResponse:
         if versioned_api:
             await self._check_version()
         url = self._canonicalize_url(path, versioned_api=versioned_api)
+        _headers: CIMultiDict[str | int | bool] = CIMultiDict()
         if headers:
-            headers = CIMultiDict(headers)
-            if "Content-Type" not in headers:
-                headers["Content-Type"] = "application/json"
+            _headers.update(headers)
+        if "Content-Type" not in _headers:
+            _headers["Content-Type"] = "application/json"
         if timeout is SENTINEL:
+            # Use the timeout configured upon the Docker instance creation
+            # or the timeout already configured in the passed aiohttp.ClientSession instance.
             timeout = self.session.timeout
         assert not isinstance(timeout, Sentinel)
+        # Set the timeout manually according to the individual timeout argument.
+        # NOTE: This is no longer recommended.
+        #       Use `asyncio.timeout()` async context manager block to enforce
+        #       the total request-response processing timeout.
         if not isinstance(timeout, aiohttp.ClientTimeout):
             timeout = aiohttp.ClientTimeout(timeout)
         try:
             real_params = httpize(params)
+            real_headers = httpize(_headers)
             response = await self.session.request(
                 method,
                 url,
                 params=real_params,
-                headers=headers,
+                headers=real_headers,
                 data=data,
                 timeout=timeout,
                 chunked=chunked,
@@ -313,22 +320,24 @@ class Docker:
 
     async def _query_json(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str = "GET",
         *,
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
-        headers=None,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> Any:
         """
         A shorthand of _query() that treats the input as JSON.
         """
-        if headers is None:
-            headers = {}
-        headers["Content-Type"] = "application/json"
+        _headers: CIMultiDict[str | int | bool] = CIMultiDict()
+        if headers:
+            _headers.update(headers)
+        if "Content-Type" not in _headers:
+            _headers["Content-Type"] = "application/json"
         if data is not None and not isinstance(data, (str, bytes)):
             data = json.dumps(data)
         async with self._query(
@@ -336,7 +345,7 @@ class Docker:
             method,
             params=params,
             data=data,
-            headers=headers,
+            headers=_headers,
             timeout=timeout,
             read_until_eof=read_until_eof,
             versioned_api=versioned_api,
@@ -346,12 +355,12 @@ class Docker:
 
     def _query_chunked_post(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str = "POST",
         *,
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
-        headers=None,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
         timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
@@ -359,10 +368,11 @@ class Docker:
         """
         A shorthand for uploading data by chunks
         """
-        if headers is None:
-            headers = {}
-        if headers and "content-type" not in headers:
-            headers["content-type"] = "application/octet-stream"
+        _headers: CIMultiDict[str | int | bool] = CIMultiDict()
+        if headers:
+            _headers.update(headers)
+        if "Content-Type" not in _headers:
+            _headers["Content-Type"] = "application/octet-stream"
         return self._query(
             path,
             method,

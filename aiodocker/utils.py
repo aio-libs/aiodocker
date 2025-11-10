@@ -17,7 +17,10 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
+
+from multidict import CIMultiDict
 
 from .types import JSONObject
 
@@ -125,7 +128,21 @@ def human_bool(s) -> bool:
         return bool(s)
 
 
-def httpize(d: Optional[JSONObject]) -> Optional[Mapping[str, str]]:
+@overload
+def httpize(
+    d: Optional[CIMultiDict[str | int | bool]],
+) -> Optional[CIMultiDict[str]]: ...
+
+
+@overload
+def httpize(
+    d: Optional[JSONObject],
+) -> Optional[Mapping[str, str]]: ...
+
+
+def httpize(
+    d: Optional[JSONObject | CIMultiDict[str | int | bool]],
+) -> Optional[Mapping[str, str] | CIMultiDict[str | int | bool]]:
     if d is None:
         return None
     converted = {}
