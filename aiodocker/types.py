@@ -68,6 +68,10 @@ class AsyncContainerFactory(Protocol):
 
 @dataclass(slots=True)
 class Timeout:
+    """
+    A timeout configuration dataclass.
+    """
+
     connect: Optional[float] = None
     """
     The timeout for establishing a connection to the docker host.
@@ -87,7 +91,7 @@ class Timeout:
 
     def to_aiohttp_client_timeout(self) -> aiohttp.ClientTimeout:
         """
-        Return the :class:`aiohttp.ClientTimeout` instance converted from this.
+        Returns an :class:`aiohttp.ClientTimeout` instance converted from this.
         """
         return aiohttp.ClientTimeout(
             connect=self.connect,
@@ -101,6 +105,14 @@ class PortInfo(TypedDict):
 
 
 class Sentinel(enum.Enum):
+    """
+    A special single-value enum constant to represent "unspecified" value in the contexts
+    where ``None`` has another meaning.
+
+    For example, ``None`` in timeouts means infinity.
+    If you want to represent an unspecified/default value for timeouts, use the ``SENTINEL`` or ``Sentinel.TOKEN``.
+    """
+
     TOKEN = enum.auto()
 
 
