@@ -16,9 +16,9 @@ aiodocker: AsyncIO bindings for docker.io
    :target: https://pypi.org/project/aiodocker/
    :alt: Python Versions
 
-.. image:: https://travis-ci.org/aio-libs/aiodocker.svg?branch=main
-   :target: https://travis-ci.org/aio-libs/aiodocker
-   :alt: Build Status
+.. image:: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml/badge.svg?branch=main
+   :target: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml?query=branch%3Amain
+   :alt: GitHub Actions status for the main branch
 
 .. image:: https://codecov.io/gh/aio-libs/aiodocker/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/aio-libs/aiodocker
