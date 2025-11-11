@@ -40,8 +40,8 @@ class DockerLog:
         params2 = ChainMap(forced_params, params, default_params)
         timeout = self.docker._timeout.to_aiohttp_client_timeout()
         # inherit and update the parent client's timeout
-        # total timeout doesn't make sense for streaming
-        timeout = attrs.evolve(timeout, total=None)
+        # sock_read and total timeout doesn't make sense for log streaming
+        timeout = attrs.evolve(timeout, sock_read=None, total=None)
         try:
             async with self.docker._query(
                 f"containers/{self.container._id}/logs", params=params2
