@@ -1,21 +1,10 @@
-========
 Volumes
-========
+=======
 
-----------
-Reference
-----------
+.. autoclass:: aiodocker.volumes.DockerVolumes
+    :members:
+    :undoc-members:
 
-DockerVolumes
-==============
-
-.. autoclass:: aiodocker.docker.DockerVolumes
-        :members:
-        :undoc-members:
-
-DockerVolume
-==============
-
-.. autoclass:: aiodocker.docker.DockerVolume
-        :members:
-        :undoc-members:
+.. autoclass:: aiodocker.volumes.DockerVolume
+    :members:
+    :undoc-members:

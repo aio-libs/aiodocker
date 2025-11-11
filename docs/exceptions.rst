@@ -1,14 +1,6 @@
-===========
 Exceptions
-===========
-
-----------
-Reference
-----------
-
-DockerError
-============
+==========
 
 .. autoclass:: aiodocker.exceptions.DockerError
-        :members:
-        :undoc-members:
+    :members:
+    :undoc-members:

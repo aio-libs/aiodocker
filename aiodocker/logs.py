@@ -5,6 +5,7 @@ from collections import ChainMap
 from typing import TYPE_CHECKING, Any, Optional
 
 import aiohttp
+import attrs
 
 from .channel import Channel, ChannelSubscriber
 
@@ -37,6 +38,10 @@ class DockerLog:
         forced_params = {"follow": True}
         default_params = {"stdout": True, "stderr": True}
         params2 = ChainMap(forced_params, params, default_params)
+        timeout = self.docker._timeout.to_aiohttp_client_timeout()
+        # inherit and update the parent client's timeout
+        # total timeout doesn't make sense for streaming
+        timeout = attrs.evolve(timeout, total=None)
         try:
             async with self.docker._query(
                 f"containers/{self.container._id}/logs", params=params2

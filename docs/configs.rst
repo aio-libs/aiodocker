@@ -1,10 +1,15 @@
-============
 Configs
-============
+=======
 
+.. autoclass:: aiodocker.configs.DockerConfigs
+    :members:
+    :undoc-members:
+
+Example
+-------
 
 Create a config
-========================
+~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -51,15 +56,3 @@ Create a config
 
     if __name__ == "__main__":
         asyncio.run(main())
-
-
-------------
-Reference
-------------
-
-DockerConfigs
-===============
-
-.. autoclass:: aiodocker.configs.DockerConfigs
-        :members:
-        :undoc-members:

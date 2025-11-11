@@ -14,9 +14,7 @@ from types import TracebackType
 from typing import (
     Any,
     AsyncIterator,
-    Dict,
     Optional,
-    Tuple,
     Type,
     Union,
 )
@@ -44,7 +42,7 @@ from .utils import httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
-__all__: Tuple[str, ...] = (
+__all__ = (
     "Docker",
     "DockerContainers",
     "DockerContainer",
@@ -78,6 +76,45 @@ _rx_tcp_schemes = re.compile(r"^(tcp|http|https)://")
 
 
 class Docker:
+    """
+    The Docker client as the main entrypoint to the sub-APIs such as
+    container, images, networks, swarm and services, etc.
+    You may access such sub-API collections via the attributes of the client instance,
+    like:
+
+    .. code-block:: python
+
+        docker = aiodocker.Docker()
+        await docker.containers.list()
+        await docker.images.pull(...)
+
+    The client will auto-detect the Docker host from the ``DOCKER_HOST`` environment
+    variable or search for local socket files if not specified.
+
+    Args:
+        url: The Docker daemon address as the full URL string (e.g.,
+            ``"unix:///var/run/docker.sock"``, ``"tcp://127.0.0.1:2375"``,
+            ``"npipe:////./pipe/docker_engine"``).
+            If not specified, it will use ``DOCKER_HOST`` environment variable or auto-detect
+            from common socket paths.
+        connector: Custom aiohttp connector for the HTTP session. If provided,
+            it will be used instead of creating a connector based on the url.
+        session: Custom aiohttp ClientSession. If None, a new session will be
+            created with the connector and timeout settings.
+        timeout: :class:`~aiodocker.types.Timeout` configuration for API requests.
+            If None, there is no timeout at all.
+        ssl_context: SSL context for HTTPS connections. If None and ``DOCKER_TLS_VERIFY``
+            is set, will create a context using ``DOCKER_CERT_PATH`` certificates.
+        api_version: Pin the Docker API version (e.g., "v1.43"). Use "auto" to
+            automatically detect the API version from the daemon.
+
+    Raises:
+        ValueError: Raised if the docker host cannot be determined,
+            if both url and connector are incompatible,
+            or if api_version format is invalid.
+        OSError: On Windows, if named pipe access fails unexpectedly.
+    """
+
     def __init__(
         self,
         url: Optional[str] = None,
@@ -190,14 +227,58 @@ class Docker:
         await self.close()
 
     async def close(self) -> None:
+        """Close the Docker client and release resources.
+
+        Stops the event monitoring and closes the underlying aiohttp session,
+        releasing all associated resources including connections.
+        """
         await self.events.stop()
         await self.session.close()
 
-    async def auth(self, **credentials: Any) -> Dict[str, Any]:
+    async def auth(self, **credentials: Any) -> dict[str, Any]:
+        """Authenticate with Docker registry.
+
+        Validates registry credentials and returns authentication information.
+
+        Args:
+            credentials: Registry authentication credentials. Typically includes:
+
+                - ``username`` (str): Registry username
+                - ``password`` (str): Registry password
+                - ``email`` (str, optional): User email
+                - ``serveraddress`` (str, optional): Registry server address
+
+        Returns:
+            Authentication response from the Docker daemon, typically
+            containing status and identity token information.
+
+        Raises:
+            DockerError: If authentication fails or credentials are invalid.
+        """
         response = await self._query_json("auth", "POST", data=credentials)
         return response
 
-    async def version(self) -> Dict[str, Any]:
+    async def version(self) -> dict[str, Any]:
+        """Get Docker daemon version information.
+
+        Retrieves version details about the Docker daemon including API version,
+        OS, architecture, and component versions.
+
+        Returns:
+            A dict containing version information with keys like:
+
+            - ``Version`` (str): Docker version
+            - ``ApiVersion`` (str): API version
+            - ``Os`` (str): Operating system
+            - ``Arch`` (str): Architecture
+            - ``KernelVersion`` (str): Kernel version
+            - ``GitCommit`` (str): Git commit hash
+
+            and additional component-specific information.
+
+        Raises:
+            DockerError: If the request fails or daemon is unreachable.
+        """
         data = await self._query_json("version")
         return data
 

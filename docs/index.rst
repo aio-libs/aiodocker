@@ -124,6 +124,8 @@ It's *Apache 2* licensed and freely available.
    configs
    containers
    exec
+   stream
+   logs
    images
    networks
    secrets
@@ -132,8 +134,8 @@ It's *Apache 2* licensed and freely available.
    system
    volumes
    tasks
-   log
    events
+   types
    exceptions
 
 Indices and tables
