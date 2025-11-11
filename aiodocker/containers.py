@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import shlex
 import tarfile
+import warnings
 from contextlib import AbstractAsyncContextManager
 from typing import (
     TYPE_CHECKING,
@@ -286,14 +287,17 @@ class DockerContainer:
         ):
             pass
 
-    async def wait(self, *, timeout=None, **kwargs) -> Dict[str, Any]:
-        data = await self.docker._query_json(
-            f"containers/{self._id}/wait",
-            method="POST",
-            params=kwargs,
-            timeout=timeout,
-        )
-        return data
+    async def wait(self, *, timeout: float | None = None, **kwargs) -> Dict[str, Any]:
+        with warnings.catch_warnings():
+            # The wait API is an exception from deprecation of the total timeout.
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            data = await self.docker._query_json(
+                f"containers/{self._id}/wait",
+                method="POST",
+                params=kwargs,
+                timeout=timeout,
+            )
+            return data
 
     async def delete(self, **kwargs) -> None:
         async with self.docker._query(
