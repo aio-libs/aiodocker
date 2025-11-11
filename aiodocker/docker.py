@@ -241,16 +241,21 @@ class Docker:
         Validates registry credentials and returns authentication information.
 
         Args:
-            credentials: Registry authentication credentials. Typically includes:
+            credentials: Registry authentication credentials.
+                Typically includes:
 
                 - ``username`` (str): Registry username
                 - ``password`` (str): Registry password
-                - ``email`` (str, optional): User email
-                - ``serveraddress`` (str, optional): Registry server address
+                - ``serveraddress`` (str, optional): Registry server address without a protocol
+
+                If you have an identity token issued in prior, you may pass ``identitytoken`` only.
 
         Returns:
-            Authentication response from the Docker daemon, typically
-            containing status and identity token information.
+            Authentication response from the Docker daemon,
+            including:
+
+            - ``Status`` (str): A string message like "Login Succeeded"
+            - ``IdentityToken`` (str): The identity token
 
         Raises:
             DockerError: If authentication fails or credentials are invalid.
@@ -265,7 +270,8 @@ class Docker:
         OS, architecture, and component versions.
 
         Returns:
-            A dict containing version information with keys like:
+            A dict containing version information with keys
+            like:
 
             - ``Version`` (str): Docker version
             - ``ApiVersion`` (str): API version
