@@ -7,6 +7,7 @@ import os
 import re
 import ssl
 import sys
+import warnings
 from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
@@ -20,6 +21,7 @@ from typing import (
 )
 
 import aiohttp
+import attrs
 from multidict import CIMultiDict
 from yarl import URL
 
@@ -97,10 +99,11 @@ class Docker:
             ``"npipe:////./pipe/docker_engine"``).
             If not specified, it will use ``DOCKER_HOST`` environment variable or auto-detect
             from common socket paths.
-        connector: Custom aiohttp connector for the HTTP session. If provided,
-            it will be used instead of creating a connector based on the url.
-        session: Custom aiohttp ClientSession. If None, a new session will be
+        connector: Custom :class:`aiohttp.BaseConnector` implementation to establish new connections to the docker host.
+            If provided, it will be used instead of creating a connector based on the **url** value.
+        session: Custom :class:`aiohttp.ClientSession`. If None, a new session will be
             created with the connector and timeout settings.
+            The timeout configuration in this object is *ignored* by the **timeout** argument.
         timeout: :class:`~aiodocker.types.Timeout` configuration for API requests.
             If None, there is no timeout at all.
         ssl_context: SSL context for HTTPS connections. If None and ``DOCKER_TLS_VERIFY``
@@ -359,17 +362,26 @@ class Docker:
             _headers.update(headers)
         if "Content-Type" not in _headers:
             _headers["Content-Type"] = "application/json"
-        if timeout is SENTINEL:
-            # Use the timeout configured upon the Docker instance creation
-            # or the timeout already configured in the passed aiohttp.ClientSession instance.
-            timeout = self.session.timeout
-        assert not isinstance(timeout, Sentinel)
-        # Set the timeout manually according to the individual timeout argument.
-        # NOTE: This is no longer recommended.
-        #       Use `asyncio.timeout()` async context manager block to enforce
-        #       the total request-response processing timeout.
-        if not isinstance(timeout, aiohttp.ClientTimeout):
-            timeout = aiohttp.ClientTimeout(timeout)
+        # Derive from the timeout configured upon the client instance creation.
+        _timeout = self._timeout.to_aiohttp_client_timeout()
+        match timeout:
+            case float():
+                warnings.warn(
+                    "Manually setting the total timeout is highly discouraged. "
+                    "Use asyncio.timeout() block instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                _timeout = attrs.evolve(_timeout, total=timeout)
+            case aiohttp.ClientTimeout():
+                # Override with the caller's decision.
+                _timeout = timeout
+            case None:
+                # Infinite timeout.
+                _timeout = aiohttp.ClientTimeout()
+            case Sentinel.TOKEN:
+                # Use the client-level config.
+                pass
         try:
             real_params = httpize(params)
             real_headers = httpize(_headers)
@@ -379,7 +391,7 @@ class Docker:
                 params=real_params,
                 headers=real_headers,
                 data=data,
-                timeout=timeout,
+                timeout=_timeout,
                 chunked=chunked,
                 read_until_eof=read_until_eof,
             )
