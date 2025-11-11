@@ -81,7 +81,7 @@ class Timeout:
     This value is IGNORED when you use streaming APIs such as
     :meth:`DockerLog.run() <aiodocker.logs.DockerLog.run>` and :class:`~aiodocker.stream.Stream`.
 
-    It is generally recommended to use :class:`asyncio.timeout()` to set
+    It is generally recommended to use :func:`asyncio.timeout()` to set
     arbitrary total timeouts of an entire request-response processing block.
     """
 
