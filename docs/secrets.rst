@@ -1,10 +1,15 @@
-============
 Secrets
-============
+=======
 
+.. autoclass:: aiodocker.secrets.DockerSecrets
+    :members:
+    :undoc-members:
+
+Example
+-------
 
 Create a secret
-========================
+~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -51,15 +56,3 @@ Create a secret
 
     if __name__ == "__main__":
         asyncio.run(main())
-
-
-------------
-Reference
-------------
-
-DockerSecrets
-===============
-
-.. autoclass:: aiodocker.secrets.DockerSecrets
-        :members:
-        :undoc-members:
