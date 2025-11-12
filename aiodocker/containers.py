@@ -23,7 +23,6 @@ from aiohttp import ClientResponse, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
-from .docker import _suppress_timeout_deprecation
 from .exceptions import DockerContainerError, DockerError
 from .execs import Exec
 from .jsonstream import json_stream_list, json_stream_stream
@@ -31,7 +30,7 @@ from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
 from .types import JSONObject, MutableJSONObject, PortInfo
-from .utils import identical, parse_result
+from .utils import _suppress_timeout_deprecation, identical, parse_result
 
 
 if TYPE_CHECKING:

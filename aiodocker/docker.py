@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextvars
 import json
 import logging
 import os
@@ -41,7 +40,7 @@ from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
 from .types import SENTINEL, JSONObject, Sentinel, Timeout
-from .utils import httpize, parse_result
+from .utils import _suppress_timeout_deprecation, httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
@@ -67,11 +66,6 @@ __all__ = (
 )
 
 log = logging.getLogger(__name__)
-
-# Context variable to suppress timeout deprecation warnings in specific contexts
-_suppress_timeout_deprecation: contextvars.ContextVar[bool] = contextvars.ContextVar(
-    "_suppress_timeout_deprecation", default=False
-)
 
 _sock_search_paths = [
     Path("/run/docker.sock"),

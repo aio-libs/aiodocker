@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import codecs
+import contextvars
 import json
 import tarfile
 import tempfile
@@ -23,6 +24,11 @@ from typing import (
 from multidict import CIMultiDict
 
 from .types import JSONObject
+
+
+_suppress_timeout_deprecation: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "_suppress_timeout_deprecation", default=False
+)
 
 
 async def parse_result(response, response_type=None, *, encoding="utf-8"):
