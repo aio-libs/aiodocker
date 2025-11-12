@@ -460,7 +460,7 @@ class Docker:
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
         headers: Optional[Mapping[str, str | int | bool]] = None,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:

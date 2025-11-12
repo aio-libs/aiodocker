@@ -44,7 +44,7 @@ class DockerLog:
         timeout = attrs.evolve(timeout, sock_read=None, total=None)
         try:
             async with self.docker._query(
-                f"containers/{self.container._id}/logs", params=params2
+                f"containers/{self.container._id}/logs", params=params2, timeout=timeout
             ) as resp:
                 self.response = resp
                 assert self.response is not None
