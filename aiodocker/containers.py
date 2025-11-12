@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import shlex
 import tarfile
-import warnings
 from contextlib import AbstractAsyncContextManager
 from typing import (
     TYPE_CHECKING,
@@ -24,6 +23,7 @@ from aiohttp import ClientResponse, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
+from .docker import _suppress_timeout_deprecation
 from .exceptions import DockerContainerError, DockerError
 from .execs import Exec
 from .jsonstream import json_stream_list, json_stream_stream
@@ -288,9 +288,10 @@ class DockerContainer:
             pass
 
     async def wait(self, *, timeout: float | None = None, **kwargs) -> Dict[str, Any]:
-        with warnings.catch_warnings():
-            # The wait API is an exception from deprecation of the total timeout.
-            warnings.simplefilter("ignore", category=DeprecationWarning)
+        # The wait API is an exception from deprecation of the total timeout.
+        # Use a context variable to suppress the warning in a thread-safe and async-safe manner.
+        token = _suppress_timeout_deprecation.set(True)
+        try:
             data = await self.docker._query_json(
                 f"containers/{self._id}/wait",
                 method="POST",
@@ -298,6 +299,8 @@ class DockerContainer:
                 timeout=timeout,
             )
             return data
+        finally:
+            _suppress_timeout_deprecation.reset(token)
 
     async def delete(self, **kwargs) -> None:
         async with self.docker._query(

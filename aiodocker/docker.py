@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json
 import logging
 import os
@@ -66,6 +67,11 @@ __all__ = (
 )
 
 log = logging.getLogger(__name__)
+
+# Context variable to suppress timeout deprecation warnings in specific contexts
+_suppress_timeout_deprecation: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "_suppress_timeout_deprecation", default=False
+)
 
 _sock_search_paths = [
     Path("/run/docker.sock"),
@@ -366,12 +372,13 @@ class Docker:
         _timeout = self._timeout.to_aiohttp_client_timeout()
         match timeout:
             case float():
-                warnings.warn(
-                    "Manually setting the total timeout is highly discouraged. "
-                    "Use asyncio.timeout() block instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
+                if not _suppress_timeout_deprecation.get():
+                    warnings.warn(
+                        "Manually setting the total timeout is highly discouraged. "
+                        "Use asyncio.timeout() block instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
                 _timeout = attrs.evolve(_timeout, total=timeout)
             case aiohttp.ClientTimeout():
                 # Override with the caller's decision.
