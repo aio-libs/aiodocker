@@ -7,19 +7,15 @@ from collections.abc import (
     MutableSequence,
     Sequence,
 )
-from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
-    Optional,
     Protocol,
     TypeAlias,
     TypedDict,
     TypeVar,
     Union,
 )
-
-import aiohttp
 
 
 if TYPE_CHECKING:
@@ -64,39 +60,6 @@ MutableJSONList: TypeAlias = MutableSequence[MutableJSONValue]
 
 class AsyncContainerFactory(Protocol):
     async def __call__(self, config: dict[str, Any], name: str) -> DockerContainer: ...
-
-
-@dataclass(slots=True)
-class Timeout:
-    """
-    A timeout configuration dataclass.
-    """
-
-    connect: Optional[float] = None
-    """
-    The timeout for establishing a connection to the docker host.
-    Equivalent to :attr:`aiohttp.ClientTimeout.connect`.
-    """
-    total: Optional[float] = None
-    """
-    The timeout until reading the end of response.
-    Equivalent to :attr:`aiohttp.ClientTimeout.total`.
-
-    This value is IGNORED when you use streaming APIs such as
-    :meth:`DockerLog.run() <aiodocker.logs.DockerLog.run>` and :class:`~aiodocker.stream.Stream`.
-
-    It is generally recommended to use :func:`asyncio.timeout()` to set
-    arbitrary total timeouts of an entire request-response processing block.
-    """
-
-    def to_aiohttp_client_timeout(self) -> aiohttp.ClientTimeout:
-        """
-        Returns an :class:`aiohttp.ClientTimeout` instance converted from this.
-        """
-        return aiohttp.ClientTimeout(
-            connect=self.connect,
-            total=self.total,
-        )
 
 
 class PortInfo(TypedDict):

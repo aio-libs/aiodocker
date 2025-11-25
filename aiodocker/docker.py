@@ -39,7 +39,7 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .types import SENTINEL, JSONObject, Sentinel, Timeout
+from .types import SENTINEL, JSONObject, Sentinel
 from .utils import _suppress_timeout_deprecation, httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
@@ -104,7 +104,7 @@ class Docker:
         session: Custom :class:`aiohttp.ClientSession`. If None, a new session will be
             created with the connector and timeout settings.
             The timeout configuration in this object is *ignored* by the **timeout** argument.
-        timeout: :class:`~aiodocker.types.Timeout` configuration for API requests.
+        timeout: :class:`aiohttp.ClientTimeout` configuration for API requests.
             If None, there is no timeout at all.
         ssl_context: SSL context for HTTPS connections. If None and ``DOCKER_TLS_VERIFY``
             is set, will create a context using ``DOCKER_CERT_PATH`` certificates.
@@ -123,7 +123,7 @@ class Docker:
         url: Optional[str] = None,
         connector: Optional[aiohttp.BaseConnector] = None,
         session: Optional[aiohttp.ClientSession] = None,
-        timeout: Optional[Timeout] = None,
+        timeout: Optional[aiohttp.ClientTimeout] = None,
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
     ) -> None:
@@ -158,7 +158,7 @@ class Docker:
             raise ValueError("Invalid API version format")
         self.api_version = api_version
 
-        self._timeout = timeout or Timeout()
+        self._timeout = timeout or aiohttp.ClientTimeout()
 
         if docker_host is None:
             raise ValueError(
@@ -197,7 +197,7 @@ class Docker:
         if session is None:
             session = aiohttp.ClientSession(
                 connector=self.connector,
-                timeout=self._timeout.to_aiohttp_client_timeout(),
+                timeout=self._timeout,
             )
         self.session = session
 
@@ -363,7 +363,7 @@ class Docker:
         if "Content-Type" not in _headers:
             _headers["Content-Type"] = "application/json"
         # Derive from the timeout configured upon the client instance creation.
-        _timeout = self._timeout.to_aiohttp_client_timeout()
+        _timeout = self._timeout
         match timeout:
             case float():
                 if not _suppress_timeout_deprecation.get():

@@ -43,7 +43,7 @@ class Stream:
             return
         url, body, tty = await self._setup()
         # inherit and update the parent client's timeout
-        timeout = self.docker._timeout.to_aiohttp_client_timeout()
+        timeout = self.docker._timeout
         if self._timeout is not None:
             timeout = attrs.evolve(
                 timeout,
