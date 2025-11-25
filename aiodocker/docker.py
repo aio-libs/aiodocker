@@ -130,6 +130,8 @@ class Docker:
             UNIX_PRE_LEN = len(UNIX_PRE)
             WIN_PRE = "npipe://"
             WIN_PRE_LEN = len(WIN_PRE)
+            SSH_PRE = "ssh://"
+
             if _rx_tcp_schemes.search(docker_host):
                 if (
                     os.environ.get("DOCKER_TLS_VERIFY", "0") == "1"
@@ -149,6 +151,13 @@ class Docker:
                 )
                 # dummy hostname for URL composition
                 self.docker_host = WIN_PRE + "localhost"
+            elif docker_host.startswith(SSH_PRE):
+                from .ssh import SSHConnector, parse_ssh_url
+
+                ssh_url, socket_path = parse_ssh_url(docker_host)
+                connector = SSHConnector(ssh_url, socket_path)
+                # dummy hostname for URL composition
+                self.docker_host = "unix://localhost"
             else:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector

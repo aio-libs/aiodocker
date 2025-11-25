@@ -128,6 +128,7 @@ It's *Apache 2* licensed and freely available.
    networks
    secrets
    services
+   ssh
    swarm
    system
    volumes
