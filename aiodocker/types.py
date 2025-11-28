@@ -68,6 +68,14 @@ class PortInfo(TypedDict):
 
 
 class Sentinel(enum.Enum):
+    """
+    A special single-value enum constant to represent "unspecified" value in the contexts
+    where ``None`` has another meaning.
+
+    For example, ``None`` in timeouts means infinity.
+    If you want to represent an unspecified/default value for timeouts, use the ``SENTINEL`` or ``Sentinel.TOKEN``.
+    """
+
     TOKEN = enum.auto()
 
 

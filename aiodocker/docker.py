@@ -7,24 +7,23 @@ import os
 import re
 import ssl
 import sys
+import warnings
+from collections.abc import Mapping
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from pathlib import Path
 from types import TracebackType
 from typing import (
     Any,
     AsyncIterator,
-    Dict,
     Optional,
-    Tuple,
     Type,
     Union,
 )
 
 import aiohttp
+import attrs
 from multidict import CIMultiDict
 from yarl import URL
-
-from aiodocker.types import JSONObject
 
 # Sub-API classes
 from .configs import DockerConfigs
@@ -40,12 +39,12 @@ from .services import DockerServices
 from .swarm import DockerSwarm
 from .system import DockerSystem
 from .tasks import DockerTasks
-from .types import SENTINEL, Sentinel
-from .utils import httpize, parse_result
+from .types import SENTINEL, JSONObject, Sentinel
+from .utils import _suppress_timeout_deprecation, httpize, parse_result
 from .volumes import DockerVolume, DockerVolumes
 
 
-__all__: Tuple[str, ...] = (
+__all__ = (
     "Docker",
     "DockerContainers",
     "DockerContainer",
@@ -79,11 +78,52 @@ _rx_tcp_schemes = re.compile(r"^(tcp|http|https)://")
 
 
 class Docker:
+    """
+    The Docker client as the main entrypoint to the sub-APIs such as
+    container, images, networks, swarm and services, etc.
+    You may access such sub-API collections via the attributes of the client instance,
+    like:
+
+    .. code-block:: python
+
+        docker = aiodocker.Docker()
+        await docker.containers.list()
+        await docker.images.pull(...)
+
+    The client will auto-detect the Docker host from the ``DOCKER_HOST`` environment
+    variable or search for local socket files if not specified.
+
+    Args:
+        url: The Docker daemon address as the full URL string (e.g.,
+            ``"unix:///var/run/docker.sock"``, ``"tcp://127.0.0.1:2375"``,
+            ``"npipe:////./pipe/docker_engine"``).
+            If not specified, it will use ``DOCKER_HOST`` environment variable or auto-detect
+            from common socket paths.
+        connector: Custom :class:`aiohttp.BaseConnector` implementation to establish new connections to the docker host.
+            If provided, it will be used instead of creating a connector based on the **url** value.
+        session: Custom :class:`aiohttp.ClientSession`. If None, a new session will be
+            created with the connector and timeout settings.
+            The timeout configuration in this object is *ignored* by the **timeout** argument.
+        timeout: :class:`aiohttp.ClientTimeout` configuration for API requests.
+            If None, there is no timeout at all.
+        ssl_context: SSL context for HTTPS connections. If None and ``DOCKER_TLS_VERIFY``
+            is set, will create a context using ``DOCKER_CERT_PATH`` certificates.
+        api_version: Pin the Docker API version (e.g., "v1.43"). Use "auto" to
+            automatically detect the API version from the daemon.
+
+    Raises:
+        ValueError: Raised if the docker host cannot be determined,
+            if both url and connector are incompatible,
+            or if api_version format is invalid.
+        OSError: On Windows, if named pipe access fails unexpectedly.
+    """
+
     def __init__(
         self,
         url: Optional[str] = None,
         connector: Optional[aiohttp.BaseConnector] = None,
         session: Optional[aiohttp.ClientSession] = None,
+        timeout: Optional[aiohttp.ClientTimeout] = None,
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
     ) -> None:
@@ -117,6 +157,8 @@ class Docker:
         if api_version != "auto" and _rx_version.search(api_version) is None:
             raise ValueError("Invalid API version format")
         self.api_version = api_version
+
+        self._timeout = timeout or aiohttp.ClientTimeout()
 
         if docker_host is None:
             raise ValueError(
@@ -153,7 +195,10 @@ class Docker:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector
         if session is None:
-            session = aiohttp.ClientSession(connector=self.connector)
+            session = aiohttp.ClientSession(
+                connector=self.connector,
+                timeout=self._timeout,
+            )
         self.session = session
 
         self.events = DockerEvents(self)
@@ -185,14 +230,64 @@ class Docker:
         await self.close()
 
     async def close(self) -> None:
+        """Close the Docker client and release resources.
+
+        Stops the event monitoring and closes the underlying aiohttp session,
+        releasing all associated resources including connections.
+        """
         await self.events.stop()
         await self.session.close()
 
-    async def auth(self, **credentials: Any) -> Dict[str, Any]:
+    async def auth(self, **credentials: Any) -> dict[str, Any]:
+        """Authenticate with Docker registry.
+
+        Validates registry credentials and returns authentication information.
+
+        Args:
+            credentials: Registry authentication credentials.
+                Typically includes:
+
+                - ``username`` (str): Registry username
+                - ``password`` (str): Registry password
+                - ``serveraddress`` (str, optional): Registry server address without a protocol
+
+                If you have an identity token issued in prior, you may pass ``identitytoken`` only.
+
+        Returns:
+            Authentication response from the Docker daemon,
+            including:
+
+            - ``Status`` (str): A string message like "Login Succeeded"
+            - ``IdentityToken`` (str): The identity token
+
+        Raises:
+            DockerError: If authentication fails or credentials are invalid.
+        """
         response = await self._query_json("auth", "POST", data=credentials)
         return response
 
-    async def version(self) -> Dict[str, Any]:
+    async def version(self) -> dict[str, Any]:
+        """Get Docker daemon version information.
+
+        Retrieves version details about the Docker daemon including API version,
+        OS, architecture, and component versions.
+
+        Returns:
+            A dict containing version information with keys
+            like:
+
+            - ``Version`` (str): Docker version
+            - ``ApiVersion`` (str): API version
+            - ``Os`` (str): Operating system
+            - ``Arch`` (str): Architecture
+            - ``KernelVersion`` (str): Kernel version
+            - ``GitCommit`` (str): Git commit hash
+
+            and additional component-specific information.
+
+        Raises:
+            DockerError: If the request fails or daemon is unreachable.
+        """
         data = await self._query_json("version")
         return data
 
@@ -218,14 +313,14 @@ class Docker:
     @asynccontextmanager
     async def _query(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str = "GET",
         *,
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
-        headers=None,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
-        chunked=None,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
+        chunked: Optional[bool] = None,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> AsyncIterator[aiohttp.ClientResponse]:
@@ -248,38 +343,56 @@ class Docker:
 
     async def _do_query(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str,
         *,
-        params: Optional[JSONObject],
-        data: Any,
-        headers,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
-        chunked,
-        read_until_eof: bool,
-        versioned_api: bool,
+        params: Optional[JSONObject] = None,
+        data: Any = None,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
+        chunked: Optional[bool] = None,
+        read_until_eof: bool = True,
+        versioned_api: bool = True,
     ) -> aiohttp.ClientResponse:
         if versioned_api:
             await self._check_version()
         url = self._canonicalize_url(path, versioned_api=versioned_api)
+        _headers: CIMultiDict[str | int | bool] = CIMultiDict()
         if headers:
-            headers = CIMultiDict(headers)
-            if "Content-Type" not in headers:
-                headers["Content-Type"] = "application/json"
-        if timeout is SENTINEL:
-            timeout = self.session.timeout
-        assert not isinstance(timeout, Sentinel)
-        if not isinstance(timeout, aiohttp.ClientTimeout):
-            timeout = aiohttp.ClientTimeout(timeout)
+            _headers.update(headers)
+        if "Content-Type" not in _headers:
+            _headers["Content-Type"] = "application/json"
+        # Derive from the timeout configured upon the client instance creation.
+        _timeout = self._timeout
+        match timeout:
+            case float():
+                if not _suppress_timeout_deprecation.get():
+                    warnings.warn(
+                        "Manually setting the total timeout is highly discouraged. "
+                        "Use asyncio.timeout() block instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+                _timeout = attrs.evolve(_timeout, total=timeout)
+            case aiohttp.ClientTimeout():
+                # Override with the caller's decision.
+                _timeout = timeout
+            case None:
+                # Infinite timeout.
+                _timeout = aiohttp.ClientTimeout()
+            case Sentinel.TOKEN:
+                # Use the client-level config.
+                pass
         try:
             real_params = httpize(params)
+            real_headers = httpize(_headers)
             response = await self.session.request(
                 method,
                 url,
                 params=real_params,
-                headers=headers,
+                headers=real_headers,
                 data=data,
-                timeout=timeout,
+                timeout=_timeout,
                 chunked=chunked,
                 read_until_eof=read_until_eof,
             )
@@ -307,22 +420,24 @@ class Docker:
 
     async def _query_json(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str = "GET",
         *,
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
-        headers=None,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> Any:
         """
         A shorthand of _query() that treats the input as JSON.
         """
-        if headers is None:
-            headers = {}
-        headers["Content-Type"] = "application/json"
+        _headers: CIMultiDict[str | int | bool] = CIMultiDict()
+        if headers:
+            _headers.update(headers)
+        if "Content-Type" not in _headers:
+            _headers["Content-Type"] = "application/json"
         if data is not None and not isinstance(data, (str, bytes)):
             data = json.dumps(data)
         async with self._query(
@@ -330,7 +445,7 @@ class Docker:
             method,
             params=params,
             data=data,
-            headers=headers,
+            headers=_headers,
             timeout=timeout,
             read_until_eof=read_until_eof,
             versioned_api=versioned_api,
@@ -340,23 +455,24 @@ class Docker:
 
     def _query_chunked_post(
         self,
-        path: Union[str, URL],
+        path: str | URL,
         method: str = "POST",
         *,
         params: Optional[JSONObject] = None,
         data: Optional[Any] = None,
-        headers=None,
-        timeout: Union[float, aiohttp.ClientTimeout, Sentinel, None] = SENTINEL,
+        headers: Optional[Mapping[str, str | int | bool]] = None,
+        timeout: float | aiohttp.ClientTimeout | None | Sentinel = SENTINEL,
         read_until_eof: bool = True,
         versioned_api: bool = True,
     ) -> AbstractAsyncContextManager[aiohttp.ClientResponse]:
         """
         A shorthand for uploading data by chunks
         """
-        if headers is None:
-            headers = {}
-        if headers and "content-type" not in headers:
-            headers["content-type"] = "application/octet-stream"
+        _headers: CIMultiDict[str | int | bool] = CIMultiDict()
+        if headers:
+            _headers.update(headers)
+        if "Content-Type" not in _headers:
+            _headers["Content-Type"] = "application/octet-stream"
         return self._query(
             path,
             method,

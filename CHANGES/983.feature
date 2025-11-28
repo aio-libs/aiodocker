@@ -1,0 +1,1 @@
+Introduce the client-level ``timeout`` configuration which becomes the base timeout configuration while still allowing legacy individual per-API timeouts and merging it into the base timeout.  Now setting individual float (total) timeout per-API call is HIGHLY DISCOURAGED in favor of composable timeouts via stdlib's `asyncio.timeout()` async context manager.

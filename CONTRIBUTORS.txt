@@ -15,6 +15,7 @@ Gyubong Lee
 Hiroki Kiyohara
 Igor Alexandrov
 Jason Kraus
+Jonathan Carroll Otsuka
 Joongi Kim
 Joshua Chung
 Julien Kmec
@@ -26,6 +27,7 @@ Nikolay Novik
 Paul Tagliamonte
 Robin Tweedie
 Sanghun Lee
+Saulius Adamonis
 Tianon Gravi
 Tommy Beadle
 Travis DePrato

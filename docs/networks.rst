@@ -1,9 +1,19 @@
-==========
 Networks
-==========
+========
+
+.. autoclass:: aiodocker.networks.DockerNetworks
+    :members:
+    :undoc-members:
+
+.. autoclass:: aiodocker.networks.DockerNetwork
+    :members:
+    :undoc-members:
+
+Example
+-------
 
 Create a network
-==================
+~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -26,19 +36,3 @@ Create a network
 
     if __name__ == "__main__":
         asyncio.run(create_network())
-
----------
-Reference
----------
-
-DockerNetworks
-================
-.. autoclass:: aiodocker.docker.DockerNetworks
-        :members:
-        :undoc-members:
-
-DockerNetwork
-===============
-.. autoclass:: aiodocker.docker.DockerNetwork
-        :members:
-        :undoc-members:
