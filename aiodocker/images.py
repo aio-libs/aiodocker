@@ -11,14 +11,13 @@ from typing import (
     List,
     Literal,
     Mapping,
-    MutableMapping,
     Optional,
     Union,
     overload,
 )
 
 from .jsonstream import json_stream_list, json_stream_stream
-from .types import SupportsRead
+from .types import SENTINEL, JSONObject, Sentinel, SupportsRead
 from .utils import clean_map, compose_auth_header
 
 
@@ -30,14 +29,14 @@ class DockerImages:
     def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def list(self, **params) -> Mapping:
+    async def list(self, **params) -> List[Any]:
         """
         List of images
         """
         response = await self.docker._query_json("images/json", "GET", params=params)
         return response
 
-    async def inspect(self, name: str) -> Mapping:
+    async def inspect(self, name: str) -> Dict[str, Any]:
         """
         Return low-level information about an image
 
@@ -47,7 +46,7 @@ class DockerImages:
         response = await self.docker._query_json(f"images/{name}/json")
         return response
 
-    async def get(self, name: str) -> Mapping:
+    async def get(self, name: str) -> Dict[str, Any]:
         warnings.warn(
             """images.get is deprecated and will be removed in the next release,
             please use images.inspect instead.""",
@@ -56,7 +55,7 @@ class DockerImages:
         )
         return await self.inspect(name)
 
-    async def history(self, name: str) -> Mapping:
+    async def history(self, name: str) -> Dict[str, Any]:
         response = await self.docker._query_json(f"images/{name}/history")
         return response
 
@@ -65,34 +64,37 @@ class DockerImages:
         self,
         from_image: str,
         *,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]: ...
+        timeout: Union[float, Sentinel, None] = SENTINEL,
+    ) -> List[Dict[str, Any]]: ...
 
     @overload
     def pull(
         self,
         from_image: str,
         *,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: Literal[True],
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def pull(
         self,
         from_image: str,
         *,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: bool = False,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Any:
         """
         Similar to `docker pull`, pull an image locally
@@ -118,12 +120,17 @@ class DockerImages:
             registry, has_registry_host, _ = image.partition("/")
             if not has_registry_host:
                 raise ValueError(
-                    "Image should have registry host "
-                    "when auth information is provided"
+                    "Image should have registry host when auth information is provided"
                 )
             # TODO: assert registry == repo?
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
-        cm = self.docker._query("images/create", "POST", params=params, headers=headers)
+        cm = self.docker._query(
+            "images/create",
+            "POST",
+            params=params,
+            headers=headers,
+            timeout=timeout,
+        )
         return self._handle_response(cm, stream)
 
     def _handle_response(self, cm, stream):
@@ -146,28 +153,31 @@ class DockerImages:
         self,
         name: str,
         *,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[False] = False,
-    ) -> Dict[str, Any]: ...
+        timeout: Union[float, Sentinel, None] = SENTINEL,
+    ) -> List[Dict[str, Any]]: ...
 
     @overload
     def push(
         self,
         name: str,
         *,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[True],
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def push(
         self,
         name: str,
         *,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
+        auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: bool = False,
+        timeout: Union[float, Sentinel, None] = SENTINEL,
     ) -> Any:
         params = {}
         headers = {
@@ -180,8 +190,7 @@ class DockerImages:
             registry, has_registry_host, _ = name.partition("/")
             if not has_registry_host:
                 raise ValueError(
-                    "Image should have registry host "
-                    "when auth information is provided"
+                    "Image should have registry host when auth information is provided"
                 )
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
         cm = self.docker._query(
@@ -189,6 +198,7 @@ class DockerImages:
             "POST",
             params=params,
             headers=headers,
+            timeout=timeout,
         )
         return self._handle_response(cm, stream)
 
@@ -216,7 +226,7 @@ class DockerImages:
 
     async def delete(
         self, name: str, *, force: bool = False, noprune: bool = False
-    ) -> List:
+    ) -> List[Any]:
         """
         Remove an image along with any untagged parent
         images that were referenced by that image
@@ -231,7 +241,10 @@ class DockerImages:
             List of deleted images
         """
         params = {"force": force, "noprune": noprune}
-        return await self.docker._query_json(f"images/{name}", "DELETE", params=params)
+        response = await self.docker._query_json(
+            f"images/{name}", "DELETE", params=params
+        )
+        return response
 
     @staticmethod
     async def _stream(fileobj: SupportsRead[bytes]) -> AsyncIterator[bytes]:
@@ -250,15 +263,15 @@ class DockerImages:
         tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Optional[Mapping] = None,
+        buildargs: Optional[Mapping[str, str]] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Optional[Mapping] = None,
+        labels: Optional[Mapping[str, str]] = None,
         platform: Optional[str] = None,
         stream: Literal[False] = False,
         encoding: Optional[str] = None,
-    ) -> Dict[str, Any]:
+    ) -> List[Dict[str, Any]]:
         pass
 
     @overload
@@ -271,11 +284,11 @@ class DockerImages:
         tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Optional[Mapping] = None,
+        buildargs: Optional[Mapping[str, str]] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Optional[Mapping] = None,
+        labels: Optional[Mapping[str, str]] = None,
         platform: Optional[str] = None,
         stream: Literal[True],
         encoding: Optional[str] = None,
@@ -291,11 +304,11 @@ class DockerImages:
         tag: Optional[str] = None,
         quiet: bool = False,
         nocache: bool = False,
-        buildargs: Optional[Mapping] = None,
+        buildargs: Optional[Mapping[str, str]] = None,
         pull: bool = False,
         rm: bool = True,
         forcerm: bool = False,
-        labels: Optional[Mapping] = None,
+        labels: Optional[Mapping[str, str]] = None,
         platform: Optional[str] = None,
         stream: bool = False,
         encoding: Optional[str] = None,

@@ -10,17 +10,18 @@ AsyncIO bindings for docker.io
    :target: https://pypi.org/project/aiodocker/
    :alt: Python Versions
 
-.. image:: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml/badge.svg?branch=master
-   :target: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml?query=branch%3Amaster
+.. image:: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml/badge.svg?branch=main
+   :target: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml?query=branch%3Amain
    :alt: GitHub Actions status for the main branch
 
-.. image:: https://codecov.io/gh/aio-libs/aiodocker/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/aio-libs/aiodocker/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/aio-libs/aiodocker
    :alt: Code Coverage
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
     :target: https://gitter.im/aio-libs/Lobby
     :alt: Chat on Gitter
+
 
 A simple Docker HTTP API wrapper written with asyncio and aiohttp.
 

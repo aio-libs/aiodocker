@@ -2,19 +2,25 @@
 
 name: CI/CD
 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+
 on:
   merge_group:
   push:
-    branches: [ master ]
+    branches: [ main ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   schedule:
     - cron:  '0 6 * * *'  # Daily 6AM UTC build
 
 
 env:
-  PYTHON_LATEST: 3.12
+  PYTHON_LATEST: '3.14'
   PROJECT_NAME: aiodocker
 
   # For re-actors/checkout-python-sdist
@@ -28,16 +34,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout project
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
+      with:
+        # Fetch all history but without their actual contents,
+        # so that dynamic version for build work correctly.
+        fetch-depth: 0
+        filter: 'blob:none'
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
     - name: Install core libraries for build
-      run: python -Im pip install build
+      run: python -m pip install build
     - name: Build artifacts
-      run: python -Im build
+      run: python -m build
     - name: Upload built artifacts for testing
       uses: actions/upload-artifact@v4
       with:
@@ -49,29 +60,21 @@ jobs:
 
   lint:
     name: Linter
-    needs:
-    - build
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-    - name: Download all the dists
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ env.dists-artifact-name }}
-        path: dist
+      uses: actions/checkout@v5
     - name: Setup Python ${{ env.PYTHON_LATEST }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
         cache: pip
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -e .[ci,dev]
+        python -m pip install -e '.[lint]'
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit/
@@ -79,67 +82,107 @@ jobs:
     - name: Run linters
       run: |
         make lint
+
+  twine-check:
+    name: Twine check
+    runs-on: ubuntu-latest
+    needs:
+    - build
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: dist
+    - name: Setup Python ${{ env.PYTHON_LATEST }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ env.PYTHON_LATEST }}
+        cache: pip
     - name: Run twine checker
       run: |
         pip install twine
         twine check --strict dist/*
 
   test:
-    name: test
+    name: 'test (Python ${{ matrix.python-version }}, aiohttp ${{ matrix.aiohttp-version }}, ${{ matrix.os }})'
     needs:
     - build
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        aiohttp-version: ['3.10', '3.13']
         os: [ubuntu]
-        registry: ['1']
         pytest-arg: ['']
-        include:
-          - python-version: '3.12'
-            os: windows
-            registry: '0'
-            pytest-arg: '-k test_integration'
+        # NOTE: Temporarily disabled due to mismatch of:
+        #       - Path(r"\\.\pipe").iterdir()
+        #       - Path(r"\\.\pipe\docker_engine").exists()
+        #       which works fine in my local Windows machine
+        #       but not in GitHub Action's Windows runner.
+        # include:
+        #   - python-version: '3.14'
+        #     aiohttp-version: ['3.10', '3.13']
+        #     os: windows
+        #     pytest-arg: '-k test_integration'
     runs-on: ${{ matrix.os }}-latest
     timeout-minutes: 30
     steps:
+    - name: Show environment info
+      run: |
+        docker context inspect
+        docker version
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
     - name: Setup Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
         cache: pip
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.dists-artifact-name }}
+        path: dist
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -e .[ci,dev]
-    - name: Start Docker services
-      if: ${{ matrix.registry == '1' }}
+        python -m pip install -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}.0'
+    - name: Install the build artifact
       run: |
-        docker run -d --name ${{ env.PROJECT_NAME }}-test-registry -p 5000:5000 registry:2
-        docker run -d -p 5001:5001 --name ${{ env.PROJECT_NAME }}-test-registry2 -v `pwd`/tests/certs:/certs -e "REGISTRY_AUTH=htpasswd" -e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" -e REGISTRY_AUTH_HTPASSWD_PATH=/certs/htpasswd -e REGISTRY_HTTP_ADDR=0.0.0.0:5001 -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.crt -e REGISTRY_HTTP_TLS_KEY=/certs/registry.key registry:2
-    - name: Run unittests
+        python -m pip install dist/aiodocker*.whl
+    # NOTE: Unfortunately the gain of image caching is too small,
+    #       and even it increases the latency of Linux jobs. :(
+    # - name: Cache Docker images
+    #   uses: ScribeMD/docker-cache@0.5.0
+    #   with:
+    #     key: docker-${{ runner.os }}
+    - name: Run tests
       env:
         COLOR: 'yes'
-        DOCKER_VERSION: ${{ matrix.docker }}
       run: |
-        python -m pytest -vv --durations=10 ${{ matrix.pytest-arg }}
+        python -m pytest -s -vv --durations=10 ${{ matrix.pytest-arg }}
     - name: Rename coverage logs
       run: |
-        mv coverage.xml "coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
+        mv coverage.xml "coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml"
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}
-        path: coverage-unit-${{ matrix.python-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
+        name: coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}
+        path: coverage-unit-py${{ matrix.python-version }}-aiohttp${{ matrix.aiohttp-version }}-${{ matrix.os }}-${{ matrix.registry }}.xml
         if-no-files-found: error
         retention-days: 1
+    - name: Clean up Docker images produced during tests
+      run: |
+        docker image list --filter 'reference=aiodocker-*' --format '{{.Repository}}:{{.Tag}}' | xargs -r docker rmi
 
   check:  # This job does nothing and is only used for the branch protection
     name: ✅ Ensure the required checks passing
     if: always()
     needs:
     - lint
+    - twine-check
     - test
     runs-on: ubuntu-latest
     steps:
@@ -148,7 +191,7 @@ jobs:
       with:
         jobs: ${{ toJSON(needs) }}
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ github.sha }}
     - name: Download coverage artifact

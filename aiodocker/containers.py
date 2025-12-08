@@ -1,8 +1,25 @@
+from __future__ import annotations
+
 import json
 import shlex
 import tarfile
-from typing import Any, Dict, Mapping, Optional, Sequence, Tuple, Union
+from contextlib import AbstractAsyncContextManager
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Dict,
+    List,
+    Literal,
+    Mapping,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    overload,
+)
 
+from aiohttp import ClientResponse, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
@@ -12,20 +29,29 @@ from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
-from .utils import identical, parse_result
+from .types import JSONObject, MutableJSONObject, PortInfo
+from .utils import _suppress_timeout_deprecation, identical, parse_result
+
+
+if TYPE_CHECKING:
+    from .docker import Docker
 
 
 class DockerContainers:
-    def __init__(self, docker):
+    def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def list(self, **kwargs):
+    async def list(self, **kwargs) -> List[DockerContainer]:
         data = await self.docker._query_json(
             "containers/json", method="GET", params=kwargs
         )
         return [DockerContainer(self.docker, **x) for x in data]
 
-    async def create_or_replace(self, name, config):
+    async def create_or_replace(
+        self,
+        name: str,
+        config: JSONObject,
+    ) -> DockerContainer:
         container = None
 
         try:
@@ -44,25 +70,29 @@ class DockerContainers:
 
         return container
 
-    async def create(self, config, *, name=None):
+    async def create(
+        self,
+        config: JSONObject,
+        *,
+        name: Optional[str] = None,
+    ) -> DockerContainer:
         url = "containers/create"
-
-        config = json.dumps(config, sort_keys=True).encode("utf-8")
+        encoded_config = json.dumps(config, sort_keys=True).encode("utf-8")
         kwargs = {}
         if name:
             kwargs["name"] = name
         data = await self.docker._query_json(
-            url, method="POST", data=config, params=kwargs
+            url, method="POST", data=encoded_config, params=kwargs
         )
         return DockerContainer(self.docker, id=data["Id"])
 
     async def run(
         self,
-        config,
+        config: JSONObject,
         *,
         auth: Optional[Union[Mapping, str, bytes]] = None,
         name: Optional[str] = None,
-    ):
+    ) -> DockerContainer:
         """
         Create and start a container.
 
@@ -77,7 +107,7 @@ class DockerContainers:
         except DockerError as err:
             # image not found, try pulling it
             if err.status == 404 and "Image" in config:
-                await self.docker.pull(config["Image"], auth=auth)
+                await self.docker.pull(str(config["Image"]), auth=auth)
                 container = await self.create(config, name=name)
             else:
                 raise err
@@ -91,63 +121,106 @@ class DockerContainers:
 
         return container
 
-    async def get(self, container, **kwargs):
+    async def get(self, container_id: str, **kwargs) -> DockerContainer:
         data = await self.docker._query_json(
-            f"containers/{container}/json",
+            f"containers/{container_id}/json",
             method="GET",
             params=kwargs,
         )
         return DockerContainer(self.docker, **data)
 
-    def container(self, container_id, **kwargs):
+    def container(self, container_id: str, **kwargs) -> DockerContainer:
         data = {"id": container_id}
         data.update(kwargs)
         return DockerContainer(self.docker, **data)
 
     def exec(self, exec_id: str) -> Exec:
         """Return Exec instance for already created exec object."""
-        return Exec(self.docker, exec_id, None)
+        return Exec(self.docker, exec_id)
 
 
 class DockerContainer:
-    def __init__(self, docker, **kwargs):
+    _container: Dict[str, Any]
+    _id: str
+
+    def __init__(self, docker: Docker, **kwargs) -> None:
         self.docker = docker
         self._container = kwargs
-        self._id = self._container.get(
+        _id = self._container.get(
             "id", self._container.get("ID", self._container.get("Id"))
         )
+        if _id is None:
+            raise ValueError(
+                "DockerContainer should be initialized with explicit container ID."
+            )
+        self._id = _id
         self.logs = DockerLog(docker, self)
 
     @property
     def id(self) -> str:
         return self._id
 
-    def log(self, *, stdout=False, stderr=False, follow=False, **kwargs):
+    @overload
+    async def log(
+        self,
+        *,
+        stdout: bool = False,
+        stderr: bool = False,
+        follow: Literal[False] = False,
+        **kwargs,
+    ) -> List[str]: ...
+
+    @overload
+    def log(
+        self,
+        *,
+        stdout: bool = False,
+        stderr: bool = False,
+        follow: Literal[True],
+        **kwargs,
+    ) -> AsyncIterator[str]: ...
+
+    def log(
+        self,
+        *,
+        stdout: bool = False,
+        stderr: bool = False,
+        follow: bool = False,
+        **kwargs,
+    ) -> Any:
         if stdout is False and stderr is False:
             raise TypeError("Need one of stdout or stderr")
 
         params = {"stdout": stdout, "stderr": stderr, "follow": follow}
         params.update(kwargs)
-
         cm = self.docker._query(
             f"containers/{self._id}/logs", method="GET", params=params
         )
-
         if follow:
             return self._logs_stream(cm)
         else:
             return self._logs_list(cm)
 
-    async def _logs_stream(self, cm):
-        inspect_info = await self.show()
+    async def _logs_stream(
+        self, cm: AbstractAsyncContextManager[ClientResponse]
+    ) -> AsyncIterator[str]:
+        try:
+            inspect_info = await self.show()
+        except DockerError:
+            raise
         is_tty = inspect_info["Config"]["Tty"]
 
         async with cm as response:
             async for item in multiplexed_result_stream(response, is_tty=is_tty):
                 yield item
 
-    async def _logs_list(self, cm):
-        inspect_info = await self.show()
+    async def _logs_list(
+        self, cm: AbstractAsyncContextManager[ClientResponse]
+    ) -> Sequence[str]:
+        try:
+            inspect_info = await self.show()
+        except DockerError:
+            raise
         is_tty = inspect_info["Config"]["Tty"]
 
         async with cm as response:
@@ -160,6 +233,7 @@ class DockerContainer:
             params={"path": path},
         ) as response:
             data = await parse_result(response)
+            assert isinstance(data, tarfile.TarFile)
             return data
 
     async def put_archive(self, path, data):
@@ -173,20 +247,20 @@ class DockerContainer:
             data = await parse_result(response)
             return data
 
-    async def show(self, **kwargs):
+    async def show(self, **kwargs) -> Dict[str, Any]:
         data = await self.docker._query_json(
             f"containers/{self._id}/json", method="GET", params=kwargs
         )
         self._container = data
         return data
 
-    async def stop(self, **kwargs):
+    async def stop(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}/stop", method="POST", params=kwargs
         ):
             pass
 
-    async def start(self, **kwargs):
+    async def start(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}/start",
             method="POST",
@@ -195,7 +269,7 @@ class DockerContainer:
         ):
             pass
 
-    async def restart(self, timeout=None):
+    async def restart(self, timeout=None) -> None:
         params = {}
         if timeout is not None:
             params["t"] = timeout
@@ -206,28 +280,34 @@ class DockerContainer:
         ):
             pass
 
-    async def kill(self, **kwargs):
+    async def kill(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}/kill", method="POST", params=kwargs
         ):
             pass
 
-    async def wait(self, *, timeout=None, **kwargs):
-        data = await self.docker._query_json(
-            f"containers/{self._id}/wait",
-            method="POST",
-            params=kwargs,
-            timeout=timeout,
-        )
-        return data
+    async def wait(self, *, timeout: float | None = None, **kwargs) -> Dict[str, Any]:
+        # The wait API is an exception from deprecation of the total timeout.
+        # Use a context variable to suppress the warning in a thread-safe and async-safe manner.
+        token = _suppress_timeout_deprecation.set(True)
+        try:
+            data = await self.docker._query_json(
+                f"containers/{self._id}/wait",
+                method="POST",
+                params=kwargs,
+                timeout=timeout,
+            )
+            return data
+        finally:
+            _suppress_timeout_deprecation.reset(token)
 
-    async def delete(self, **kwargs):
+    async def delete(self, **kwargs) -> None:
         async with self.docker._query(
             f"containers/{self._id}", method="DELETE", params=kwargs
         ):
             pass
 
-    async def rename(self, newname):
+    async def rename(self, newname) -> None:
         async with self.docker._query(
             f"containers/{self._id}/rename",
             method="POST",
@@ -236,7 +316,7 @@ class DockerContainer:
         ):
             pass
 
-    async def websocket(self, **params):
+    async def websocket(self, **params) -> ClientWebSocketResponse:
         if not params:
             params = {"stdin": True, "stdout": True, "stderr": True, "stream": True}
         path = f"containers/{self._id}/attach/ws"
@@ -272,7 +352,7 @@ class DockerContainer:
 
         return Stream(self.docker, setup, None)
 
-    async def port(self, private_port):
+    async def port(self, private_port: int | str) -> List[PortInfo] | None:
         if "NetworkSettings" not in self._container:
             await self.show()
 
@@ -294,7 +374,25 @@ class DockerContainer:
 
         return h_ports
 
-    def stats(self, *, stream=True):
+    @overload
+    def stats(
+        self,
+        *,
+        stream: Literal[True] = True,
+    ) -> AsyncIterator[Dict[str, Any]]: ...
+
+    @overload
+    async def stats(
+        self,
+        *,
+        stream: Literal[False],
+    ) -> List[Dict[str, Any]]: ...
+
+    def stats(
+        self,
+        *,
+        stream: bool = True,
+    ) -> Any:
         cm = self.docker._query(
             f"containers/{self._id}/stats",
             params={"stream": "1" if stream else "0"},
@@ -325,7 +423,7 @@ class DockerContainer:
         environment: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
         workdir: Optional[str] = None,
         detach_keys: Optional[str] = None,
-    ):
+    ) -> Exec:
         if isinstance(cmd, str):
             cmd = shlex.split(cmd)
         if environment is None:
@@ -384,7 +482,7 @@ class DockerContainer:
         Commit a container to an image. Similar to the ``docker commit``
         command.
         """
-        params = {"container": self._id, "pause": pause}
+        params: MutableJSONObject = {"container": self._id, "pause": pause}
         if repository is not None:
             params["repo"] = repository
         if tag is not None:
@@ -410,8 +508,8 @@ class DockerContainer:
         async with self.docker._query(f"containers/{self._id}/unpause", method="POST"):
             pass
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self._container[key]
 
-    def __hasitem__(self, key):
+    def __hasitem__(self, key: str) -> bool:
         return key in self._container

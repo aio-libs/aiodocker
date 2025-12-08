@@ -21,32 +21,29 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import codecs
 import os
 import re
 import sys
+from importlib.metadata import version
 
 
 _docs_path = os.path.dirname(__file__)
-_version_path = os.path.abspath(
-    os.path.join(_docs_path, "..", "aiodocker", "__init__.py")
-)
-with codecs.open(_version_path, "r", "latin1") as fp:
-    try:
-        _version_match = re.search(
-            r"^__version__ = \""
-            r"(?P<major>\d+)"
-            r"\.(?P<minor>\d+)"
-            r"\.(?P<patch>\d+)"
-            r"(?P<tag>.*)?\"$",
-            fp.read(),
-            re.M,
-        )
-        if _version_match is None:
-            raise ValueError
-        _version_info = _version_match.groupdict()
-    except (IndexError, ValueError):
-        raise RuntimeError("Unable to determine version.")
+try:
+    _version_str = version("aiodocker")
+    _version_match = re.search(
+        r"^(?P<major>\d+)"
+        r"\.(?P<minor>\d+)"
+        r"\.(?P<patch>\d+)"
+        r"(?:\.?)(?P<tag>.*)?$",
+        _version_str,
+        flags=re.M,
+    )
+    if _version_match is None:
+        raise ValueError
+    print(f"{_version_str} -> {_version_match.groupdict()}")
+    _version_info = _version_match.groupdict()
+except (IndexError, ValueError):
+    raise RuntimeError("Unable to determine version.")
 
 _root_path = os.path.abspath(os.path.join(_docs_path, ".."))
 sys.path.insert(0, _root_path)
@@ -65,10 +62,8 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "alabaster",
-    "sphinxcontrib.asyncio",
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
-    "sphinx_autodoc_typehints",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -102,7 +97,7 @@ release = "{major}.{minor}.{patch}-{tag}".format(**_version_info)
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -117,6 +112,11 @@ todo_include_todos = False
 
 # The default language to highlight source code in.
 highlight_language = "python3"
+
+# -- Options for napoleon -------------------------------------------------
+
+napoleon_use_rtype = False
+
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -149,7 +149,7 @@ html_theme_options = {
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -243,6 +243,6 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard
 # library.
 intersphinx_mapping = {
-    "https://docs.python.org/": None,
+    "python": ("https://docs.python.org/", None),
     "aiohttp": ("https://aiohttp.readthedocs.io/en/stable/", None),
 }

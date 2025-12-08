@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import json
 from base64 import b64encode
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Sequence
 
 from .utils import clean_filters, clean_map
 
@@ -9,7 +11,11 @@ class DockerSecrets:
     def __init__(self, docker):
         self.docker = docker
 
-    async def list(self, *, filters: Optional[Mapping] = None) -> List[Mapping]:
+    async def list(
+        self,
+        *,
+        filters: Optional[Mapping[str, str | Sequence[str]]] = None,
+    ) -> List[Mapping]:
         """
         Return a list of secrets
 

@@ -1,14 +1,6 @@
-=======
 Events
-=======
+======
 
------------
-Reference
------------
-
-DockerEvents
-=============
-
-.. autoclass:: aiodocker.docker.DockerEvents
-        :members:
-        :undoc-members:
+.. autoclass:: aiodocker.events.DockerEvents
+    :members:
+    :undoc-members:

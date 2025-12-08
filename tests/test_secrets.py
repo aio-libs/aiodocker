@@ -5,9 +5,7 @@ from aiodocker.exceptions import DockerError
 
 @pytest.fixture
 async def tmp_secret(swarm, random_name):
-    secret = await swarm.secrets.create(
-        name="secret-" + random_name(), data=random_name()
-    )
+    secret = await swarm.secrets.create(name="secret-" + random_name, data=random_name)
     yield secret["ID"]
     await swarm.secrets.delete(secret["ID"])
 

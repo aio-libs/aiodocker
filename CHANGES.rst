@@ -12,6 +12,81 @@ Changes
 
 .. towncrier release notes start
 
+0.24.0 (2024-11-21)
+===================
+
+Features
+--------
+
+- Added Python 3.13 support (#927)
+- Added timeout parameter for push method (#929)
+
+
+Bugfixes
+--------
+
+- Fix `DockerImages.build()`, `DockerImages.pull()`, `DockerImages.push()` methods' incorrect return type declarations. (#909)
+
+
+Deprecations and Removals
+-------------------------
+
+- Removed Python 3.8 support as it has reached end of life. (#924)
+
+
+0.23.0 (2024-09-23)
+===================
+
+Features
+--------
+
+- Introduce a sentinel value to `_do_query()` and its friend methods to allow configuring per-request infinite timeouts instead of always falling back to the session-level default timeout when setting the timeout argument to `None`, and add the timeout arguments to image-related API wrappers (#900)
+
+
+0.22.2 (2024-07-18)
+===================
+
+Bugfixes
+--------
+
+- Use ``TYPE_CHECKING`` flag to avoid importing from ``typing_extensions`` at run time (#876)
+
+
+0.22.1 (2024-07-05)
+===================
+
+Bugfixes
+--------
+
+- Fix a missing removal of the legacy `AsyncCM` interface usage and update type annotations to avoid this in the future (#874)
+
+
+0.22.0 (2024-06-26)
+===================
+
+NOTICE: This release drops support for Python 3.7 and older. Please upgrade your Python version or keep using prior releases.
+
+Features
+--------
+
+- Adds the force parameter to `DockerVolume.delete()` (#690)
+- Migrate from setuptools to hatch.  To install the package and all dependencies, use "pip install .[dev,doc]". (#848)
+
+
+Bugfixes
+--------
+
+- Support additional parameters in swarm init (#323)
+- Fixes unittests that don't run locally due to deprecations in later versions of Docker. Tested with 26.00, v1.45. (#849)
+- Fix never-awaited coroutines of `_AsyncCM` to close when handling errors (#861)
+
+
+Misc
+----
+
+- #850
+
+
 0.22.0a1 (2024-05-21)
 =====================
 

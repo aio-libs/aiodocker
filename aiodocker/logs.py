@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import warnings
 from collections import ChainMap
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 import aiohttp
+import attrs
 
 from .channel import Channel, ChannelSubscriber
 
@@ -17,7 +20,7 @@ class DockerLog:
         self.docker = docker
         self.channel = Channel()
         self.container = container
-        self.response = None
+        self.response: Optional[aiohttp.ClientResponse] = None
 
     def listen(self) -> ChannelSubscriber:
         warnings.warn(
@@ -30,21 +33,25 @@ class DockerLog:
 
     async def run(self, **params: Any) -> None:
         if self.response:
-            warnings.warn("already running", RuntimeWarning, stackelevel=2)
+            warnings.warn("already running", RuntimeWarning, stackelevel=2)  # type: ignore
             return
         forced_params = {"follow": True}
         default_params = {"stdout": True, "stderr": True}
         params2 = ChainMap(forced_params, params, default_params)
+        # inherit and update the parent client's timeout
+        # sock_read and total timeout doesn't make sense for log streaming
+        timeout = attrs.evolve(self.docker._timeout, sock_read=None, total=None)
         try:
-            self.response = await self.docker._query(
-                f"containers/{self.container._id}/logs", params=params2
-            )
-            assert self.response is not None
-            while True:
-                msg = await self.response.content.readline()
-                if not msg:
-                    break
-                await self.channel.publish(msg)
+            async with self.docker._query(
+                f"containers/{self.container._id}/logs", params=params2, timeout=timeout
+            ) as resp:
+                self.response = resp
+                assert self.response is not None
+                while True:
+                    msg = await self.response.content.readline()
+                    if not msg:
+                        break
+                    await self.channel.publish(msg)
         except (aiohttp.ClientConnectionError, aiohttp.ServerDisconnectedError):
             pass
         finally:

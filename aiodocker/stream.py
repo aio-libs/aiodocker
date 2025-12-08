@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import socket
 import struct
 import warnings
@@ -5,6 +7,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Awaitable, Callable, NamedTuple, Optional, Tuple, Type
 
 import aiohttp
+import attrs
 from yarl import URL
 
 from .exceptions import DockerError
@@ -20,27 +23,35 @@ class Message(NamedTuple):
 
 
 class Stream:
+    _resp: aiohttp.ClientResponse | None
+
     def __init__(
         self,
         docker: "Docker",
         setup: Callable[[], Awaitable[Tuple[URL, Optional[bytes], bool]]],
-        timeout: Optional[aiohttp.ClientTimeout],
+        timeout: Optional[aiohttp.ClientTimeout] = None,
     ) -> None:
         self._setup = setup
         self.docker = docker
         self._resp = None
         self._closed = False
         self._timeout = timeout
-        self._queue = None
+        self._queue: Optional[aiohttp.FlowControlDataQueue[Message]] = None
 
     async def _init(self) -> None:
         if self._resp is not None:
             return
         url, body, tty = await self._setup()
-        timeout = self._timeout
-        if timeout is None:
-            # total timeout doesn't make sense for streaming
-            timeout = aiohttp.ClientTimeout()
+        # inherit and update the parent client's timeout
+        timeout = self.docker._timeout
+        if self._timeout is not None:
+            timeout = attrs.evolve(
+                timeout,
+                connect=self._timeout.connect,
+                sock_connect=self._timeout.sock_connect,
+            )
+        # sock_read and total timeout doesn't make sense for streaming
+        timeout = attrs.evolve(timeout, sock_read=None, total=None)
         self._resp = resp = await self.docker._do_query(
             url,
             method="POST",
@@ -76,6 +87,8 @@ class Stream:
             )
         protocol = conn.protocol
         loop = resp._loop
+        assert protocol is not None
+        assert protocol.transport is not None
         sock = protocol.transport.get_extra_info("socket")
         if sock is not None:
             # set TCP keepalive for vendored socket
@@ -104,9 +117,12 @@ class Stream:
             raise RuntimeError("Cannot write to closed transport")
         await self._init()
         assert self._resp is not None
+        assert self._resp.connection is not None
         transport = self._resp.connection.transport
+        assert transport is not None
         transport.write(data)
         protocol = self._resp.connection.protocol
+        assert protocol is not None
         if protocol.transport is not None:
             await protocol._drain_helper()
 
@@ -116,12 +132,13 @@ class Stream:
         if self._closed:
             return
         self._closed = True
+        assert self._resp.connection is not None
         transport = self._resp.connection.transport
         if transport and transport.can_write_eof():
             transport.write_eof()
         self._resp.close()
 
-    async def __aenter__(self) -> "Stream":
+    async def __aenter__(self) -> Stream:
         await self._init()
         return self
 
@@ -130,8 +147,9 @@ class Stream:
         exc_typ: Type[BaseException],
         exc_val: BaseException,
         exc_tb: TracebackType,
-    ) -> None:
+    ) -> Optional[bool]:
         await self.close()
+        return None
 
     def __del__(self, _warnings=warnings) -> None:
         if self._resp is not None:

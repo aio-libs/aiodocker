@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, List, Mapping, Optional
 
 from .utils import clean_filters

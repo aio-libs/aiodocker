@@ -7,12 +7,15 @@ Byeongjun Park
 Cecil Tonglet
 Christian Barra
 Danny Song
+Edgar Ramírez Mondragón
 eevelweezel
 Gaopeiliang
 Greg Guthe
+Gyubong Lee
 Hiroki Kiyohara
 Igor Alexandrov
 Jason Kraus
+Jonathan Carroll Otsuka
 Joongi Kim
 Joshua Chung
 Julien Kmec
@@ -22,6 +25,9 @@ Konstantin Valetov
 Martin Koppehel
 Nikolay Novik
 Paul Tagliamonte
+Robin Tweedie
+Sanghun Lee
+Saulius Adamonis
 Tianon Gravi
 Tommy Beadle
 Travis DePrato

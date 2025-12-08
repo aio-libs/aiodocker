@@ -1,8 +1,18 @@
+from importlib.metadata import PackageNotFoundError, version
+
 from .docker import Docker
 from .exceptions import DockerContainerError, DockerError
 
 
-__version__ = "0.22.0a1"
+try:
+    __version__ = version("aiodocker")
+except PackageNotFoundError:
+    # Package is not installed
+    __version__ = "0.0.0+unknown"
 
 
-__all__ = ("Docker", "DockerError", "DockerContainerError")
+__all__ = (
+    "Docker",
+    "DockerError",
+    "DockerContainerError",
+)

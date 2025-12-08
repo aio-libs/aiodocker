@@ -16,11 +16,11 @@ aiodocker: AsyncIO bindings for docker.io
    :target: https://pypi.org/project/aiodocker/
    :alt: Python Versions
 
-.. image:: https://travis-ci.org/aio-libs/aiodocker.svg?branch=master
-   :target: https://travis-ci.org/aio-libs/aiodocker
-   :alt: Build Status
+.. image:: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml/badge.svg?branch=main
+   :target: https://github.com/aio-libs/aiodocker/actions/workflows/ci-cd.yml?query=branch%3Amain
+   :alt: GitHub Actions status for the main branch
 
-.. image:: https://codecov.io/gh/aio-libs/aiodocker/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/aio-libs/aiodocker/branch/main/graph/badge.svg
    :target: https://codecov.io/gh/aio-libs/aiodocker
    :alt: Code Coverage
 
@@ -123,15 +123,19 @@ It's *Apache 2* licensed and freely available.
    client
    configs
    containers
+   exec
+   stream
+   logs
    images
+   networks
    secrets
    services
    swarm
    system
    volumes
    tasks
-   log
    events
+   types
    exceptions
 
 Indices and tables
