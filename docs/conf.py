@@ -113,6 +113,11 @@ todo_include_todos = False
 # The default language to highlight source code in.
 highlight_language = "python3"
 
+# -- Options for napoleon -------------------------------------------------
+
+napoleon_use_rtype = False
+
+
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for

@@ -1,14 +1,6 @@
-======
 System
 ======
 
-----------
-Reference
-----------
-
-DockerSystem
-=============
-
 .. autoclass:: aiodocker.system.DockerSystem
-        :members:
-        :undoc-members:
+    :members:
+    :undoc-members:
