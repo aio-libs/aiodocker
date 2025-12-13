@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -46,23 +47,24 @@ from .volumes import DockerVolume, DockerVolumes
 
 __all__ = (
     "Docker",
-    "DockerContainers",
+    "DockerConfigs",
     "DockerContainer",
-    "DockerEvents",
+    "DockerContainers",
+    "DockerContextEndpoint",
     "DockerError",
+    "DockerEvents",
     "DockerImages",
     "DockerLog",
-    "DockerSwarm",
-    "DockerConfigs",
+    "DockerNetwork",
+    "DockerNetworks",
     "DockerSecrets",
     "DockerServices",
-    "DockerTasks",
-    "DockerVolumes",
-    "DockerVolume",
-    "DockerNetworks",
-    "DockerNetwork",
+    "DockerSwarm",
     "DockerSwarmNodes",
     "DockerSystem",
+    "DockerTasks",
+    "DockerVolume",
+    "DockerVolumes",
 )
 
 log = logging.getLogger(__name__)
@@ -75,6 +77,26 @@ _sock_search_paths = [
 
 _rx_version = re.compile(r"^v\d+\.\d+$")
 _rx_tcp_schemes = re.compile(r"^(tcp|http|https)://")
+
+
+@attrs.define
+class DockerContextEndpoint:
+    """Docker context endpoint configuration.
+
+    Holds the endpoint settings from a Docker context, including
+    connection host and TLS configuration.
+    """
+
+    host: str
+    skip_tls_verify: bool = False
+    tls_ca: Optional[bytes] = None
+    tls_cert: Optional[bytes] = None
+    tls_key: Optional[bytes] = None
+
+    @property
+    def has_tls(self) -> bool:
+        """Check if TLS credentials are available."""
+        return self.tls_ca is not None or self.tls_cert is not None
 
 
 class Docker:
@@ -128,10 +150,14 @@ class Docker:
         api_version: str = "auto",
     ) -> None:
         docker_host = url  # rename
+        context_endpoint: Optional[DockerContextEndpoint] = None
+
         if docker_host is None:
             docker_host = os.environ.get("DOCKER_HOST", None)
         if docker_host is None:
-            docker_host = self._get_docker_context_host()
+            context_endpoint = self._get_docker_context_endpoint()
+            if context_endpoint is not None:
+                docker_host = context_endpoint.host
         if docker_host is None:
             for sockpath in _sock_search_paths:
                 if sockpath.is_socket():
@@ -174,9 +200,14 @@ class Docker:
             WIN_PRE = "npipe://"
             WIN_PRE_LEN = len(WIN_PRE)
             if _rx_tcp_schemes.search(docker_host):
+                # Determine SSL context: user-provided > context TLS > DOCKER_TLS_VERIFY
+                if ssl_context is None and context_endpoint is not None:
+                    ssl_context = self._create_context_ssl_context(context_endpoint)
+                    if ssl_context is not None:
+                        docker_host = _rx_tcp_schemes.sub("https://", docker_host)
                 if (
-                    os.environ.get("DOCKER_TLS_VERIFY", "0") == "1"
-                    and ssl_context is None
+                    ssl_context is None
+                    and os.environ.get("DOCKER_TLS_VERIFY", "0") == "1"
                 ):
                     ssl_context = self._docker_machine_ssl_context()
                     docker_host = _rx_tcp_schemes.sub("https://", docker_host)
@@ -520,20 +551,161 @@ class Docker:
         return context
 
     @staticmethod
-    def _get_docker_context_host() -> Optional[str]:
+    def _get_context_dir_name(context_name: str) -> str:
+        """Compute the SHA256 hash used for context directory names.
+
+        Docker CLI uses SHA256 of the context name as the directory name
+        under ~/.docker/contexts/meta/ and ~/.docker/contexts/tls/.
+        """
+        return hashlib.sha256(context_name.encode("utf-8")).hexdigest()
+
+    @staticmethod
+    def _get_docker_context_endpoint() -> Optional[DockerContextEndpoint]:
+        """Get the Docker endpoint configuration from the current Docker context.
+
+        Resolution order:
+        1. DOCKER_CONTEXT environment variable
+        2. currentContext from ~/.docker/config.json
+        3. If context name is "default" or not found, return None
+           (caller should fall back to DOCKER_HOST or socket search)
+
+        Returns:
+            DockerContextEndpoint with host, TLS settings, and certificates,
+            or None if no context is configured or the context is "default".
+        """
         current_context_name = os.environ.get("DOCKER_CONTEXT", None)
         if current_context_name is None:
             try:
                 docker_config_path = Path.home() / ".docker" / "config.json"
                 docker_config = json.loads(docker_config_path.read_bytes())
-            except IOError:
+                current_context_name = docker_config.get("currentContext")
+            except (OSError, json.JSONDecodeError):
                 return None
-            current_context_name = docker_config.get("currentContext", "default")
 
-        for meta_path in (Path.home() / ".docker" / "contexts" / "meta").glob(
-            "*/meta.json"
-        ):
+        # "default" is a virtual context that doesn't exist as files.
+        # It means "use DOCKER_HOST or search for local sockets".
+        if current_context_name is None or current_context_name == "default":
+            return None
+
+        # Compute the SHA256 hash of the context name to find its directory
+        context_dir_name = Docker._get_context_dir_name(current_context_name)
+        contexts_dir = Path.home() / ".docker" / "contexts"
+        meta_path = contexts_dir / "meta" / context_dir_name / "meta.json"
+
+        try:
             context_data = json.loads(meta_path.read_bytes())
-            if context_data["Name"] == current_context_name:
-                return context_data["Endpoints"]["docker"]["Host"]
-        return None
+            docker_endpoint = context_data["Endpoints"]["docker"]
+            host = docker_endpoint["Host"]
+            skip_tls_verify = docker_endpoint.get("SkipTLSVerify", False)
+        except (OSError, json.JSONDecodeError, KeyError):
+            return None
+
+        # Load TLS certificates if available
+        tls_dir = contexts_dir / "tls" / context_dir_name / "docker"
+        tls_ca, tls_cert, tls_key = Docker._load_context_tls(tls_dir)
+
+        return DockerContextEndpoint(
+            host=host,
+            skip_tls_verify=skip_tls_verify,
+            tls_ca=tls_ca,
+            tls_cert=tls_cert,
+            tls_key=tls_key,
+        )
+
+    @staticmethod
+    def _load_context_tls(
+        tls_dir: Path,
+    ) -> tuple[Optional[bytes], Optional[bytes], Optional[bytes]]:
+        """Load TLS certificate files from a context's TLS directory.
+
+        Args:
+            tls_dir: Path to the TLS directory (e.g., ~/.docker/contexts/tls/{hash}/docker)
+
+        Returns:
+            Tuple of (ca_data, cert_data, key_data), each being bytes or None if not found.
+        """
+        ca_data: Optional[bytes] = None
+        cert_data: Optional[bytes] = None
+        key_data: Optional[bytes] = None
+
+        try:
+            ca_path = tls_dir / "ca.pem"
+            if ca_path.exists():
+                ca_data = ca_path.read_bytes()
+        except OSError:
+            pass
+
+        try:
+            cert_path = tls_dir / "cert.pem"
+            if cert_path.exists():
+                cert_data = cert_path.read_bytes()
+        except OSError:
+            pass
+
+        try:
+            key_path = tls_dir / "key.pem"
+            if key_path.exists():
+                key_data = key_path.read_bytes()
+        except OSError:
+            pass
+
+        return ca_data, cert_data, key_data
+
+    @staticmethod
+    def _create_context_ssl_context(
+        endpoint: DockerContextEndpoint,
+    ) -> Optional[ssl.SSLContext]:
+        """Create an SSL context from Docker context endpoint TLS data.
+
+        Args:
+            endpoint: The Docker context endpoint with TLS data.
+
+        Returns:
+            An ssl.SSLContext configured with the context's certificates,
+            or None if no TLS data is available.
+        """
+        if not endpoint.has_tls:
+            return None
+
+        import tempfile
+
+        context = ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
+        context.set_ciphers(ssl._RESTRICTED_SERVER_CIPHERS)  # type: ignore
+
+        if endpoint.skip_tls_verify:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        else:
+            context.check_hostname = True
+            context.verify_mode = ssl.CERT_REQUIRED
+
+        # SSL context methods require file paths, so we need to write temp files
+        # for the in-memory certificate data
+        try:
+            if endpoint.tls_ca is not None:
+                with tempfile.NamedTemporaryFile(
+                    mode="wb", suffix=".pem", delete=False
+                ) as ca_file:
+                    ca_file.write(endpoint.tls_ca)
+                    ca_path = ca_file.name
+                context.load_verify_locations(cafile=ca_path)
+                Path(ca_path).unlink(missing_ok=True)
+
+            if endpoint.tls_cert is not None and endpoint.tls_key is not None:
+                with tempfile.NamedTemporaryFile(
+                    mode="wb", suffix=".pem", delete=False
+                ) as cert_file:
+                    cert_file.write(endpoint.tls_cert)
+                    cert_path = cert_file.name
+                with tempfile.NamedTemporaryFile(
+                    mode="wb", suffix=".pem", delete=False
+                ) as key_file:
+                    key_file.write(endpoint.tls_key)
+                    key_path = key_file.name
+                context.load_cert_chain(certfile=cert_path, keyfile=key_path)
+                Path(cert_path).unlink(missing_ok=True)
+                Path(key_path).unlink(missing_ok=True)
+
+            return context
+        except (ssl.SSLError, OSError):
+            return None
