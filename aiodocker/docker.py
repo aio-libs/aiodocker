@@ -55,7 +55,6 @@ __all__ = (
     "DockerContainer",
     "DockerContainers",
     "DockerContextEndpoint",
-    "DockerError",
     "DockerEvents",
     "DockerImages",
     "DockerLog",
@@ -582,7 +581,6 @@ class Docker:
                 directory not found).
         """
         current_context_name = os.environ.get("DOCKER_CONTEXT", None)
-        context_from_env = current_context_name is not None
         if current_context_name is None:
             try:
                 docker_config_path = Path.home() / ".docker" / "config.json"
