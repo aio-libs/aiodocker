@@ -115,9 +115,7 @@ class DockerContainers:
         try:
             await container.start()
         except DockerError as err:
-            raise DockerContainerError(
-                err.status, {"message": err.message}, container["id"]
-            )
+            raise DockerContainerError(err.status, err.message, container["id"])
 
         return container
 
