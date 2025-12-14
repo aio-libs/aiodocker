@@ -23,7 +23,7 @@ from aiohttp import ClientResponse, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
-from .exceptions import DockerContainerError, DockerError
+from .exceptions import DockerAPIError, DockerContainerError, DockerError
 from .execs import Exec
 from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
@@ -104,7 +104,7 @@ class DockerContainers:
         """
         try:
             container = await self.create(config, name=name)
-        except DockerError as err:
+        except DockerAPIError as err:
             # image not found, try pulling it
             if err.status == 404 and "Image" in config:
                 await self.docker.pull(str(config["Image"]), auth=auth)
@@ -114,10 +114,8 @@ class DockerContainers:
 
         try:
             await container.start()
-        except DockerError as err:
-            raise DockerContainerError(
-                err.status, {"message": err.message}, container["id"]
-            )
+        except DockerAPIError as err:
+            raise DockerContainerError(err.status, err.message, container["id"])
 
         return container
 

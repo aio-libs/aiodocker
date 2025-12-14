@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from aiodocker.docker import Docker, DockerContextEndpoint
+from aiodocker.exceptions import DockerContextInvalidError, DockerContextTLSError
 
 
 class TestGetContextDirName:
@@ -97,12 +98,10 @@ class TestGetDockerContextEndpoint:
         meta_dir.mkdir(parents=True)
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(
-            json.dumps(
-                {
-                    "Name": "mycontext",
-                    "Endpoints": {"docker": {"Host": "tcp://192.168.1.100:2375"}},
-                }
-            )
+            json.dumps({
+                "Name": "mycontext",
+                "Endpoints": {"docker": {"Host": "tcp://192.168.1.100:2375"}},
+            })
         )
 
         endpoint = Docker._get_docker_context_endpoint()
@@ -132,12 +131,10 @@ class TestGetDockerContextEndpoint:
         meta_dir.mkdir(parents=True)
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(
-            json.dumps(
-                {
-                    "Name": "envcontext",
-                    "Endpoints": {"docker": {"Host": "unix:///custom/docker.sock"}},
-                }
-            )
+            json.dumps({
+                "Name": "envcontext",
+                "Endpoints": {"docker": {"Host": "unix:///custom/docker.sock"}},
+            })
         )
 
         # Create meta.json for configcontext (should NOT be used)
@@ -146,12 +143,10 @@ class TestGetDockerContextEndpoint:
         meta_dir2.mkdir(parents=True)
         meta_path2 = meta_dir2 / "meta.json"
         meta_path2.write_text(
-            json.dumps(
-                {
-                    "Name": "configcontext",
-                    "Endpoints": {"docker": {"Host": "tcp://wrong-host:2375"}},
-                }
-            )
+            json.dumps({
+                "Name": "configcontext",
+                "Endpoints": {"docker": {"Host": "tcp://wrong-host:2375"}},
+            })
         )
 
         # Should use envcontext, not configcontext
@@ -168,22 +163,25 @@ class TestGetDockerContextEndpoint:
 
         assert Docker._get_docker_context_endpoint() is None
 
-    def test_returns_none_when_context_not_found(
+    def test_raises_error_when_context_not_found(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return None when context directory doesn't exist."""
+        """Should raise DockerContextInvalidError when context directory doesn't exist."""
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setenv("DOCKER_CONTEXT", "nonexistent")
 
         docker_dir = tmp_path / ".docker"
         docker_dir.mkdir()
 
-        assert Docker._get_docker_context_endpoint() is None
+        with pytest.raises(DockerContextInvalidError) as exc_info:
+            Docker._get_docker_context_endpoint()
+        assert exc_info.value.context_name == "nonexistent"
+        assert "not found" in exc_info.value.message
 
-    def test_returns_none_on_invalid_json_config(
+    def test_raises_error_on_invalid_json_config(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return None when config.json contains invalid JSON."""
+        """Should raise DockerContextInvalidError when config.json contains invalid JSON."""
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.delenv("DOCKER_CONTEXT", raising=False)
 
@@ -192,12 +190,14 @@ class TestGetDockerContextEndpoint:
         config_path = docker_dir / "config.json"
         config_path.write_text("not valid json {{{")
 
-        assert Docker._get_docker_context_endpoint() is None
+        with pytest.raises(DockerContextInvalidError) as exc_info:
+            Docker._get_docker_context_endpoint()
+        assert "Invalid JSON in Docker config file" in exc_info.value.message
 
-    def test_returns_none_on_invalid_json_meta(
+    def test_raises_error_on_invalid_json_meta(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return None when meta.json contains invalid JSON."""
+        """Should raise DockerContextInvalidError when meta.json contains invalid JSON."""
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setenv("DOCKER_CONTEXT", "badmeta")
 
@@ -208,12 +208,15 @@ class TestGetDockerContextEndpoint:
         meta_path = meta_dir / "meta.json"
         meta_path.write_text("invalid json")
 
-        assert Docker._get_docker_context_endpoint() is None
+        with pytest.raises(DockerContextInvalidError) as exc_info:
+            Docker._get_docker_context_endpoint()
+        assert exc_info.value.context_name == "badmeta"
+        assert "Invalid JSON in context metadata file" in exc_info.value.message
 
-    def test_returns_none_on_missing_endpoints_key(
+    def test_raises_error_on_missing_endpoints_key(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return None when meta.json is missing Endpoints."""
+        """Should raise DockerContextInvalidError when meta.json is missing Endpoints."""
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setenv("DOCKER_CONTEXT", "noendpoints")
 
@@ -224,12 +227,15 @@ class TestGetDockerContextEndpoint:
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(json.dumps({"Name": "noendpoints"}))
 
-        assert Docker._get_docker_context_endpoint() is None
+        with pytest.raises(DockerContextInvalidError) as exc_info:
+            Docker._get_docker_context_endpoint()
+        assert exc_info.value.context_name == "noendpoints"
+        assert "Missing required field" in exc_info.value.message
 
-    def test_returns_none_on_missing_docker_endpoint(
+    def test_raises_error_on_missing_docker_endpoint(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return None when meta.json has no docker endpoint."""
+        """Should raise DockerContextInvalidError when meta.json has no docker endpoint."""
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setenv("DOCKER_CONTEXT", "nodocker")
 
@@ -242,7 +248,34 @@ class TestGetDockerContextEndpoint:
             json.dumps({"Name": "nodocker", "Endpoints": {"other": {"Host": "foo"}}})
         )
 
-        assert Docker._get_docker_context_endpoint() is None
+        with pytest.raises(DockerContextInvalidError) as exc_info:
+            Docker._get_docker_context_endpoint()
+        assert exc_info.value.context_name == "nodocker"
+        assert "Missing required field" in exc_info.value.message
+
+    def test_raises_error_on_missing_host_field(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Should raise DockerContextInvalidError when docker endpoint has no Host."""
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("DOCKER_CONTEXT", "nohost")
+
+        docker_dir = tmp_path / ".docker"
+        context_hash = Docker._get_context_dir_name("nohost")
+        meta_dir = docker_dir / "contexts" / "meta" / context_hash
+        meta_dir.mkdir(parents=True)
+        meta_path = meta_dir / "meta.json"
+        meta_path.write_text(
+            json.dumps({
+                "Name": "nohost",
+                "Endpoints": {"docker": {"SkipTLSVerify": True}},
+            })
+        )
+
+        with pytest.raises(DockerContextInvalidError) as exc_info:
+            Docker._get_docker_context_endpoint()
+        assert exc_info.value.context_name == "nohost"
+        assert "Host" in exc_info.value.message
 
     def test_handles_unix_socket_host(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -257,12 +290,10 @@ class TestGetDockerContextEndpoint:
         meta_dir.mkdir(parents=True)
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(
-            json.dumps(
-                {
-                    "Name": "unixctx",
-                    "Endpoints": {"docker": {"Host": "unix:///var/run/docker.sock"}},
-                }
-            )
+            json.dumps({
+                "Name": "unixctx",
+                "Endpoints": {"docker": {"Host": "unix:///var/run/docker.sock"}},
+            })
         )
 
         endpoint = Docker._get_docker_context_endpoint()
@@ -282,12 +313,10 @@ class TestGetDockerContextEndpoint:
         meta_dir.mkdir(parents=True)
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(
-            json.dumps(
-                {
-                    "Name": "winctx",
-                    "Endpoints": {"docker": {"Host": "npipe:////./pipe/docker_engine"}},
-                }
-            )
+            json.dumps({
+                "Name": "winctx",
+                "Endpoints": {"docker": {"Host": "npipe:////./pipe/docker_engine"}},
+            })
         )
 
         endpoint = Docker._get_docker_context_endpoint()
@@ -307,17 +336,15 @@ class TestGetDockerContextEndpoint:
         meta_dir.mkdir(parents=True)
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(
-            json.dumps(
-                {
-                    "Name": "tlsctx",
-                    "Endpoints": {
-                        "docker": {
-                            "Host": "tcp://secure-host:2376",
-                            "SkipTLSVerify": True,
-                        }
-                    },
-                }
-            )
+            json.dumps({
+                "Name": "tlsctx",
+                "Endpoints": {
+                    "docker": {
+                        "Host": "tcp://secure-host:2376",
+                        "SkipTLSVerify": True,
+                    }
+                },
+            })
         )
 
         endpoint = Docker._get_docker_context_endpoint()
@@ -353,7 +380,9 @@ class TestLoadContextTLS:
         """Should load client certificate and key when present."""
         tls_dir = tmp_path / "tls"
         tls_dir.mkdir()
-        cert_content = b"-----BEGIN CERTIFICATE-----\nCLIENT CERT\n-----END CERTIFICATE-----"
+        cert_content = (
+            b"-----BEGIN CERTIFICATE-----\nCLIENT CERT\n-----END CERTIFICATE-----"
+        )
         key_content = b"-----BEGIN RSA PRIVATE KEY-----\nPRIVATE KEY\n-----END RSA PRIVATE KEY-----"
         (tls_dir / "cert.pem").write_bytes(cert_content)
         (tls_dir / "key.pem").write_bytes(key_content)
@@ -379,6 +408,60 @@ class TestLoadContextTLS:
         assert cert == cert_content
         assert key == key_content
 
+    def test_raises_error_on_unreadable_ca_file(self, tmp_path: Path) -> None:
+        """Should raise DockerContextTLSError when CA file exists but cannot be read."""
+        tls_dir = tmp_path / "tls"
+        tls_dir.mkdir()
+        ca_path = tls_dir / "ca.pem"
+        ca_path.write_bytes(b"CA")
+        # Make the file unreadable
+        ca_path.chmod(0o000)
+
+        try:
+            with pytest.raises(DockerContextTLSError) as exc_info:
+                Docker._load_context_tls(tls_dir, context_name="testctx")
+            assert "Failed to read CA certificate" in exc_info.value.message
+            assert exc_info.value.context_name == "testctx"
+        finally:
+            # Restore permissions for cleanup
+            ca_path.chmod(0o644)
+
+    def test_raises_error_on_unreadable_cert_file(self, tmp_path: Path) -> None:
+        """Should raise DockerContextTLSError when cert file exists but cannot be read."""
+        tls_dir = tmp_path / "tls"
+        tls_dir.mkdir()
+        cert_path = tls_dir / "cert.pem"
+        cert_path.write_bytes(b"CERT")
+        # Make the file unreadable
+        cert_path.chmod(0o000)
+
+        try:
+            with pytest.raises(DockerContextTLSError) as exc_info:
+                Docker._load_context_tls(tls_dir, context_name="testctx")
+            assert "Failed to read client certificate" in exc_info.value.message
+            assert exc_info.value.context_name == "testctx"
+        finally:
+            # Restore permissions for cleanup
+            cert_path.chmod(0o644)
+
+    def test_raises_error_on_unreadable_key_file(self, tmp_path: Path) -> None:
+        """Should raise DockerContextTLSError when key file exists but cannot be read."""
+        tls_dir = tmp_path / "tls"
+        tls_dir.mkdir()
+        key_path = tls_dir / "key.pem"
+        key_path.write_bytes(b"KEY")
+        # Make the file unreadable
+        key_path.chmod(0o000)
+
+        try:
+            with pytest.raises(DockerContextTLSError) as exc_info:
+                Docker._load_context_tls(tls_dir, context_name="testctx")
+            assert "Failed to read private key" in exc_info.value.message
+            assert exc_info.value.context_name == "testctx"
+        finally:
+            # Restore permissions for cleanup
+            key_path.chmod(0o644)
+
 
 class TestGetDockerContextEndpointWithTLS:
     """Tests for Docker._get_docker_context_endpoint() with TLS files."""
@@ -398,12 +481,10 @@ class TestGetDockerContextEndpointWithTLS:
         meta_dir.mkdir(parents=True)
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(
-            json.dumps(
-                {
-                    "Name": "securectx",
-                    "Endpoints": {"docker": {"Host": "tcp://secure:2376"}},
-                }
-            )
+            json.dumps({
+                "Name": "securectx",
+                "Endpoints": {"docker": {"Host": "tcp://secure:2376"}},
+            })
         )
 
         # Create TLS files
@@ -419,6 +500,7 @@ class TestGetDockerContextEndpointWithTLS:
         endpoint = Docker._get_docker_context_endpoint()
         assert endpoint is not None
         assert endpoint.host == "tcp://secure:2376"
+        assert endpoint.context_name == "securectx"
         assert endpoint.tls_ca == ca_content
         assert endpoint.tls_cert == cert_content
         assert endpoint.tls_key == key_content
@@ -439,12 +521,10 @@ class TestGetDockerContextEndpointWithTLS:
         meta_dir.mkdir(parents=True)
         meta_path = meta_dir / "meta.json"
         meta_path.write_text(
-            json.dumps(
-                {
-                    "Name": "nontlsctx",
-                    "Endpoints": {"docker": {"Host": "tcp://insecure:2375"}},
-                }
-            )
+            json.dumps({
+                "Name": "nontlsctx",
+                "Endpoints": {"docker": {"Host": "tcp://insecure:2375"}},
+            })
         )
 
         endpoint = Docker._get_docker_context_endpoint()
@@ -474,3 +554,13 @@ class TestDockerContextEndpoint:
         """skip_tls_verify should default to False."""
         endpoint = DockerContextEndpoint(host="tcp://host:2376")
         assert endpoint.skip_tls_verify is False
+
+    def test_default_context_name(self) -> None:
+        """context_name should default to None."""
+        endpoint = DockerContextEndpoint(host="tcp://host:2376")
+        assert endpoint.context_name is None
+
+    def test_context_name_set(self) -> None:
+        """context_name should be set when provided."""
+        endpoint = DockerContextEndpoint(host="tcp://host:2376", context_name="myctx")
+        assert endpoint.context_name == "myctx"
