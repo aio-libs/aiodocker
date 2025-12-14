@@ -31,9 +31,9 @@ from .configs import DockerConfigs
 from .containers import DockerContainer, DockerContainers
 from .events import DockerEvents
 from .exceptions import (
-    DockerAPIError,
     DockerContextInvalidError,
     DockerContextTLSError,
+    DockerError,
 )
 from .images import DockerImages
 from .logs import DockerLog
@@ -437,7 +437,7 @@ class Docker:
         except asyncio.TimeoutError:
             raise
         except aiohttp.ClientConnectionError as exc:
-            raise DockerAPIError(
+            raise DockerError(
                 900,
                 f"Cannot connect to Docker Engine via {self._connection_info} [{exc}]",
             )
@@ -447,9 +447,9 @@ class Docker:
             response.close()
             if content_type == "application/json":
                 data = json.loads(what.decode("utf8"))
-                raise DockerAPIError(response.status, data["message"])
+                raise DockerError(response.status, data["message"])
             else:
-                raise DockerAPIError(response.status, what.decode("utf8"))
+                raise DockerError(response.status, what.decode("utf8"))
         return response
 
     async def _query_json(

@@ -10,7 +10,7 @@ import aiohttp
 import attrs
 from yarl import URL
 
-from .exceptions import DockerAPIError
+from .exceptions import DockerError
 
 
 if TYPE_CHECKING:
@@ -81,7 +81,7 @@ class Stream:
                     msg = msg + f" First 100 bytes of body: [{body[100]!r}]..."
                 else:
                     msg = msg + f" Body: [{body!r}]"
-            raise DockerAPIError(500, msg)
+            raise DockerError(500, msg)
         protocol = conn.protocol
         loop = resp._loop
         assert protocol is not None
