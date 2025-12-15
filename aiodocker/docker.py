@@ -116,15 +116,27 @@ class Docker:
         await docker.containers.list()
         await docker.images.pull(...)
 
-    The client will auto-detect the Docker host from the ``DOCKER_HOST`` environment
-    variable or search for local socket files if not specified.
+    Docker Host Resolution Precedence
+    ----------------------------------
+    The Docker host is determined using the following precedence order (highest to lowest):
+
+    1. **url parameter** - Explicitly provided Docker daemon address
+    2. **context parameter** - Explicitly specified Docker context name
+    3. **DOCKER_HOST environment variable** - Falls back when no explicit context specified
+    4. **DOCKER_CONTEXT environment variable** - Specifies which Docker context to use
+    5. **currentContext from ~/.docker/config.json** - Default context set by docker CLI
+    6. **Socket auto-detection** - Searches common socket paths (e.g., /var/run/docker.sock)
+
+    Note: Explicit constructor parameters (``url``, ``context``) take precedence over
+    environment variables (``DOCKER_HOST``, ``DOCKER_CONTEXT``). This follows the principle
+    that explicit code configuration overrides implicit environment configuration, matching
+    the pattern used in the official Docker Go client.
 
     Args:
         url: The Docker daemon address as the full URL string (e.g.,
             ``"unix:///var/run/docker.sock"``, ``"tcp://127.0.0.1:2375"``,
             ``"npipe:////./pipe/docker_engine"``).
-            If not specified, it will use ``DOCKER_HOST`` environment variable or auto-detect
-            from common socket paths.
+            Takes highest precedence when specified.
         connector: Custom :class:`aiohttp.BaseConnector` implementation to establish new connections to the docker host.
             If provided, it will be used instead of creating a connector based on the **url** value.
         session: Custom :class:`aiohttp.ClientSession`. If None, a new session will be
@@ -136,6 +148,10 @@ class Docker:
             is set, will create a context using ``DOCKER_CERT_PATH`` certificates.
         api_version: Pin the Docker API version (e.g., "v1.43"). Use "auto" to
             automatically detect the API version from the daemon.
+        context: Docker context name to use (e.g., "production", "staging").
+            When specified, loads the endpoint configuration from the named context
+            in ``~/.docker/contexts/``. Overrides all environment variables
+            (``DOCKER_HOST``, ``DOCKER_CONTEXT``) and config file settings.
 
     Raises:
         ValueError: Raised if the docker host cannot be determined,
@@ -152,16 +168,17 @@ class Docker:
         timeout: Optional[aiohttp.ClientTimeout] = None,
         ssl_context: Optional[ssl.SSLContext] = None,
         api_version: str = "auto",
+        context: Optional[str] = None,
     ) -> None:
         docker_host = url  # rename
         context_endpoint: Optional[DockerContextEndpoint] = None
 
         if docker_host is None:
-            docker_host = os.environ.get("DOCKER_HOST", None)
-        if docker_host is None:
-            context_endpoint = self._get_docker_context_endpoint()
+            context_endpoint = self._get_docker_context_endpoint(context)
             if context_endpoint is not None:
                 docker_host = context_endpoint.host
+        if docker_host is None:
+            docker_host = os.environ.get("DOCKER_HOST", None)
         if docker_host is None:
             for sockpath in _sock_search_paths:
                 if sockpath.is_socket():
@@ -562,14 +579,21 @@ class Docker:
         return hashlib.sha256(context_name.encode("utf-8")).hexdigest()
 
     @staticmethod
-    def _get_docker_context_endpoint() -> Optional[DockerContextEndpoint]:
+    def _get_docker_context_endpoint(
+        context_name: Optional[str] = None,
+    ) -> Optional[DockerContextEndpoint]:
         """Get the Docker endpoint configuration from the current Docker context.
 
         Resolution order:
-        1. DOCKER_CONTEXT environment variable
-        2. currentContext from ~/.docker/config.json
-        3. If context name is "default" or not found, return None
+        1. context_name parameter (if provided)
+        2. DOCKER_CONTEXT environment variable
+        3. currentContext from ~/.docker/config.json
+        4. If context name is "default" or not found, return None
            (caller should fall back to DOCKER_HOST or socket search)
+
+        Args:
+            context_name: Explicit context name to use. If provided, takes precedence
+                over environment variables and config file.
 
         Returns:
             DockerContextEndpoint with host, TLS settings, and certificates,
@@ -580,7 +604,9 @@ class Docker:
                 data (e.g., invalid JSON, missing required fields, or context
                 directory not found).
         """
-        current_context_name = os.environ.get("DOCKER_CONTEXT", None)
+        current_context_name = context_name
+        if current_context_name is None:
+            current_context_name = os.environ.get("DOCKER_CONTEXT", None)
         if current_context_name is None:
             try:
                 docker_config_path = Path.home() / ".docker" / "config.json"

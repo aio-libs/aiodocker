@@ -564,3 +564,129 @@ class TestDockerContextEndpoint:
         """context_name should be set when provided."""
         endpoint = DockerContextEndpoint(host="tcp://host:2376", context_name="myctx")
         assert endpoint.context_name == "myctx"
+
+
+class TestDockerConstructorContextParameter:
+    """Tests for Docker.__init__() context parameter."""
+
+    async def test_context_parameter_loads_named_context(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Docker(context='mycontext') should load the specified context."""
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.delenv("DOCKER_HOST", raising=False)
+        monkeypatch.delenv("DOCKER_CONTEXT", raising=False)
+
+        # Create context files
+        docker_dir = tmp_path / ".docker"
+        context_hash = Docker._get_context_dir_name("mycontext")
+        meta_dir = docker_dir / "contexts" / "meta" / context_hash
+        meta_dir.mkdir(parents=True)
+        meta_path = meta_dir / "meta.json"
+        meta_path.write_text(
+            json.dumps({
+                "Name": "mycontext",
+                "Endpoints": {"docker": {"Host": "tcp://context-host:2375"}},
+            })
+        )
+
+        # Create Docker client with context parameter
+        docker = Docker(context="mycontext")
+        assert docker.docker_host == "tcp://context-host:2375"
+        await docker.close()
+
+    async def test_context_parameter_overrides_docker_context_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """context parameter should take precedence over DOCKER_CONTEXT env var."""
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.delenv("DOCKER_HOST", raising=False)
+        monkeypatch.setenv("DOCKER_CONTEXT", "envcontext")
+
+        docker_dir = tmp_path / ".docker"
+
+        # Create context from parameter
+        param_context_hash = Docker._get_context_dir_name("paramcontext")
+        meta_dir1 = docker_dir / "contexts" / "meta" / param_context_hash
+        meta_dir1.mkdir(parents=True)
+        (meta_dir1 / "meta.json").write_text(
+            json.dumps({
+                "Name": "paramcontext",
+                "Endpoints": {"docker": {"Host": "tcp://param-host:2375"}},
+            })
+        )
+
+        # Create context from env var (should NOT be used)
+        env_context_hash = Docker._get_context_dir_name("envcontext")
+        meta_dir2 = docker_dir / "contexts" / "meta" / env_context_hash
+        meta_dir2.mkdir(parents=True)
+        (meta_dir2 / "meta.json").write_text(
+            json.dumps({
+                "Name": "envcontext",
+                "Endpoints": {"docker": {"Host": "tcp://env-host:2375"}},
+            })
+        )
+
+        # Should use paramcontext, not envcontext
+        docker = Docker(context="paramcontext")
+        assert docker.docker_host == "tcp://param-host:2375"
+        await docker.close()
+
+    async def test_context_parameter_overrides_docker_host_env(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """context parameter should take precedence over DOCKER_HOST env var."""
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("DOCKER_HOST", "tcp://env-host:2375")
+
+        docker_dir = tmp_path / ".docker"
+        context_hash = Docker._get_context_dir_name("mycontext")
+        meta_dir = docker_dir / "contexts" / "meta" / context_hash
+        meta_dir.mkdir(parents=True)
+        (meta_dir / "meta.json").write_text(
+            json.dumps({
+                "Name": "mycontext",
+                "Endpoints": {"docker": {"Host": "tcp://context-host:2375"}},
+            })
+        )
+
+        # context parameter should win over DOCKER_HOST
+        docker = Docker(context="mycontext")
+        assert docker.docker_host == "tcp://context-host:2375"
+        await docker.close()
+
+    async def test_url_parameter_overrides_context_parameter(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """url parameter should take precedence over context parameter."""
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.delenv("DOCKER_HOST", raising=False)
+
+        docker_dir = tmp_path / ".docker"
+        context_hash = Docker._get_context_dir_name("mycontext")
+        meta_dir = docker_dir / "contexts" / "meta" / context_hash
+        meta_dir.mkdir(parents=True)
+        (meta_dir / "meta.json").write_text(
+            json.dumps({
+                "Name": "mycontext",
+                "Endpoints": {"docker": {"Host": "tcp://context-host:2375"}},
+            })
+        )
+
+        # url parameter should win
+        docker = Docker(url="tcp://url-host:2375", context="mycontext")
+        assert docker.docker_host == "tcp://url-host:2375"
+        await docker.close()
+
+    async def test_context_parameter_with_default_value(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """context='default' should be treated as no context (fall back to DOCKER_HOST)."""
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("DOCKER_HOST", "tcp://fallback-host:2375")
+        monkeypatch.delenv("DOCKER_CONTEXT", raising=False)
+
+        # context='default' should be ignored, falling back to DOCKER_HOST
+        docker = Docker(context="default")
+        assert docker.docker_host == "tcp://fallback-host:2375"
+        await docker.close()
