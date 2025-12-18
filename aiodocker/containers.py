@@ -30,7 +30,7 @@ from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
 from .types import JSONObject, MutableJSONObject, PortInfo
-from .utils import identical, parse_result
+from .utils import _suppress_timeout_deprecation, identical, parse_result
 
 
 if TYPE_CHECKING:
@@ -115,9 +115,7 @@ class DockerContainers:
         try:
             await container.start()
         except DockerError as err:
-            raise DockerContainerError(
-                err.status, {"message": err.message}, container["id"]
-            )
+            raise DockerContainerError(err.status, err.message, container["id"])
 
         return container
 
@@ -286,14 +284,20 @@ class DockerContainer:
         ):
             pass
 
-    async def wait(self, *, timeout=None, **kwargs) -> Dict[str, Any]:
-        data = await self.docker._query_json(
-            f"containers/{self._id}/wait",
-            method="POST",
-            params=kwargs,
-            timeout=timeout,
-        )
-        return data
+    async def wait(self, *, timeout: float | None = None, **kwargs) -> Dict[str, Any]:
+        # The wait API is an exception from deprecation of the total timeout.
+        # Use a context variable to suppress the warning in a thread-safe and async-safe manner.
+        token = _suppress_timeout_deprecation.set(True)
+        try:
+            data = await self.docker._query_json(
+                f"containers/{self._id}/wait",
+                method="POST",
+                params=kwargs,
+                timeout=timeout,
+            )
+            return data
+        finally:
+            _suppress_timeout_deprecation.reset(token)
 
     async def delete(self, **kwargs) -> None:
         async with self.docker._query(

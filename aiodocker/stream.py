@@ -7,6 +7,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, Awaitable, Callable, NamedTuple, Optional, Tuple, Type
 
 import aiohttp
+import attrs
 from yarl import URL
 
 from .exceptions import DockerError
@@ -28,7 +29,7 @@ class Stream:
         self,
         docker: "Docker",
         setup: Callable[[], Awaitable[Tuple[URL, Optional[bytes], bool]]],
-        timeout: Optional[aiohttp.ClientTimeout],
+        timeout: Optional[aiohttp.ClientTimeout] = None,
     ) -> None:
         self._setup = setup
         self.docker = docker
@@ -41,10 +42,16 @@ class Stream:
         if self._resp is not None:
             return
         url, body, tty = await self._setup()
-        timeout = self._timeout
-        if timeout is None:
-            # total timeout doesn't make sense for streaming
-            timeout = aiohttp.ClientTimeout()
+        # inherit and update the parent client's timeout
+        timeout = self.docker._timeout
+        if self._timeout is not None:
+            timeout = attrs.evolve(
+                timeout,
+                connect=self._timeout.connect,
+                sock_connect=self._timeout.sock_connect,
+            )
+        # sock_read and total timeout doesn't make sense for streaming
+        timeout = attrs.evolve(timeout, sock_read=None, total=None)
         self._resp = resp = await self.docker._do_query(
             url,
             method="POST",
@@ -74,10 +81,7 @@ class Stream:
                     msg = msg + f" First 100 bytes of body: [{body[100]!r}]..."
                 else:
                     msg = msg + f" Body: [{body!r}]"
-            raise DockerError(
-                500,
-                {"message": msg},
-            )
+            raise DockerError(500, msg)
         protocol = conn.protocol
         loop = resp._loop
         assert protocol is not None

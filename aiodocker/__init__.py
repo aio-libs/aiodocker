@@ -1,7 +1,13 @@
 from importlib.metadata import PackageNotFoundError, version
 
 from .docker import Docker
-from .exceptions import DockerContainerError, DockerError
+from .exceptions import (
+    DockerContainerError,
+    DockerContextError,
+    DockerContextInvalidError,
+    DockerContextTLSError,
+    DockerError,
+)
 
 
 try:
@@ -13,6 +19,9 @@ except PackageNotFoundError:
 
 __all__ = (
     "Docker",
-    "DockerError",
     "DockerContainerError",
+    "DockerContextError",
+    "DockerContextInvalidError",
+    "DockerContextTLSError",
+    "DockerError",
 )

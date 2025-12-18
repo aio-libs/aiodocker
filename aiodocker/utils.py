@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import codecs
+import contextvars
 import json
 import tarfile
 import tempfile
@@ -17,9 +18,17 @@ from typing import (
     Tuple,
     Union,
     cast,
+    overload,
 )
 
+from multidict import CIMultiDict
+
 from .types import JSONObject
+
+
+_suppress_timeout_deprecation: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "_suppress_timeout_deprecation", default=False
+)
 
 
 async def parse_result(response, response_type=None, *, encoding="utf-8"):
@@ -125,7 +134,21 @@ def human_bool(s) -> bool:
         return bool(s)
 
 
-def httpize(d: Optional[JSONObject]) -> Optional[Mapping[str, str]]:
+@overload
+def httpize(
+    d: Optional[CIMultiDict[str | int | bool]],
+) -> Optional[CIMultiDict[str]]: ...
+
+
+@overload
+def httpize(
+    d: Optional[JSONObject],
+) -> Optional[Mapping[str, str]]: ...
+
+
+def httpize(
+    d: Optional[JSONObject | CIMultiDict[str | int | bool]],
+) -> Optional[Mapping[str, str] | CIMultiDict[str | int | bool]]:
     if d is None:
         return None
     converted = {}

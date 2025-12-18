@@ -1,10 +1,15 @@
-============
 Services
-============
+========
 
+.. autoclass:: aiodocker.services.DockerServices
+    :members:
+    :undoc-members:
+
+Example
+-------
 
 Create a service
-========================
+~~~~~~~~~~~~~~~~
 
 .. code-block:: python
 
@@ -27,14 +32,3 @@ Create a service
 
     if __name__ == "__main__":
          asyncio.run(create_service())
-
-------------
-Reference
-------------
-
-DockerServices
-===============
-
-.. autoclass:: aiodocker.services.DockerServices
-        :members:
-        :undoc-members:
