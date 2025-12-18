@@ -14,6 +14,8 @@ from urllib.parse import urlparse
 import aiohttp
 from aiohttp.connector import Connection
 
+from .exceptions import DockerError
+
 
 try:
     import asyncssh
@@ -57,21 +59,22 @@ class SSHConnector(aiohttp.UnixConnector):
             path on the remote host (works with standard, rootless, and custom setups).
         """
         if asyncssh is None:
-            raise ImportError(
+            raise DockerError(
+                500,
                 "asyncssh is required for SSH connections. "
-                "Install with: pip install aiodocker[ssh]"
+                "Install with: pip install aiodocker[ssh]",
             )
 
         # Validate and parse SSH URL
         parsed = urlparse(ssh_url)
         if parsed.scheme != "ssh":
-            raise ValueError(f"Invalid SSH URL scheme: {parsed.scheme}")
+            raise DockerError(400, f"Invalid SSH URL scheme: {parsed.scheme}")
 
         if not parsed.hostname:
-            raise ValueError("SSH URL must include hostname")
+            raise DockerError(400, "SSH URL must include hostname")
 
         if not parsed.username:
-            raise ValueError("SSH URL must include username")
+            raise DockerError(400, "SSH URL must include username")
 
         self._ssh_host = parsed.hostname
         self._ssh_port = parsed.port or DEFAULT_SSH_PORT
@@ -154,11 +157,12 @@ class SSHConnector(aiohttp.UnixConnector):
 
         if known_hosts is None and self._strict_host_keys:
             # Docker-py equivalent: enforce host key checking
-            raise ValueError(
+            raise DockerError(
+                400,
                 "Host key verification is required for security. "
                 "Either add the host to ~/.ssh/known_hosts or set strict_host_keys=False. "
                 "SECURITY WARNING: Disabling host key verification makes connections "
-                "vulnerable to man-in-the-middle attacks."
+                "vulnerable to man-in-the-middle attacks.",
             )
         elif known_hosts is None:
             # Allow but warn (similar to docker-py's WarningPolicy)
@@ -217,6 +221,9 @@ class SSHConnector(aiohttp.UnixConnector):
         """Handle a Docker API connection by executing dial-stdio and relaying data."""
         process = None
         try:
+            if self._ssh_conn is None:
+                raise DockerError(500, "SSH connection not established")
+
             log.debug("Handling new Docker connection via dial-stdio")
 
             # Execute docker system dial-stdio on remote host
@@ -330,7 +337,14 @@ class SSHConnector(aiohttp.UnixConnector):
                             pass
                         self._ssh_context = None
                         self._ssh_conn = None
-                    raise
+
+                    # Wrap in DockerError if not already one
+                    if isinstance(e, DockerError):
+                        raise
+                    raise DockerError(
+                        900,
+                        f"Cannot connect to Docker via SSH {self._ssh_username}@{self._ssh_host}:{self._ssh_port}: {sanitized_error}",
+                    ) from e
 
     async def connect(
         self, req: aiohttp.ClientRequest, traces: Any, timeout: aiohttp.ClientTimeout
