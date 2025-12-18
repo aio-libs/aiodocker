@@ -8,7 +8,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 from urllib.parse import urlparse
 
 import aiohttp
@@ -45,7 +45,7 @@ class SSHConnector(aiohttp.UnixConnector):
         socket_path: str = DEFAULT_DOCKER_SOCKET,
         strict_host_keys: bool = True,
         **kwargs: Any,
-    ):
+    ) -> None:
         """Initialize SSH connector.
 
         Args:
@@ -93,8 +93,8 @@ class SSHConnector(aiohttp.UnixConnector):
             )
 
         # Connection state
-        self._ssh_conn: Optional[asyncssh.SSHClientConnection] = None
-        self._ssh_context: Optional[Any] = None
+        self._ssh_conn: asyncssh.SSHClientConnection | None = None
+        self._ssh_context: Any | None = None
         self._tunnel_lock = asyncio.Lock()
 
         # Create secure temporary directory (system chooses location and sets permissions)
@@ -104,7 +104,7 @@ class SSHConnector(aiohttp.UnixConnector):
         # Initialize as Unix connector with our local socket
         super().__init__(path=self._local_socket_path)
 
-    def _load_ssh_config(self) -> Dict[str, Any]:
+    def _load_ssh_config(self) -> dict[str, Any]:
         """Load SSH configuration from ~/.ssh/config like docker-py does."""
         if SSHConfig is None:
             log.debug("SSH config parsing not available (paramiko not installed)")
@@ -181,7 +181,7 @@ class SSHConnector(aiohttp.UnixConnector):
 
         return message
 
-    def _clean_environment(self) -> Dict[str, str]:
+    def _clean_environment(self) -> dict[str, str]:
         """Clean environment variables for security like docker-py does."""
         env = os.environ.copy()
         for var in DANGEROUS_ENV_VARS:
@@ -282,7 +282,7 @@ class SSHConnector(aiohttp.UnixConnector):
         self._ssh_password = None
 
 
-def parse_ssh_url(url: str) -> Tuple[str, str]:
+def parse_ssh_url(url: str) -> tuple[str, str]:
     """Parse SSH URL and extract connection info and socket path.
 
     Args:
