@@ -73,9 +73,6 @@ class SSHConnector(aiohttp.UnixConnector):
         if not parsed.hostname:
             raise DockerError(400, "SSH URL must include hostname")
 
-        if not parsed.username:
-            raise DockerError(400, "SSH URL must include username")
-
         self._ssh_host = parsed.hostname
         self._ssh_port = parsed.port or DEFAULT_SSH_PORT
         self._ssh_username = parsed.username

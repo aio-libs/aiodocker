@@ -2,6 +2,8 @@
 
 import pytest
 
+from aiodocker.exceptions import DockerError
+
 
 def test_ssh_connector_import_error() -> None:
     """Test SSH connector raises ImportError when asyncssh not available."""
@@ -14,7 +16,7 @@ def test_ssh_connector_import_error() -> None:
     try:
         from aiodocker.ssh import SSHConnector
 
-        with pytest.raises(ImportError, match="asyncssh is required"):
+        with pytest.raises(DockerError, match="asyncssh is required"):
             SSHConnector("ssh://user@host")
     finally:
         aiodocker.ssh.asyncssh = original_asyncssh
@@ -22,7 +24,7 @@ def test_ssh_connector_import_error() -> None:
 
 def test_ssh_connector_invalid_url_scheme() -> None:
     """Test SSH connector rejects invalid URL schemes."""
-    with pytest.raises(ValueError, match="Invalid SSH URL scheme"):
+    with pytest.raises(DockerError, match="Invalid SSH URL scheme"):
         from aiodocker.ssh import SSHConnector
 
         SSHConnector("http://user@host")
@@ -30,18 +32,10 @@ def test_ssh_connector_invalid_url_scheme() -> None:
 
 def test_ssh_connector_missing_hostname() -> None:
     """Test SSH connector requires hostname."""
-    with pytest.raises(ValueError, match="SSH URL must include hostname"):
+    with pytest.raises(DockerError, match="SSH URL must include hostname"):
         from aiodocker.ssh import SSHConnector
 
         SSHConnector("ssh://user@")
-
-
-def test_ssh_connector_missing_username() -> None:
-    """Test SSH connector requires username."""
-    with pytest.raises(ValueError, match="SSH URL must include username"):
-        from aiodocker.ssh import SSHConnector
-
-        SSHConnector("ssh://host:22")
 
 
 def test_ssh_connector_invalid_port() -> None:
