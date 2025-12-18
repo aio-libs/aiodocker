@@ -13,11 +13,14 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
 
     # Connect to Docker over SSH
-    # Format: ssh://user@host:port///path/to/docker.sock
-    docker_host = "ssh://ubuntu@docker-host:22///var/run/docker.sock"
+    # Format: ssh://user@host:port
+    # The connection uses 'docker system dial-stdio' which automatically
+    # discovers the correct Docker socket on the remote host
+    docker_host = "ssh://ubuntu@docker-host:22"
 
-    # You can also use default socket path
-    # docker_host = "ssh://ubuntu@docker-host:22"
+    # Note: Socket paths in URLs (e.g., ssh://user@host///path) are accepted
+    # for backward compatibility but are ignored. The dial-stdio approach
+    # automatically works with standard, rootless, and custom Docker setups.
 
     try:
         async with aiodocker.Docker(url=docker_host) as docker:

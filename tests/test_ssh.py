@@ -2,41 +2,6 @@
 
 import pytest
 
-from aiodocker.ssh import parse_ssh_url
-
-
-def test_parse_ssh_url_with_socket_path() -> None:
-    """Test parsing SSH URL with explicit socket path."""
-    url = "ssh://ubuntu@host:22///var/run/docker.sock"
-    ssh_url, socket_path = parse_ssh_url(url)
-
-    assert ssh_url == "ssh://ubuntu@host:22"
-    assert socket_path == "/var/run/docker.sock"
-
-
-def test_parse_ssh_url_with_custom_socket() -> None:
-    """Test parsing SSH URL with custom socket path."""
-    url = "ssh://user@example.com:2222///foo/bar/docker.sock"
-    ssh_url, socket_path = parse_ssh_url(url)
-
-    assert ssh_url == "ssh://user@example.com:2222"
-    assert socket_path == "/foo/bar/docker.sock"
-
-
-def test_parse_ssh_url_default_socket() -> None:
-    """Test parsing SSH URL without explicit socket path."""
-    url = "ssh://ubuntu@host:22"
-    ssh_url, socket_path = parse_ssh_url(url)
-
-    assert ssh_url == "ssh://ubuntu@host:22"
-    assert socket_path == "/var/run/docker.sock"
-
-
-def test_parse_ssh_url_invalid_scheme() -> None:
-    """Test parsing invalid URL scheme."""
-    with pytest.raises(ValueError, match="SSH URL must start with ssh://"):
-        parse_ssh_url("http://example.com")
-
 
 def test_ssh_connector_import_error() -> None:
     """Test SSH connector raises ImportError when asyncssh not available."""

@@ -249,10 +249,9 @@ class Docker:
                 # dummy hostname for URL composition
                 self.docker_host = WIN_PRE + "localhost"
             elif docker_host.startswith(SSH_PRE):
-                from .ssh import SSHConnector, parse_ssh_url
+                from .ssh import SSHConnector
 
-                ssh_url, socket_path = parse_ssh_url(docker_host)
-                connector = SSHConnector(ssh_url, socket_path)
+                connector = SSHConnector(docker_host)
                 # dummy hostname for URL composition
                 self.docker_host = "unix://localhost"
             else:

@@ -269,8 +269,13 @@ def main():
         epilog="""
 Examples:
   %(prog)s ssh://ubuntu@docker-host.example.com:22
-  %(prog)s ssh://user@192.168.1.100:2222///var/run/docker.sock
+  %(prog)s ssh://user@192.168.1.100:2222
   %(prog)s ssh://admin@prod-docker:22
+
+Note:
+  - Uses 'docker system dial-stdio' for connections
+  - Automatically discovers the correct Docker socket on the remote host
+  - Works with standard, rootless, and custom Docker setups
 
 Security Notes:
   - Ensure the remote host is in your ~/.ssh/known_hosts file

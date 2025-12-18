@@ -30,10 +30,9 @@ log = logging.getLogger(__name__)
 
 # Constants
 DEFAULT_SSH_PORT = 22
-DEFAULT_DOCKER_SOCKET = "/var/run/docker.sock"
 DANGEROUS_ENV_VARS = ["LD_LIBRARY_PATH", "SSL_CERT_FILE", "SSL_CERT_DIR", "PYTHONPATH"]
 
-__all__ = ["SSHConnector", "parse_ssh_url"]
+__all__ = ["SSHConnector"]
 
 
 class SSHConnector(aiohttp.UnixConnector):
@@ -42,7 +41,6 @@ class SSHConnector(aiohttp.UnixConnector):
     def __init__(
         self,
         ssh_url: str,
-        socket_path: str = DEFAULT_DOCKER_SOCKET,
         strict_host_keys: bool = True,
         **kwargs: Any,
     ) -> None:
@@ -50,9 +48,13 @@ class SSHConnector(aiohttp.UnixConnector):
 
         Args:
             ssh_url: SSH connection URL (ssh://user@host:port)
-            socket_path: Remote Docker socket path
             strict_host_keys: Enforce strict host key verification (default: True)
             **kwargs: Additional SSH connection options
+
+        Note:
+            This connector uses 'docker system dial-stdio' to connect to the remote
+            Docker daemon, which automatically discovers and uses the correct socket
+            path on the remote host (works with standard, rootless, and custom setups).
         """
         if asyncssh is None:
             raise ImportError(
@@ -75,7 +77,6 @@ class SSHConnector(aiohttp.UnixConnector):
         self._ssh_port = parsed.port or DEFAULT_SSH_PORT
         self._ssh_username = parsed.username
         self._ssh_password = parsed.password
-        self._socket_path = socket_path
         self._strict_host_keys = strict_host_keys
 
         # Load SSH config and merge with provided options
@@ -96,6 +97,8 @@ class SSHConnector(aiohttp.UnixConnector):
         self._ssh_conn: asyncssh.SSHClientConnection | None = None
         self._ssh_context: Any | None = None
         self._tunnel_lock = asyncio.Lock()
+        self._socket_server: asyncio.Server | None = None
+        self._relay_tasks: set[asyncio.Task[None]] = set()
 
         # Create secure temporary directory (system chooses location and sets permissions)
         self._temp_dir = tempfile.TemporaryDirectory()
@@ -188,8 +191,88 @@ class SSHConnector(aiohttp.UnixConnector):
             env.pop(var, None)
         return env
 
+    async def _relay_data(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
+        """Relay data between two streams."""
+        try:
+            while True:
+                data = await reader.read(8192)
+                if not data:
+                    break
+                writer.write(data)
+                await writer.drain()
+        except (asyncio.CancelledError, ConnectionError, BrokenPipeError):
+            pass
+        finally:
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
+    async def _handle_docker_connection(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
+        """Handle a Docker API connection by executing dial-stdio and relaying data."""
+        process = None
+        try:
+            log.debug("Handling new Docker connection via dial-stdio")
+
+            # Execute docker system dial-stdio on remote host
+            # This automatically connects to the correct Docker socket
+            process = await self._ssh_conn.create_process("docker system dial-stdio")  # type: ignore
+
+            # Create relay tasks for bidirectional communication
+            send_task = asyncio.create_task(
+                self._relay_data(reader, process.stdin)  # type: ignore
+            )
+            recv_task = asyncio.create_task(
+                self._relay_data(process.stdout, writer)  # type: ignore
+            )
+
+            # Track tasks for cleanup
+            self._relay_tasks.add(send_task)
+            self._relay_tasks.add(recv_task)
+
+            # Wait for either direction to complete
+            done, pending = await asyncio.wait(
+                [send_task, recv_task], return_when=asyncio.FIRST_COMPLETED
+            )
+
+            # Cancel remaining task
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+            # Remove from tracking
+            self._relay_tasks.discard(send_task)
+            self._relay_tasks.discard(recv_task)
+
+        except Exception as e:
+            sanitized_error = self._sanitize_error_message(e)
+            log.error("Error in dial-stdio relay: %s", sanitized_error)
+        finally:
+            # Clean up process
+            if process:
+                try:
+                    process.terminate()
+                    await process.wait()
+                except Exception:
+                    pass
+
+            # Close writer
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except Exception:
+                pass
+
     async def _ensure_ssh_tunnel(self) -> None:
-        """Ensure SSH tunnel is established using asyncssh context manager with proper locking."""
+        """Ensure SSH connection and local Unix socket server are established."""
         # Use lock to prevent concurrent tunnel creation (docker-py principle)
         async with self._tunnel_lock:
             # Re-check condition after acquiring lock
@@ -216,12 +299,14 @@ class SSHConnector(aiohttp.UnixConnector):
                     )
                     self._ssh_conn = await self._ssh_context.__aenter__()
 
-                    # Forward local socket to remote Docker socket
-                    await self._ssh_conn.forward_local_path(
-                        self._local_socket_path, self._socket_path
+                    # Create Unix socket server that handles connections via dial-stdio
+                    self._socket_server = await asyncio.start_unix_server(
+                        self._handle_docker_connection,
+                        path=self._local_socket_path,
                     )
                     log.debug(
-                        "SSH tunnel established: local socket -> %s", self._socket_path
+                        "SSH connection established, Unix socket server listening at %s",
+                        self._local_socket_path,
                     )
 
                     # Clear password from memory after successful connection
@@ -255,6 +340,26 @@ class SSHConnector(aiohttp.UnixConnector):
         """Close SSH connection and clean up resources with proper error handling."""
         await super().close()
 
+        # Close socket server
+        if self._socket_server:
+            try:
+                self._socket_server.close()
+                await self._socket_server.wait_closed()
+            except Exception as e:
+                log.warning("Error closing socket server: %s", type(e).__name__)
+            finally:
+                self._socket_server = None
+
+        # Cancel all relay tasks
+        for task in list(self._relay_tasks):
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+        self._relay_tasks.clear()
+
         # Close SSH context manager properly
         if self._ssh_context:
             try:
@@ -280,26 +385,3 @@ class SSHConnector(aiohttp.UnixConnector):
 
         # Clear any remaining sensitive data
         self._ssh_password = None
-
-
-def parse_ssh_url(url: str) -> tuple[str, str]:
-    """Parse SSH URL and extract connection info and socket path.
-
-    Args:
-        url: SSH URL like ssh://user@host:port///path/to/docker.sock
-
-    Returns:
-        Tuple of (ssh_connection_url, socket_path)
-    """
-    if not url.startswith("ssh://"):
-        raise ValueError("SSH URL must start with ssh://")
-
-    # Handle the triple slash for absolute path
-    if "///" in url:
-        ssh_part, socket_path = url.split("///", 1)
-        socket_path = "/" + socket_path
-    else:
-        ssh_part = url
-        socket_path = DEFAULT_DOCKER_SOCKET
-
-    return ssh_part, socket_path

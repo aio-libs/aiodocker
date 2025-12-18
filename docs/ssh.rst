@@ -4,6 +4,8 @@ SSH Connections
 
 aiodocker supports connecting to remote Docker hosts over SSH using the ``ssh://`` URL scheme. This feature requires the ``asyncssh`` library and follows the same security principles as docker-py.
 
+The SSH connector uses ``docker system dial-stdio`` to communicate with the remote Docker daemon, which automatically discovers and uses the correct socket path on the remote host. This works seamlessly with standard Docker installations, rootless Docker, and custom socket configurations without requiring manual socket path specification.
+
 Installation
 ============
 
@@ -43,13 +45,24 @@ URL Format
 
 SSH URLs follow this format::
 
-    ssh://[user[:password]@]host[:port][///socket_path]
+    ssh://[user[:password]@]host[:port]
 
 Examples:
 
-* ``ssh://ubuntu@host:22///var/run/docker.sock`` - Full format with custom socket path
-* ``ssh://ubuntu@host:22`` - Uses default socket path (``/var/run/docker.sock``)
-* ``ssh://ubuntu@host`` - Uses default port (22) and socket path
+* ``ssh://ubuntu@host:22`` - Connect to host on port 22
+* ``ssh://ubuntu@host`` - Connect using default SSH port (22)
+* ``ssh://dockeruser@production.example.com:2222`` - Custom port
+
+**Note on Socket Paths:**
+
+Unlike traditional SSH port forwarding approaches, aiodocker uses ``docker system dial-stdio`` which automatically discovers the correct Docker socket on the remote host. Socket paths in URLs (e.g., ``ssh://user@host///var/run/docker.sock``) are accepted for backward compatibility but are ignored.
+
+This automatic discovery means the connector works correctly with:
+
+* Standard Docker installations (``/var/run/docker.sock``)
+* Rootless Docker (``/run/user/1000/docker.sock``)
+* Custom socket paths configured in the remote Docker daemon
+* Docker contexts on the remote host
 
 Authentication
 ==============
@@ -275,7 +288,8 @@ Requirements
 
 * ``asyncssh >= 2.14.0`` (installed automatically with ``aiodocker[ssh]``)
 * SSH access to the remote Docker host
-* Docker socket accessible on the remote host (usually ``/var/run/docker.sock``)
+* Docker CLI (``docker`` command) available on the remote host (required for ``docker system dial-stdio``)
+* Docker daemon running and accessible on the remote host
 
 ----------
 Reference
@@ -287,8 +301,3 @@ SSHConnector
 .. autoclass:: aiodocker.ssh.SSHConnector
         :members:
         :undoc-members:
-
-Functions
-=========
-
-.. autofunction:: aiodocker.ssh.parse_ssh_url
