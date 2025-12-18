@@ -49,7 +49,8 @@ class SSHConnector(aiohttp.UnixConnector):
         """Initialize SSH connector.
 
         Args:
-            ssh_url: SSH connection URL (ssh://user@host:port)
+            ssh_url: SSH connection URL (ssh://[user@]host[:port]).
+                The username is optional and can be inferred from ~/.ssh/config.
             strict_host_keys: Enforce strict host key verification (default: True)
             **kwargs: Additional SSH connection options
 

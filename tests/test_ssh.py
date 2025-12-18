@@ -6,7 +6,7 @@ from aiodocker.exceptions import DockerError
 
 
 def test_ssh_connector_import_error() -> None:
-    """Test SSH connector raises ImportError when asyncssh not available."""
+    """Test SSH connector raises DockerError when asyncssh not available."""
     # Mock missing asyncssh
     import aiodocker.ssh
 
