@@ -26,6 +26,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+ssh = [
+    "asyncssh>=2.14.0",
+    "paramiko>=2.9.0",
+]
 dev = [
     "aiohttp==3.13.2",
     "towncrier==25.8.0",
@@ -34,6 +38,7 @@ lint = [
     "pre-commit>=3.5.0",
     "ruff==0.14.5",
     "mypy==1.18.2",
+    "types-paramiko",
 ]
 test = [
     "async-timeout~=5.0.1",
@@ -44,6 +49,9 @@ test = [
     "pytest-cov==7.0.0",
     "pytest-sugar==1.1.1",
     "testcontainers==4.13.3",
+    # SSH dependencies for testing SSH functionality
+    "asyncssh>=2.14.0",
+    "paramiko>=2.9.0",
 ]
 doc = [
     "alabaster==1.0.0",

@@ -135,8 +135,9 @@ class Docker:
     Args:
         url: The Docker daemon address as the full URL string (e.g.,
             ``"unix:///var/run/docker.sock"``, ``"tcp://127.0.0.1:2375"``,
-            ``"npipe:////./pipe/docker_engine"``).
+            ``"npipe:////./pipe/docker_engine"``, ``"ssh://user@host:port"``).
             Takes highest precedence when specified.
+            Refer to :doc:`ssh` for more details about SSH transports in the URL.
         connector: Custom :class:`aiohttp.BaseConnector` implementation to establish new connections to the docker host.
             If provided, it will be used instead of creating a connector based on the **url** value.
         session: Custom :class:`aiohttp.ClientSession`. If None, a new session will be
@@ -220,6 +221,8 @@ class Docker:
             UNIX_PRE_LEN = len(UNIX_PRE)
             WIN_PRE = "npipe://"
             WIN_PRE_LEN = len(WIN_PRE)
+            SSH_PRE = "ssh://"
+
             if _rx_tcp_schemes.search(docker_host):
                 # Determine SSL context: user-provided > context TLS > DOCKER_TLS_VERIFY
                 if ssl_context is None and context_endpoint is not None:
@@ -246,6 +249,12 @@ class Docker:
                 )
                 # dummy hostname for URL composition
                 self.docker_host = WIN_PRE + "localhost"
+            elif docker_host.startswith(SSH_PRE):
+                from .ssh import SSHConnector
+
+                connector = SSHConnector(docker_host)
+                # dummy hostname for URL composition
+                self.docker_host = "unix://localhost"
             else:
                 raise ValueError("Missing protocol scheme in docker_host.")
         self.connector = connector
