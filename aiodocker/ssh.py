@@ -221,7 +221,10 @@ class SSHConnector(aiohttp.UnixConnector):
 
             # Execute docker system dial-stdio on remote host
             # This automatically connects to the correct Docker socket
-            process = await self._ssh_conn.create_process("docker system dial-stdio")  # type: ignore
+            # Use encoding=None for binary mode (stdin/stdout handle bytes, not strings)
+            process = await self._ssh_conn.create_process(
+                "docker system dial-stdio", encoding=None
+            )  # type: ignore
 
             # Create relay tasks for bidirectional communication
             send_task = asyncio.create_task(
