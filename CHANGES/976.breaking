@@ -1,1 +1,0 @@
-Drop Python 3.9 support and add Python 3.14 support, updating dependencies such as aiohttp (minimum 3.8 to 3.10) and async-timeout (minimum to 5.0) for stdlib TaskGroup and timeout compatibility in Python 3.11+

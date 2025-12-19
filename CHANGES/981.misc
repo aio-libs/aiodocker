@@ -1,1 +1,0 @@
-Isolate the docker instance for swarm and service tests via a docker-in-docker compose stack to avoid affecting the user environment

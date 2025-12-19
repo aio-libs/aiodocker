@@ -12,6 +12,38 @@ Changes
 
 .. towncrier release notes start
 
+0.25.0 (2025-12-20)
+===================
+
+Breaking Changes
+----------------
+
+- Drop Python 3.9 support and add Python 3.14 support, updating dependencies such as aiohttp (minimum 3.8 to 3.10) and async-timeout (minimum to 5.0) for stdlib TaskGroup and timeout compatibility in Python 3.11+ (#976)
+- Replace `**kwargs` with explicit parameters in `DockerContainer.{stop,restart,kill,delete}()` methods, accepting `t` for server-side stop timeout and `timeout` for client-side request timeouts for consistency with other methods covered in the previous PRs #983 and #990; since this is a BREAKING CHANGE for those who have used the `timeout` argument for the `DockerContainer.restart()` method calls, the users should replace it with `t` to keep the intended semantics (#991)
+
+
+Bug Fixes
+---------
+
+- Fix issue authenticating against private registries where the `X-Registry-Auth` header would require URL-safe substitutions. (#941)
+
+
+New Features
+------------
+
+- Add support for Docker context endpoints with TLS, reading configuration from ``~/.docker/contexts/`` and respecting ``DOCKER_CONTEXT`` environment variable and ``SkipTLSVerify`` option. (#811)
+- Add SSH protocol support for secure connections to remote Docker instances via "ssh://" URLs with mandatory host key verification (#982)
+- Introduce the client-level ``timeout`` configuration which becomes the base timeout configuration while still allowing legacy individual per-API timeouts and merging it into the base timeout.  Now setting individual float (total) timeout per-API call is HIGHLY DISCOURAGED in favor of composable timeouts via stdlib's `asyncio.timeout()` async context manager. (#983)
+
+
+Miscellaneous
+-------------
+
+- Improve the CI workflows to expand the test matrix for aiohttp 3.10/3.13 releases and let tests use the prebuilt artifact to ensure consistency with the release (#980)
+- Isolate the docker instance for swarm and service tests via a docker-in-docker compose stack to avoid affecting the user environment (#981)
+- Apply the default cooldown period (7 days) to the dependabot configuration (#984)
+
+
 0.24.0 (2024-11-21)
 ===================
 
