@@ -602,6 +602,7 @@ class DockerContainer:
         changes: Optional[Union[str, Sequence[str]]] = None,
         config: Optional[Dict[str, Any]] = None,
         pause: bool = True,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> Dict[str, Any]:
         """
         Commit a container to an image. Similar to the ``docker commit``
@@ -621,8 +622,11 @@ class DockerContainer:
                 changes = "\n".join(changes)
             params["changes"] = changes
 
+        # Default to infinite timeout for commit operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         return await self.docker._query_json(
-            "commit", method="POST", params=params, data=config
+            "commit", method="POST", params=params, data=config, timeout=timeout_config
         )
 
     async def pause(self) -> None:
