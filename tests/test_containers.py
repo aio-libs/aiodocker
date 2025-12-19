@@ -301,3 +301,153 @@ async def test_cancel_log(docker: Docker) -> None:
             stdout=True,
             stderr=True,
         )
+
+
+@pytest.mark.asyncio
+async def test_stop_with_graceful_timeout(docker: Docker, image_name: str) -> None:
+    """Test that container is successfully stopped with server-side graceful timeout.
+
+    This test verifies:
+    1. A container with a script that delays handling SIGTERM
+    2. The stop() call with t=2 (server-side timeout) succeeds immediately
+    3. The container is forcefully killed after the graceful period expires
+    4. HTTP timeout doesn't interfere with server-side stop timeout
+    """
+    # Create a container with a script that traps SIGTERM and delays shutdown
+    # The script will try to sleep for 30 seconds when it receives SIGTERM,
+    # which is much longer than our stop timeout
+    container = await docker.containers.create(
+        config={
+            "Cmd": [
+                "sh",
+                "-c",
+                # Trap SIGTERM to delay shutdown, sleep in foreground to keep container running
+                "trap 'echo Caught SIGTERM, sleeping...; sleep 999; echo Done sleeping' TERM; "
+                "echo Container started; sleep 999",
+            ],
+            "Image": image_name,
+        }
+    )
+
+    try:
+        await container.start()
+        await asyncio.sleep(0.5)  # Let container start up
+
+        # Verify container is running
+        info = await container.show()
+        assert info["State"]["Running"]
+
+        # Stop with server-side timeout of 2 seconds and HTTP timeout of 5 seconds
+        # The container will be forcefully killed (SIGKILL) after 2 seconds
+        # because it won't finish handling SIGTERM within that time
+        await container.stop(t=2, timeout=5.0)
+
+        # Verify container is stopped
+        info = await container.show()
+        assert not info["State"]["Running"]
+        assert info["State"]["Status"] in ["exited", "dead"]
+
+    finally:
+        try:
+            await container.delete(force=True)
+        except DockerError:
+            pass  # Already deleted
+
+
+@pytest.mark.asyncio
+async def test_stop_with_short_http_timeout(docker: Docker, image_name: str) -> None:
+    """Test that container is eventually stopped even when HTTP request times out.
+
+    This verifies that when HTTP timeout < server-side stop timeout, the HTTP
+    request may time out, but the Docker daemon still completes the stop operation
+    and the container is eventually stopped.
+    """
+    # Create a container that will take time to stop
+    container = await docker.containers.create(
+        config={
+            "Cmd": [
+                "sh",
+                "-c",
+                "trap 'echo Caught SIGTERM; sleep 999' TERM; sleep 999",
+            ],
+            "Image": image_name,
+        }
+    )
+
+    try:
+        await container.start()
+        await asyncio.sleep(0.5)
+
+        # Try to stop with t=3 seconds (server-side) and very short HTTP timeout
+        # The HTTP request will time out because Docker stop API waits for the
+        # container to actually stop (or for the graceful timeout to expire)
+        try:
+            await container.stop(t=3, timeout=0.5)
+        except asyncio.TimeoutError:
+            # Expected: HTTP request times out because timeout (0.5s) < t (3s)
+            pass
+
+        # Wait for the server-side stop timeout to complete
+        await asyncio.sleep(4)
+
+        # Verify container is stopped despite the HTTP timeout
+        # The daemon should have completed the stop operation
+        info = await container.show()
+        assert not info["State"]["Running"]
+
+    finally:
+        try:
+            await container.delete(force=True)
+        except DockerError:
+            pass
+
+
+@pytest.mark.asyncio
+async def test_delete_running_container_with_force(
+    docker: Docker, image_name: str
+) -> None:
+    """Test that delete(force=True) successfully kills and removes a running container.
+
+    This test verifies:
+    1. A running container can be forcefully deleted
+    2. The delete operation works with a reasonable HTTP timeout
+    3. The container is completely removed after the operation
+    """
+    # Create a container with a script that ignores SIGTERM
+    container = await docker.containers.create(
+        config={
+            "Cmd": [
+                "sh",
+                "-c",
+                "trap 'echo Caught SIGTERM; sleep 999' TERM; sleep 999",
+            ],
+            "Image": image_name,
+        }
+    )
+
+    container_id = container.id
+
+    try:
+        await container.start()
+        await asyncio.sleep(0.5)
+
+        # Verify container is running
+        info = await container.show()
+        assert info["State"]["Running"]
+
+        # Delete with force=True and reasonable HTTP timeout
+        # This will forcefully kill (SIGKILL) and remove the container
+        await container.delete(force=True, timeout=5.0)
+
+        # Wait a bit for the deletion to complete
+        await asyncio.sleep(1)
+
+        # Verify container no longer exists
+        with pytest.raises(DockerError) as exc_info:
+            await docker.containers.get(container_id)
+        assert exc_info.value.status == 404
+
+    except DockerError as e:
+        # If container was already deleted, that's fine
+        if e.status != 404:
+            raise
