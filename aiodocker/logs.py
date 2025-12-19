@@ -5,9 +5,9 @@ from collections import ChainMap
 from typing import TYPE_CHECKING, Any, Optional
 
 import aiohttp
-import attrs
 
 from .channel import Channel, ChannelSubscriber
+from .types import SENTINEL
 
 
 if TYPE_CHECKING:
@@ -38,12 +38,13 @@ class DockerLog:
         forced_params = {"follow": True}
         default_params = {"stdout": True, "stderr": True}
         params2 = ChainMap(forced_params, params, default_params)
-        # inherit and update the parent client's timeout
-        # sock_read and total timeout doesn't make sense for log streaming
-        timeout = attrs.evolve(self.docker._timeout, sock_read=None, total=None)
+        # Use infinite timeout for log streaming
+        timeout_config = self.docker._resolve_long_running_timeout(SENTINEL)
         try:
             async with self.docker._query(
-                f"containers/{self.container._id}/logs", params=params2, timeout=timeout
+                f"containers/{self.container._id}/logs",
+                params=params2,
+                timeout=timeout_config,
             ) as resp:
                 self.response = resp
                 assert self.response is not None

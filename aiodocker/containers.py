@@ -19,7 +19,7 @@ from typing import (
     overload,
 )
 
-from aiohttp import ClientResponse, ClientWebSocketResponse
+from aiohttp import ClientResponse, ClientTimeout, ClientWebSocketResponse
 from multidict import MultiDict
 from yarl import URL
 
@@ -29,7 +29,7 @@ from .jsonstream import json_stream_list, json_stream_stream
 from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
-from .types import JSONObject, MutableJSONObject, PortInfo
+from .types import SENTINEL, JSONObject, MutableJSONObject, PortInfo, Sentinel
 from .utils import _suppress_timeout_deprecation, identical, parse_result
 
 
@@ -165,6 +165,7 @@ class DockerContainer:
         stdout: bool = False,
         stderr: bool = False,
         follow: Literal[False] = False,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
         **kwargs,
     ) -> List[str]: ...
 
@@ -175,6 +176,7 @@ class DockerContainer:
         stdout: bool = False,
         stderr: bool = False,
         follow: Literal[True],
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
         **kwargs,
     ) -> AsyncIterator[str]: ...
 
@@ -184,6 +186,7 @@ class DockerContainer:
         stdout: bool = False,
         stderr: bool = False,
         follow: bool = False,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
         **kwargs,
     ) -> Any:
         if stdout is False and stderr is False:
@@ -191,8 +194,15 @@ class DockerContainer:
 
         params = {"stdout": stdout, "stderr": stderr, "follow": follow}
         params.update(kwargs)
+
+        # Default to infinite timeout for log operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         cm = self.docker._query(
-            f"containers/{self._id}/logs", method="GET", params=params
+            f"containers/{self._id}/logs",
+            method="GET",
+            params=params,
+            timeout=timeout_config,
         )
         if follow:
             return self._logs_stream(cm)
@@ -329,6 +339,7 @@ class DockerContainer:
         stdin: bool = False,
         detach_keys: Optional[str] = None,
         logs: bool = False,
+        timeout: ClientTimeout | Sentinel | None = SENTINEL,
     ) -> Stream:
         async def setup() -> Tuple[URL, Optional[bytes], bool]:
             params: MultiDict[Union[str, int]] = MultiDict()
@@ -348,7 +359,10 @@ class DockerContainer:
                 inspect_info["Config"]["Tty"],
             )
 
-        return Stream(self.docker, setup, None)
+        # Default to infinite timeout for attach operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
+        return Stream(self.docker, setup, timeout_config)
 
     async def port(self, private_port: int | str) -> List[PortInfo] | None:
         if "NetworkSettings" not in self._container:
@@ -377,6 +391,7 @@ class DockerContainer:
         self,
         *,
         stream: Literal[True] = True,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     @overload
@@ -384,16 +399,22 @@ class DockerContainer:
         self,
         *,
         stream: Literal[False],
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> List[Dict[str, Any]]: ...
 
     def stats(
         self,
         *,
         stream: bool = True,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> Any:
+        # Default to infinite timeout for stats operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         cm = self.docker._query(
             f"containers/{self._id}/stats",
             params={"stream": "1" if stream else "0"},
+            timeout=timeout_config,
         )
         if stream:
             return self._stats_stream(cm)
