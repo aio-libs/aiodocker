@@ -126,12 +126,16 @@ class DockerImages:
                 )
             # TODO: assert registry == repo?
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
+
+        # Default to infinite timeout for pull operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         cm = self.docker._query(
             "images/create",
             "POST",
             params=params,
             headers=headers,
-            timeout=timeout,
+            timeout=timeout_config,
         )
         return self._handle_response(cm, stream)
 
@@ -195,12 +199,16 @@ class DockerImages:
                     "Image should have registry host when auth information is provided"
                 )
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
+
+        # Default to infinite timeout for push operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         cm = self.docker._query(
             f"images/{name}/push",
             "POST",
             params=params,
             headers=headers,
-            timeout=timeout,
+            timeout=timeout_config,
         )
         return self._handle_response(cm, stream)
 
