@@ -30,7 +30,7 @@ from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
 from .types import SENTINEL, JSONObject, MutableJSONObject, PortInfo, Sentinel
-from .utils import _suppress_timeout_deprecation, identical, parse_result
+from .utils import identical, parse_result
 
 
 if TYPE_CHECKING:
@@ -262,9 +262,40 @@ class DockerContainer:
         self._container = data
         return data
 
-    async def stop(self, **kwargs) -> None:
+    async def stop(
+        self,
+        *,
+        t: int | None = None,
+        signal: str | None = None,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
+    ) -> None:
+        """Stop the container.
+
+        Args:
+            t: Number of seconds to wait for the container to stop before killing it.
+                If None, uses the container's configured stop timeout (default 10 seconds).
+                This is a Docker API parameter that controls the graceful shutdown period.
+            signal: Signal to send to the container (e.g., "SIGTERM", "SIGKILL").
+                If None, uses the default SIGTERM signal.
+                This parameter may not be supported in older Docker API versions.
+            timeout: HTTP request timeout for the stop operation (infinite by default).
+                This controls how long to wait for the Docker daemon to respond,
+                not the container stop duration.
+        """
+        params: Dict[str, Any] = {}
+        if t is not None:
+            params["t"] = t
+        if signal is not None:
+            params["signal"] = signal
+
+        # Default to infinite timeout for stop operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         async with self.docker._query(
-            f"containers/{self._id}/stop", method="POST", params=kwargs
+            f"containers/{self._id}/stop",
+            method="POST",
+            params=params,
+            timeout=timeout_config,
         ):
             pass
 
@@ -277,41 +308,116 @@ class DockerContainer:
         ):
             pass
 
-    async def restart(self, timeout=None) -> None:
+    async def restart(
+        self,
+        *,
+        t: int | None = None,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
+    ) -> None:
+        """Restart the container.
+
+        Args:
+            t: Number of seconds to wait for the container to stop before killing it.
+                If None, uses the container's configured stop timeout (default 10 seconds).
+                This is a Docker API parameter that controls the graceful shutdown period.
+            timeout: HTTP request timeout for the restart operation (infinite by default).
+                This controls how long to wait for the Docker daemon to respond,
+                not the container restart duration.
+        """
         params = {}
-        if timeout is not None:
-            params["t"] = timeout
+        if t is not None:
+            params["t"] = t
+
+        # Default to infinite timeout for restart operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         async with self.docker._query(
             f"containers/{self._id}/restart",
             method="POST",
             params=params,
+            timeout=timeout_config,
         ):
             pass
 
-    async def kill(self, **kwargs) -> None:
+    async def kill(
+        self,
+        *,
+        signal: str | None = None,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
+    ) -> None:
+        """Kill the container by sending a signal.
+
+        Args:
+            signal: Signal to send to the container (e.g., "SIGKILL", "SIGTERM", "SIGHUP").
+                Can be a signal name (with or without SIG prefix) or a signal number.
+                If None, uses the default SIGKILL signal.
+            timeout: HTTP request timeout for the kill operation.
+        """
+        params: Dict[str, Any] = {}
+        if signal is not None:
+            params["signal"] = signal
+
+        # Use standard timeout resolution
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         async with self.docker._query(
-            f"containers/{self._id}/kill", method="POST", params=kwargs
+            f"containers/{self._id}/kill",
+            method="POST",
+            params=params,
+            timeout=timeout_config,
         ):
             pass
 
-    async def wait(self, *, timeout: float | None = None, **kwargs) -> Dict[str, Any]:
-        # The wait API is an exception from deprecation of the total timeout.
-        # Use a context variable to suppress the warning in a thread-safe and async-safe manner.
-        token = _suppress_timeout_deprecation.set(True)
-        try:
-            data = await self.docker._query_json(
-                f"containers/{self._id}/wait",
-                method="POST",
-                params=kwargs,
-                timeout=timeout,
-            )
-            return data
-        finally:
-            _suppress_timeout_deprecation.reset(token)
+    async def wait(
+        self,
+        *,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
+        **kwargs,
+    ) -> Dict[str, Any]:
+        # Default to infinite timeout for wait operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
-    async def delete(self, **kwargs) -> None:
+        data = await self.docker._query_json(
+            f"containers/{self._id}/wait",
+            method="POST",
+            params=kwargs,
+            timeout=timeout_config,
+        )
+        return data
+
+    async def delete(
+        self,
+        *,
+        force: bool = False,
+        v: bool = False,
+        link: bool = False,
+        timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
+    ) -> None:
+        """Remove the container.
+
+        Args:
+            force: If True, kill the container before removing it (using SIGKILL).
+                If False, the container must be stopped before it can be removed.
+            v: If True, remove anonymous volumes associated with the container.
+            link: If True, remove the specified link (legacy networking feature).
+            timeout: HTTP request timeout for the delete operation.
+        """
+        params: Dict[str, Any] = {}
+        if force:
+            params["force"] = force
+        if v:
+            params["v"] = v
+        if link:
+            params["link"] = link
+
+        # Use standard timeout resolution
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         async with self.docker._query(
-            f"containers/{self._id}", method="DELETE", params=kwargs
+            f"containers/{self._id}",
+            method="DELETE",
+            params=params,
+            timeout=timeout_config,
         ):
             pass
 
