@@ -377,12 +377,7 @@ class DockerImages:
             params["platform"] = platform
 
         # Default to infinite timeout for build operations
-        _timeout: float | aiohttp.ClientTimeout | None
-        if timeout is SENTINEL:
-            # Override both total and sock_read to infinity for long-running builds
-            _timeout = aiohttp.ClientTimeout(total=None, sock_read=None)
-        else:
-            _timeout = timeout
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
         cm = self.docker._query(
             "build",
@@ -390,7 +385,7 @@ class DockerImages:
             params=clean_map(params),
             headers=headers,
             data=data,
-            timeout=_timeout,
+            timeout=timeout_config,
         )
         return self._handle_response(cm, stream)
 
@@ -410,15 +405,10 @@ class DockerImages:
             Streamreader of tarball image
         """
         # Default to infinite timeout for export operations
-        _timeout: float | aiohttp.ClientTimeout | None
-        if timeout is SENTINEL:
-            # Override both total and sock_read to infinity for long-running exports
-            _timeout = aiohttp.ClientTimeout(total=None, sock_read=None)
-        else:
-            _timeout = timeout
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
         return _ExportCM(
-            self.docker._query(f"images/{name}/get", "GET", timeout=_timeout)
+            self.docker._query(f"images/{name}/get", "GET", timeout=timeout_config)
         )
 
     def import_image(
@@ -441,15 +431,10 @@ class DockerImages:
         headers = {"Content-Type": "application/x-tar"}
 
         # Default to infinite timeout for import operations
-        _timeout: float | aiohttp.ClientTimeout | None
-        if timeout is SENTINEL:
-            # Override both total and sock_read to infinity for long-running imports
-            _timeout = aiohttp.ClientTimeout(total=None, sock_read=None)
-        else:
-            _timeout = timeout
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
         cm = self.docker._query_chunked_post(
-            "images/load", "POST", data=data, headers=headers, timeout=_timeout
+            "images/load", "POST", data=data, headers=headers, timeout=timeout_config
         )
         return self._handle_response(cm, stream)
 

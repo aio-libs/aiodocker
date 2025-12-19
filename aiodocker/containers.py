@@ -196,15 +196,13 @@ class DockerContainer:
         params.update(kwargs)
 
         # Default to infinite timeout for log operations
-        _timeout: float | ClientTimeout | None
-        if timeout is SENTINEL:
-            # Override both total and sock_read to infinity for long-running log streams
-            _timeout = ClientTimeout(total=None, sock_read=None)
-        else:
-            _timeout = timeout
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
         cm = self.docker._query(
-            f"containers/{self._id}/logs", method="GET", params=params, timeout=_timeout
+            f"containers/{self._id}/logs",
+            method="GET",
+            params=params,
+            timeout=timeout_config,
         )
         if follow:
             return self._logs_stream(cm)
@@ -362,15 +360,9 @@ class DockerContainer:
             )
 
         # Default to infinite timeout for attach operations
-        _timeout: Optional[ClientTimeout]
-        if timeout is SENTINEL:
-            # Override both total and sock_read to infinity for long-running attach streams
-            # Note: Stream._init() will further adjust this to set sock_read and total to None
-            _timeout = ClientTimeout(total=None, sock_read=None)
-        else:
-            _timeout = timeout
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
-        return Stream(self.docker, setup, _timeout)
+        return Stream(self.docker, setup, timeout_config)
 
     async def port(self, private_port: int | str) -> List[PortInfo] | None:
         if "NetworkSettings" not in self._container:
@@ -417,17 +409,12 @@ class DockerContainer:
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> Any:
         # Default to infinite timeout for stats operations
-        _timeout: float | ClientTimeout | None
-        if timeout is SENTINEL:
-            # Override both total and sock_read to infinity for long-running stats streams
-            _timeout = ClientTimeout(total=None, sock_read=None)
-        else:
-            _timeout = timeout
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
         cm = self.docker._query(
             f"containers/{self._id}/stats",
             params={"stream": "1" if stream else "0"},
-            timeout=_timeout,
+            timeout=timeout_config,
         )
         if stream:
             return self._stats_stream(cm)

@@ -369,6 +369,43 @@ class Docker:
         else:
             return URL(f"{self.docker_host}/{path}")
 
+    def _resolve_long_running_timeout(
+        self,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None,
+    ) -> aiohttp.ClientTimeout:
+        """Resolve timeout for long-running operations (logs, stats, build, etc.).
+
+        For long-running operations, defaults to infinite timeout by setting
+        both total and sock_read to None while preserving other timeout settings
+        from the client configuration.
+
+        Args:
+            timeout: The timeout value to resolve. If SENTINEL, returns an infinite
+                    timeout based on the client's base timeout configuration, overriding
+                    both total and sock_read but preserving other timeouts such as
+                    connection establishment timeouts.
+                    If None, returns infinite timeout. If float, returns a ClientTimeout
+                    based on the client's base timeout configuration with its total and
+                    sock_read timeout overridden.
+
+        Returns:
+            An explicit ClientTimeout configuration.
+        """
+        if timeout is SENTINEL:
+            # Inherit the parent client's timeout but override total and sock_read
+            # because they don't make sense for long-running operations.
+            return attrs.evolve(self._timeout, total=None, sock_read=None)
+        elif timeout is None:
+            # Infinite timeout
+            return aiohttp.ClientTimeout()
+        elif isinstance(timeout, float):
+            # Inherit the parent client's timeout but override total and sock_read
+            # as the given value.
+            return attrs.evolve(self._timeout, total=timeout, sock_read=timeout)
+        else:
+            # Already a manually configured ClientTimeout, return as-is
+            return timeout
+
     async def _check_version(self) -> None:
         if self.api_version == "auto":
             ver = await self._query_json("version", versioned_api=False)
