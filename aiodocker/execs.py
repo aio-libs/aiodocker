@@ -15,6 +15,7 @@ import aiohttp
 from yarl import URL
 
 from .stream import Stream
+from .types import SENTINEL, Sentinel
 
 
 if TYPE_CHECKING:
@@ -62,7 +63,7 @@ class Exec:
     def start(
         self,
         *,
-        timeout: Optional[aiohttp.ClientTimeout] = None,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
         detach: Literal[False] = False,
     ) -> Stream:
         pass
@@ -71,7 +72,7 @@ class Exec:
     async def start(
         self,
         *,
-        timeout: Optional[aiohttp.ClientTimeout] = None,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
         detach: Literal[True],
     ) -> bytes:
         pass
@@ -79,14 +80,14 @@ class Exec:
     def start(
         self,
         *,
-        timeout: aiohttp.ClientTimeout | None = None,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
         detach: bool = False,
     ) -> Any:
         """
         Start this exec instance.
 
         Args:
-            timeout: The timeout in seconds for the request to start the exec instance.
+            timeout: The timeout for the exec operation (infinite by default).
             detach: Indicates whether we should detach from the command (like the `-d`
                 option to `docker exec`).
             tty: Indicates whether a TTY should be allocated (like the `-t` option to
@@ -100,9 +101,12 @@ class Exec:
             from `receive*` will have their `extra` attribute set to 1 if the data was
             from stdout or 2 if from stderr.
         """
+        # Default to infinite timeout for exec operations
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         if detach:
             return self._start_detached(
-                timeout,
+                timeout_config,
                 self._tty if self._tty is not None else False,
             )
         else:
@@ -117,11 +121,11 @@ class Exec:
                     self._tty,
                 )
 
-            return Stream(self.docker, setup, timeout)
+            return Stream(self.docker, setup, timeout_config)
 
     async def _start_detached(
         self,
-        timeout: Optional[aiohttp.ClientTimeout] = None,
+        timeout: aiohttp.ClientTimeout,
         tty: bool = False,
     ) -> bytes:
         if self._tty is None:

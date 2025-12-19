@@ -7,6 +7,7 @@ from collections import ChainMap
 
 from .channel import Channel
 from .jsonstream import json_stream_stream
+from .types import SENTINEL, Sentinel
 
 
 class DockerEvents:
@@ -38,24 +39,27 @@ class DockerEvents:
             data["time"] = dt.datetime.fromtimestamp(data["time"])
         return data
 
-    async def run(self, **params):
+    async def run(self, *, timeout: float | Sentinel | None = SENTINEL, **params):
         """
         Query the events endpoint of the Docker daemon.
 
         Publish messages inside the asyncio queue.
+
+        Args:
+            timeout: The timeout for the events stream (infinite by default).
         """
         if self.json_stream:
-            warnings.warn("already running", RuntimeWarning, stackelevel=2)
+            warnings.warn("already running", category=RuntimeWarning, stacklevel=2)
             return
         forced_params = {"stream": True}
-        params = ChainMap(forced_params, params)
+        merged_params = ChainMap(forced_params, params)
+
+        # Default to infinite timeout for event streaming
+        timeout_config = self.docker._resolve_long_running_timeout(timeout)
+
         try:
-            # timeout has to be set to 0, None is not passed
-            # Otherwise after 5 minutes the client
-            # will close the connection
-            # http://aiohttp.readthedocs.io/en/stable/client_reference.html#aiohttp.ClientSession.request
             async with self.docker._query(
-                "events", method="GET", params=params, timeout=0
+                "events", method="GET", params=merged_params, timeout=timeout_config
             ) as response:
                 self.json_stream = json_stream_stream(response, self._transform_event)
                 try:
