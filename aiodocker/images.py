@@ -16,6 +16,8 @@ from typing import (
     overload,
 )
 
+import aiohttp
+
 from .jsonstream import json_stream_list, json_stream_stream
 from .types import SENTINEL, JSONObject, Sentinel, SupportsRead
 from .utils import clean_map, compose_auth_header
@@ -69,7 +71,7 @@ class DockerImages:
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: Literal[False] = False,
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: float | Sentinel | None = SENTINEL,
     ) -> List[Dict[str, Any]]: ...
 
     @overload
@@ -82,7 +84,7 @@ class DockerImages:
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: Literal[True],
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: float | Sentinel | None = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def pull(
@@ -94,7 +96,7 @@ class DockerImages:
         repo: Optional[str] = None,
         platform: Optional[str] = None,
         stream: bool = False,
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: float | Sentinel | None = SENTINEL,
     ) -> Any:
         """
         Similar to `docker pull`, pull an image locally
@@ -156,7 +158,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[False] = False,
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: float | Sentinel | None = SENTINEL,
     ) -> List[Dict[str, Any]]: ...
 
     @overload
@@ -167,7 +169,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: Literal[True],
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: float | Sentinel | None = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]: ...
 
     def push(
@@ -177,7 +179,7 @@ class DockerImages:
         auth: Optional[Union[JSONObject, str, bytes]] = None,
         tag: Optional[str] = None,
         stream: bool = False,
-        timeout: Union[float, Sentinel, None] = SENTINEL,
+        timeout: float | Sentinel | None = SENTINEL,
     ) -> Any:
         params = {}
         headers = {
@@ -271,6 +273,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[False] = False,
         encoding: Optional[str] = None,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
     ) -> List[Dict[str, Any]]:
         pass
 
@@ -292,6 +295,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: Literal[True],
         encoding: Optional[str] = None,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
     ) -> AsyncIterator[Dict[str, Any]]:
         pass
 
@@ -312,6 +316,7 @@ class DockerImages:
         platform: Optional[str] = None,
         stream: bool = False,
         encoding: Optional[str] = None,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
     ) -> Any:
         """
         Build an image given a remote Dockerfile
@@ -330,6 +335,7 @@ class DockerImages:
             labels: arbitrary key/value labels to set on the image
             platform: platform in the format `os[/arch[/variant]]`
             fileobj: a tar archive compressed or not
+            timeout: timeout for the build operation (infinite by default)
         """
         headers = {}
 
@@ -370,40 +376,80 @@ class DockerImages:
         if platform:
             params["platform"] = platform
 
+        # Default to infinite timeout for build operations
+        _timeout: float | aiohttp.ClientTimeout | None
+        if timeout is SENTINEL:
+            # Override both total and sock_read to infinity for long-running builds
+            _timeout = aiohttp.ClientTimeout(total=None, sock_read=None)
+        else:
+            _timeout = timeout
+
         cm = self.docker._query(
             "build",
             "POST",
             params=clean_map(params),
             headers=headers,
             data=data,
+            timeout=_timeout,
         )
         return self._handle_response(cm, stream)
 
-    def export_image(self, name: str):
+    def export_image(
+        self,
+        name: str,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
+    ):
         """
         Get a tarball of an image by name or id.
 
         Args:
             name: name/id of the image to be exported
+            timeout: timeout for the export operation (infinite by default)
 
         Returns:
             Streamreader of tarball image
         """
-        return _ExportCM(self.docker._query(f"images/{name}/get", "GET"))
+        # Default to infinite timeout for export operations
+        _timeout: float | aiohttp.ClientTimeout | None
+        if timeout is SENTINEL:
+            # Override both total and sock_read to infinity for long-running exports
+            _timeout = aiohttp.ClientTimeout(total=None, sock_read=None)
+        else:
+            _timeout = timeout
 
-    def import_image(self, data, stream: bool = False):
+        return _ExportCM(
+            self.docker._query(f"images/{name}/get", "GET", timeout=_timeout)
+        )
+
+    def import_image(
+        self,
+        data,
+        stream: bool = False,
+        timeout: float | aiohttp.ClientTimeout | Sentinel | None = SENTINEL,
+    ):
         """
         Import tarball of image to docker.
 
         Args:
             data: tarball data of image to be imported
+            stream: stream the response
+            timeout: timeout for the import operation (infinite by default)
 
         Returns:
             Tarball of the image
         """
         headers = {"Content-Type": "application/x-tar"}
+
+        # Default to infinite timeout for import operations
+        _timeout: float | aiohttp.ClientTimeout | None
+        if timeout is SENTINEL:
+            # Override both total and sock_read to infinity for long-running imports
+            _timeout = aiohttp.ClientTimeout(total=None, sock_read=None)
+        else:
+            _timeout = timeout
+
         cm = self.docker._query_chunked_post(
-            "images/load", "POST", data=data, headers=headers
+            "images/load", "POST", data=data, headers=headers, timeout=_timeout
         )
         return self._handle_response(cm, stream)
 

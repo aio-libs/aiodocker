@@ -432,12 +432,13 @@ class Docker:
             case float():
                 if not _suppress_timeout_deprecation.get():
                     warnings.warn(
-                        "Manually setting the total timeout is highly discouraged. "
-                        "Use asyncio.timeout() block instead.",
+                        "Manually setting timeouts via float is highly discouraged. "
+                        "Use asyncio.timeout() block or pass aiohttp.ClientTimeout instead.",
                         DeprecationWarning,
                         stacklevel=2,
                     )
-                _timeout = attrs.evolve(_timeout, total=timeout)
+                # Set both total and sock_read consistently for float timeouts
+                _timeout = attrs.evolve(_timeout, total=timeout, sock_read=timeout)
             case aiohttp.ClientTimeout():
                 # Override with the caller's decision.
                 _timeout = timeout
