@@ -233,10 +233,10 @@ jobs:
     - name: Release
       uses: aio-libs/create-release@v1.6.6
       with:
-        changes_file: CHANGES.rst
+        changes_file: CHANGES.md
         name: ${{ env.PROJECT_NAME }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        head_line: "{version}\\s+\\({date}\\)\n====+\n?"
+        head_line: "## {version}\\s+\\({date}\\)"
 
     - name: >-
         Publish 🐍📦 to PyPI
