@@ -36,8 +36,8 @@ dev = [
 ]
 lint = [
     "pre-commit>=3.5.0",
-    "ruff==0.14.8",
-    "mypy==1.19.0",
+    "ruff==0.14.10",
+    "mypy==1.19.1",
     "types-paramiko",
 ]
 test = [
