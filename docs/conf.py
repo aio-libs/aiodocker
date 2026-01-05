@@ -40,7 +40,9 @@ try:
         flags=re.M,
     )
     if _version_match is None:
-        raise ValueError(f"Version string {_version_str!r} did not match expected pattern")
+        raise ValueError(
+            f"Version string {_version_str!r} did not match expected pattern"
+        )
     _version_info = _version_match.groupdict()
     # Provide defaults for optional groups
     if _version_info["patch"] is None:
