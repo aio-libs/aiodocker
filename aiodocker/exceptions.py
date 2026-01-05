@@ -13,8 +13,6 @@ class DockerError(Exception):
         message: The error message.
     """
 
-    status: int
-
     def __init__(self, status: int, message: str, *args: Any) -> None:
         super().__init__(message, *args)
         self.status = status
