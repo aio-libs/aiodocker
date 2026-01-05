@@ -291,12 +291,11 @@ Requirements
 * Docker CLI (``docker`` command) available on the remote host (required for ``docker system dial-stdio``)
 * Docker daemon running and accessible on the remote host
 
-----------
 Reference
-----------
+=========
 
 SSHConnector
-============
+------------
 
 .. autoclass:: aiodocker.ssh.SSHConnector
         :members:
