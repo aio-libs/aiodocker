@@ -1,6 +1,6 @@
 include LICENSE
 include README.rst
-include CHANGES.rst
+include CHANGES.md
 include CONTRIBUTORS.txt
 include Makefile
 include tox.ini
