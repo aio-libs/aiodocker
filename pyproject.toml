@@ -31,7 +31,7 @@ ssh = [
     "paramiko>=2.9.0",
 ]
 dev = [
-    "aiohttp==3.13.2",
+    "aiohttp==3.13.3",
     "towncrier==25.8.0",
 ]
 lint = [
