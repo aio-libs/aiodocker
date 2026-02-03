@@ -270,7 +270,7 @@ class DockerImages:
                     - dangling: When set to "true" (or "1"), prune only unused images that are not tagged.
                                When set to "false" (or "0"), prune all unused images.
                     - until: Only remove images created before given timestamp
-                    - label: Only remove images with (or without, if label=<key> is used) the specified labels
+                    - label: Only remove images with (or without, if label!=<key> is used) the specified labels
 
         Returns:
             Dictionary containing information about deleted images and space reclaimed
