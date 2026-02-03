@@ -1,1 +1,0 @@
-Add support for the images/prune API to the library.

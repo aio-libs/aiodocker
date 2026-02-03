@@ -397,5 +397,5 @@ async def test_prune_images_without_filters(docker: Docker) -> None:
     assert isinstance(result, dict)
     assert "ImagesDeleted" in result
     assert "SpaceReclaimed" in result
-    assert result["ImagesDeleted"] is None or isinstance(result["ImagesDeleted"], list)
+    assert result["ImagesDeleted"] is None
     assert isinstance(result["SpaceReclaimed"], int)
