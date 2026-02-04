@@ -461,16 +461,17 @@ async def test_prune_containers(
     """Test that prune with filters removes only the stopped container that matches the filter."""
     # Create two stopped containers
     container_without_label: DockerContainer = await docker.containers.create(
-        {"Image": image_name}, name=random_name
+        {"Image": image_name}, name=f"{random_name}_no_label"
     )
     container_with_label: DockerContainer | None = None
     try:
         container_with_label = await docker.containers.create(
-            {"Image": image_name, "Labels": {"test": ""}}, name=random_name
+            {"Image": image_name, "Labels": {"test": ""}},
+            name=f"{random_name}_with_label",
         )
 
         # Prune stopped containers with label "test"
-        result = await docker.containers.prune(filters={"label": "label=test"})
+        result = await docker.containers.prune(filters={"label": "test"})
 
         # Verify the response structure
         assert isinstance(result, dict)
