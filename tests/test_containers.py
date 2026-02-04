@@ -1,6 +1,7 @@
 import asyncio
 import secrets
 import sys
+from contextlib import suppress
 
 import pytest
 
@@ -451,3 +452,53 @@ async def test_delete_running_container_with_force(
         # If container was already deleted, that's fine
         if e.status != 404:
             raise
+
+
+@pytest.mark.asyncio
+async def test_prune_containers(
+    docker: Docker, random_name: str, image_name: str
+) -> None:
+    """Test that prune with filters removes only the stopped container that matches the filter."""
+    # Create two stopped containers
+    container_without_label: DockerContainer = await docker.containers.create(
+        {"Image": image_name}, name=random_name
+    )
+    container_with_label: DockerContainer | None = None
+    try:
+        container_with_label = await docker.containers.create(
+            {"Image": image_name, "Labels": {"test": ""}}, name=random_name
+        )
+
+        # Prune stopped containers with label "test"
+        result = await docker.containers.prune(filters={"label": "label=test"})
+
+        # Verify the response structure
+        assert isinstance(result, dict)
+        assert "ContainersDeleted" in result
+        assert "SpaceReclaimed" in result
+        assert result["ContainersDeleted"] == [container_with_label.id]
+        assert isinstance(result["SpaceReclaimed"], int)
+
+        # Test that the container without the label still exists
+        assert await container_without_label.show()
+
+    finally:
+        with suppress(DockerError):
+            await container_without_label.delete()
+        if container_with_label:
+            with suppress(DockerError):
+                await container_with_label.delete()
+
+
+@pytest.mark.asyncio
+async def test_prune_images_without_filters(docker: Docker) -> None:
+    """Test a container prune with no filters and nothing to remove."""
+    # Prune without filters
+    result = await docker.containers.prune()
+
+    # Verify the response structure
+    assert isinstance(result, dict)
+    assert "ContainersDeleted" in result
+    assert "SpaceReclaimed" in result
+    assert result["ContainersDeleted"] is None
+    assert isinstance(result["SpaceReclaimed"], int)
