@@ -491,10 +491,11 @@ async def test_prune_containers(
 
 
 @pytest.mark.asyncio
-async def test_prune_images_without_filters(docker: Docker) -> None:
-    """Test a container prune with no filters and nothing to remove."""
-    # Prune without filters
-    result = await docker.containers.prune()
+async def test_prune_containers_nothing_to_remove(
+    docker: Docker, random_name: str
+) -> None:
+    """Test a container prune with nothing to remove."""
+    result = await docker.containers.prune(filters={"label": f"label={random_name}"})
 
     # Verify the response structure
     assert isinstance(result, dict)
