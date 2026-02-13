@@ -423,7 +423,7 @@ async def test_prune_builds_with_options(
 
 
 @pytest.mark.asyncio
-async def test_prune_builds_default_options(docker: Docker):
+async def test_prune_builds_default_options(docker: Docker) -> None:
     """Test builds prune using default options."""
     result = await docker.images.prune_builds()
 
