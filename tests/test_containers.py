@@ -31,7 +31,7 @@ async def test_run_existing_container(docker: Docker, image_name: str) -> None:
     container = await docker.containers.run(
         config={
             "Cmd": ["-c", "print('hello')"],
-            "Entrypoint": "python",
+            "Entrypoint": ["python"],
             "Image": image_name,
         }
     )
@@ -57,7 +57,7 @@ async def test_run_container_with_missing_image(
     container = await docker.containers.run(
         config={
             "Cmd": ["-c", "print('hello')"],
-            "Entrypoint": "python",
+            "Entrypoint": ["python"],
             "Image": image_name,
         }
     )
@@ -126,7 +126,7 @@ async def test_container_stats_list(docker: Docker, image_name: str) -> None:
     container = await docker.containers.run(
         config={
             "Cmd": ["-c", "print('hello')"],
-            "Entrypoint": "python",
+            "Entrypoint": ["python"],
             "Image": image_name,
         }
     )
@@ -146,7 +146,7 @@ async def test_container_stats_stream(docker: Docker, image_name: str) -> None:
     container = await docker.containers.run(
         config={
             "Cmd": ["-c", "print('hello')"],
-            "Entrypoint": "python",
+            "Entrypoint": ["python"],
             "Image": image_name,
         }
     )
