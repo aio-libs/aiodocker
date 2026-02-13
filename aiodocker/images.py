@@ -282,6 +282,53 @@ class DockerImages:
         response = await self.docker._query_json("images/prune", "POST", params=params)
         return response
 
+    async def prune_builds(
+        self,
+        *,
+        reserved_space: Optional[int] = None,
+        max_used_space: Optional[int] = None,
+        min_free_space: Optional[int] = None,
+        all_builds: Optional[bool] = None,
+        filters: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Delete builder cache
+
+        Args:
+            reserved_space: Amount of disk space in bytes to keep for cache.
+            max_used_space: Maximum amount of disk space allowed to keep for cache.
+            min_free_space: Target amount of free disk space after pruning.
+            all_builds: When true, consider all unused build cache objects for pruning.
+                When false, only consider dangling build cache objects for pruning.
+            filters: Filter expressions to limit what types of build cache objects are pruned.
+                    Available filters:
+                    - until: Only remove build cache objects created before given timestamp.
+                    - id: id=<id>
+                    - parent: parent=<id>
+                    - type: type=<string>
+                    - description: description=<string>
+                    - inuse
+                    - shared
+                    - private
+
+        Returns:
+            Dictionary containing information about deleted caches and space reclaimed
+        """
+        params = {}
+        if reserved_space is not None:
+            params["reserved-space"] = reserved_space
+        if max_used_space is not None:
+            params["max-used-space"] = max_used_space
+        if min_free_space is not None:
+            params["min-free-space"] = min_free_space
+        if all_builds is not None:
+            params["all"] = all_builds
+        if filters is not None:
+            params["filters"] = clean_filters(filters)
+
+        response = await self.docker._query_json("build/prune", "POST", params=params)
+        return response
+
     @staticmethod
     async def _stream(fileobj: SupportsRead[bytes]) -> AsyncIterator[bytes]:
         chunk = fileobj.read(io.DEFAULT_BUFFER_SIZE)
