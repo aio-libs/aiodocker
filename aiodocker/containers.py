@@ -30,7 +30,7 @@ from .logs import DockerLog
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .stream import Stream
 from .types import SENTINEL, JSONObject, MutableJSONObject, PortInfo, Sentinel
-from .utils import identical, parse_result
+from .utils import clean_filters, identical, parse_result
 
 
 if TYPE_CHECKING:
@@ -135,6 +135,32 @@ class DockerContainers:
     def exec(self, exec_id: str) -> Exec:
         """Return Exec instance for already created exec object."""
         return Exec(self.docker, exec_id)
+
+    async def prune(
+        self,
+        *,
+        filters: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Delete stopped containers
+
+        Args:
+            filters: Filter expressions to limit which containers are pruned.
+                    Available filters:
+                    - until: Only remove containers created before given timestamp
+                    - label: Only remove containers with (or without, if label!=<key> is used) the specified labels
+
+        Returns:
+            Dictionary containing information about deleted containers and space reclaimed
+        """
+        params = {}
+        if filters is not None:
+            params["filters"] = clean_filters(filters)
+
+        response = await self.docker._query_json(
+            "containers/prune", "POST", params=params
+        )
+        return response
 
 
 class DockerContainer:
