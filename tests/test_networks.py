@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import suppress
+
 import pytest
 
 from aiodocker.docker import Docker
@@ -56,3 +58,48 @@ async def test_network_delete_error(docker: Docker) -> None:
     assert await network.delete() is True
     with pytest.raises(DockerError):
         await network.delete()
+
+
+@pytest.mark.asyncio
+async def test_prune_networks(docker: Docker, random_name: str) -> None:
+    """Test that prune with filters removes only the unused network that matches the filter."""
+    # Create two networks
+    network_without_label: DockerNetwork = await docker.networks.create({
+        "Name": f"{random_name}_no_label"
+    })
+    network_with_label: DockerNetwork | None = None
+    try:
+        network_name = f"{random_name}_label"
+        network_with_label = await docker.networks.create({
+            "Name": network_name,
+            "Labels": {"test": ""},
+        })
+
+        # Prune unused networks with label "test"
+        result = await docker.networks.prune(filters={"label": "test"})
+
+        # Verify the response structure
+        assert isinstance(result, dict)
+        assert "NetworksDeleted" in result
+        assert result["NetworksDeleted"] == [network_name]
+
+        # Test that the network without the label still exists
+        assert await network_without_label.show()
+
+    finally:
+        with suppress(DockerError):
+            await network_without_label.delete()
+        if network_with_label:
+            with suppress(DockerError):
+                await network_with_label.delete()
+
+
+@pytest.mark.asyncio
+async def test_prune_networks_nothing_to_remove(docker: Docker) -> None:
+    """Test a network prune with nothing to remove."""
+    result = await docker.networks.prune()
+
+    # Verify the response structure
+    assert isinstance(result, dict)
+    assert "NetworksDeleted" in result
+    assert result["NetworksDeleted"] is None
