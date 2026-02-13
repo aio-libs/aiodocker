@@ -46,6 +46,32 @@ class DockerNetworks:
         data = await self.docker._query_json(f"networks/{net_specs}", method="GET")
         return DockerNetwork(self.docker, data["Id"])
 
+    async def prune(
+        self,
+        *,
+        filters: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Delete unused networks
+
+        Args:
+            filters: Filter expressions to limit which networks are pruned.
+                    Available filters:
+                    - until: Only remove networks created before given timestamp
+                    - label: Only remove networks with (or without, if label!=<key> is used) the specified labels
+
+        Returns:
+            Dictionary containing information about deleted networks
+        """
+        params = {}
+        if filters is not None:
+            params["filters"] = clean_filters(filters)
+
+        response = await self.docker._query_json(
+            "networks/prune", "POST", params=params
+        )
+        return response
+
 
 class DockerNetwork:
     def __init__(self, docker, id_):
