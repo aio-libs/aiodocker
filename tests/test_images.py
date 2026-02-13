@@ -404,7 +404,7 @@ async def test_prune_images_without_filters(docker: Docker) -> None:
 @pytest.mark.asyncio
 async def test_prune_builds_with_options(
     docker: Docker, random_name: str, image_name: str
-):
+) -> None:
     """Test builds prune with options set."""
     result = await docker.images.prune_builds(
         reserved_space=0,
