@@ -52,7 +52,7 @@ class DockerVolumes:
                     Available filters:
                     - label: Only remove volumes with (or without, if label!=<key> is used) the specified labels
                     - all: When set to "true", consider all volumes for pruning and not just anonymous ones
-                          When set to "false" or omitted, only consider anonymous volumes or pruning
+                          When set to "false" or omitted, only consider anonymous volumes for pruning
 
         Returns:
             Dictionary containing information about deleted volumes and space reclaimed

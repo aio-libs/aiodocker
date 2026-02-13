@@ -67,7 +67,7 @@ async def test_prune_volumes(docker: Docker) -> None:
         assert result["VolumesDeleted"] == [volume_with_label.name]
         assert isinstance(result["SpaceReclaimed"], int)
 
-        # Test that the container without the label still exists
+        # Test that the volume without the label still exists
         assert await volume_without_label.show()
 
     finally:
@@ -79,11 +79,9 @@ async def test_prune_volumes(docker: Docker) -> None:
 
 
 @pytest.mark.asyncio
-async def test_prune_volumes_nothing_to_remove(
-    docker: Docker, random_name: str
-) -> None:
+async def test_prune_volumes_nothing_to_remove(docker: Docker) -> None:
     """Test a volumes prune with nothing to remove."""
-    result = await docker.volumes.prune(filters={"label": f"label={random_name}"})
+    result = await docker.volumes.prune()
 
     # Verify the response structure
     assert isinstance(result, dict)
