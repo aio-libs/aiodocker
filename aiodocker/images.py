@@ -20,7 +20,7 @@ import aiohttp
 
 from .jsonstream import json_stream_list, json_stream_stream
 from .types import SENTINEL, JSONObject, Sentinel, SupportsRead
-from .utils import clean_map, compose_auth_header
+from .utils import clean_filters, clean_map, compose_auth_header
 
 
 if TYPE_CHECKING:
@@ -254,6 +254,32 @@ class DockerImages:
         response = await self.docker._query_json(
             f"images/{name}", "DELETE", params=params
         )
+        return response
+
+    async def prune(
+        self,
+        *,
+        filters: Optional[Mapping[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Delete unused images
+
+        Args:
+            filters: Filter expressions to limit which images are pruned.
+                    Available filters:
+                    - dangling: When set to "true" (or "1"), prune only unused images that are not tagged.
+                               When set to "false" (or "0"), prune all unused images.
+                    - until: Only remove images created before given timestamp
+                    - label: Only remove images with (or without, if label!=<key> is used) the specified labels
+
+        Returns:
+            Dictionary containing information about deleted images and space reclaimed
+        """
+        params = {}
+        if filters is not None:
+            params["filters"] = clean_filters(filters)
+
+        response = await self.docker._query_json("images/prune", "POST", params=params)
         return response
 
     @staticmethod

@@ -25,6 +25,7 @@ Julien Simbola
 Junya Fukuda
 Konstantin Valetov
 Martin Koppehel
+Mike Degatano
 Nikolay Novik
 Paul Tagliamonte
 Robin Tweedie
