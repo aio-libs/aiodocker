@@ -314,7 +314,7 @@ class DockerImages:
         Returns:
             Dictionary containing information about deleted caches and space reclaimed
         """
-        params = {}
+        params: Dict[str, Any] = {}
         if reserved_space is not None:
             params["reserved-space"] = reserved_space
         if max_used_space is not None:
