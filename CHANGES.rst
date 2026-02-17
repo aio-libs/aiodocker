@@ -12,6 +12,25 @@ Changes
 
 .. towncrier release notes start
 
+0.26.0 (2026-02-17)
+===================
+
+New Features
+------------
+
+- Introduce support in the library for the `networks/prune` API endpoint. (#691)
+- Introduce support in the library for the `images/prune` API endpoint. (#1001)
+- Introduce support in the library for the `containers/prune` API endpoint. (#1002)
+- Introduce support in the library for the `volumes/prune` API endpoint. (#1003)
+- Introduce support in the library for the `build/prune` API endpoint. (#1007)
+
+
+Miscellaneous
+-------------
+
+- Fix entrypoint usage in broken container tests to unblock CI. (#1004)
+
+
 0.25.0 (2025-12-20)
 ===================
 
