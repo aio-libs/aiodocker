@@ -1,1 +1,1 @@
-Switch the CI workflow to install packages with ``uv`` and build artifacts with ``uv build``, while keeping ``actions/setup-python`` for the interpreter -- by :user:`bdraco`.
+Build the distribution with ``uv build`` and run ``twine`` through ``uvx`` in CI, dropping the dedicated ``pip install`` steps for ``build`` and ``twine`` -- by :user:`bdraco`.
