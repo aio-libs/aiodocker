@@ -666,5 +666,5 @@ class DockerContainer:
     def __getitem__(self, key: str) -> Any:
         return self._container[key]
 
-    def __hasitem__(self, key: str) -> bool:
+    def __contains__(self, key: str) -> bool:
         return key in self._container
