@@ -31,10 +31,37 @@ class DockerImages:
     def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def list(self, **params) -> List[Any]:
+    async def list(
+        self,
+        *,
+        filters: Optional[Union[Mapping[str, Any], str]] = None,
+        **params,
+    ) -> List[Any]:
         """
         List of images
+
+        Args:
+            filters: Filter expressions for the listing. Accepts a mapping
+                like ``{"dangling": ["true"]}``, ``{"label": ["foo=bar"]}``,
+                or ``{"reference": ["busybox"]}``. A pre-encoded JSON string
+                is also accepted for backwards compatibility, but is
+                deprecated and will be removed in 1.0.
+            **params: Additional query parameters forwarded to
+                ``GET /images/json`` (e.g. ``all``, ``digests``,
+                ``shared_size``).
         """
+        if filters is not None:
+            if isinstance(filters, str):
+                warnings.warn(
+                    "Passing `filters` as a pre-encoded JSON string is "
+                    "deprecated and will be removed in 1.0. Pass a mapping "
+                    "such as {'dangling': ['true']} instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                params["filters"] = filters
+            else:
+                params["filters"] = clean_filters(filters)
         response = await self.docker._query_json("images/json", "GET", params=params)
         return response
 

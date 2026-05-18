@@ -120,6 +120,26 @@ async def test_list_images(docker: Docker, image_name: str) -> None:
 
 
 @pytest.mark.asyncio
+async def test_list_images_with_dangling_filter(docker: Docker) -> None:
+    # The filter should be JSON-encoded and forwarded; whatever the daemon
+    # returns must be a list, and every entry must actually be dangling
+    # (i.e. have no real RepoTags). An empty list is a valid result.
+    dangling = await docker.images.list(filters={"dangling": ["true"]})
+    assert isinstance(dangling, list)
+    for img in dangling:
+        tags = img.get("RepoTags") or []
+        assert tags == [] or tags == ["<none>:<none>"]
+
+
+@pytest.mark.asyncio
+async def test_list_images_filters_str_is_deprecated(
+    docker: Docker, image_name: str
+) -> None:
+    with pytest.warns(DeprecationWarning, match="pre-encoded JSON string"):
+        await docker.images.list(filters='{"reference":["' + image_name + '"]}')
+
+
+@pytest.mark.asyncio
 async def test_tag_image(docker: Docker, random_name: str, image_name: str) -> None:
     repository = random_name
     await docker.images.tag(name=image_name, repo=repository, tag="1.0")
