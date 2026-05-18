@@ -84,7 +84,6 @@ class Stream:
                     msg = msg + f" Body: [{body!r}]"
             raise DockerError(500, msg)
         protocol = conn.protocol
-        loop = resp._loop
         assert protocol is not None
         assert protocol.transport is not None
         sock = protocol.transport.get_extra_info("socket")
@@ -94,7 +93,7 @@ class Stream:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
         queue: FlowControlDataQueue[Message] = FlowControlDataQueue(
-            protocol, limit=2**16, loop=loop
+            protocol, limit=2**16
         )
         protocol.set_parser(_ExecParser(queue, tty=tty), queue)
         protocol.force_close()

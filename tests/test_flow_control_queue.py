@@ -1,9 +1,11 @@
 """Tests for the vendored ``FlowControlDataQueue``."""
 
 import asyncio
+from typing import cast
 
 import pytest
 from aiohttp import EofStream
+from aiohttp.base_protocol import BaseProtocol
 
 from aiodocker._flow_control_queue import FlowControlDataQueue
 
@@ -23,11 +25,15 @@ class _FakeProtocol:
         self.resume_calls += 1
 
 
+def _make_protocol() -> BaseProtocol:
+    """Return a `_FakeProtocol` typed as `BaseProtocol` for the queue constructor."""
+    return cast(BaseProtocol, _FakeProtocol())
+
+
 @pytest.mark.asyncio
 async def test_feed_and_read_preserves_order() -> None:
-    loop = asyncio.get_running_loop()
     queue: FlowControlDataQueue[bytes] = FlowControlDataQueue(
-        _FakeProtocol(), limit=64, loop=loop
+        _make_protocol(), limit=64
     )
     queue.feed_data(b"a", 1)
     queue.feed_data(b"b", 1)
@@ -41,46 +47,46 @@ async def test_feed_and_read_preserves_order() -> None:
 
 @pytest.mark.asyncio
 async def test_feed_data_pauses_when_limit_exceeded() -> None:
-    loop = asyncio.get_running_loop()
     protocol = _FakeProtocol()
-    # ``FlowControlDataQueue`` doubles the limit internally, so feeding 5 +
-    # 6 bytes (=11) crosses the effective threshold of 10 once.
+    # ``FlowControlDataQueue`` doubles the supplied limit internally, so the
+    # effective pause threshold is ``limit * 2 = 20``.
     queue: FlowControlDataQueue[bytes] = FlowControlDataQueue(
-        protocol, limit=5, loop=loop
+        cast(BaseProtocol, protocol), limit=10
     )
 
+    # Stays comfortably below the threshold -> never paused.
     queue.feed_data(b"hello", 5)
     assert protocol.pause_calls == 0
     assert protocol._reading_paused is False
 
-    queue.feed_data(b"world!", 6)
+    # Crosses the threshold -> paused exactly once.
+    queue.feed_data(b"x" * 25, 25)
     assert protocol.pause_calls == 1
     assert protocol._reading_paused is True
 
 
 @pytest.mark.asyncio
 async def test_read_resumes_when_below_limit() -> None:
-    loop = asyncio.get_running_loop()
     protocol = _FakeProtocol()
     queue: FlowControlDataQueue[bytes] = FlowControlDataQueue(
-        protocol, limit=5, loop=loop
+        cast(BaseProtocol, protocol), limit=10
     )
 
     queue.feed_data(b"hello", 5)
-    queue.feed_data(b"world!", 6)
+    queue.feed_data(b"x" * 25, 25)
     assert protocol._reading_paused is True
 
+    # Draining the large payload drops well below the threshold -> resumed once.
     assert await queue.read() == b"hello"
+    assert await queue.read() == b"x" * 25
     assert protocol.resume_calls == 1
     assert protocol._reading_paused is False
-    assert await queue.read() == b"world!"
 
 
 @pytest.mark.asyncio
 async def test_read_waits_for_data() -> None:
-    loop = asyncio.get_running_loop()
     queue: FlowControlDataQueue[bytes] = FlowControlDataQueue(
-        _FakeProtocol(), limit=64, loop=loop
+        _make_protocol(), limit=64
     )
 
     async def producer() -> None:
@@ -95,9 +101,8 @@ async def test_read_waits_for_data() -> None:
 
 @pytest.mark.asyncio
 async def test_set_exception_propagates() -> None:
-    loop = asyncio.get_running_loop()
     queue: FlowControlDataQueue[bytes] = FlowControlDataQueue(
-        _FakeProtocol(), limit=64, loop=loop
+        _make_protocol(), limit=64
     )
 
     queue.set_exception(RuntimeError("boom"))
