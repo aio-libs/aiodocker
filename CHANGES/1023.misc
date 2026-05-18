@@ -1,0 +1,1 @@
+Replace a fixed ten second sleep in the non-TTY attach exit test with a wait for container exit, so the test returns as soon as the container actually finishes -- by :user:`bdraco`.
