@@ -6,16 +6,16 @@ import contextvars
 import json
 import tarfile
 import tempfile
+from collections.abc import (
+    Iterable,
+    Mapping,
+    Sequence,
+)
 from io import BytesIO
 from typing import (
     IO,
     Any,
-    Dict,
-    Iterable,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
     overload,
@@ -68,7 +68,7 @@ async def parse_result(response, response_type=None, *, encoding="utf-8"):
     return data
 
 
-def parse_content_type(ct: str) -> Tuple[str, str, Mapping[str, str]]:
+def parse_content_type(ct: str) -> tuple[str, str, Mapping[str, str]]:
     """
     Decompose the value of HTTP "Content-Type" header into
     the main/sub MIME types and other extra options as a dictionary.
@@ -215,7 +215,7 @@ def format_env(key, value: Union[None, bytes, str]) -> str:
 
 def clean_networks(
     networks: Optional[Iterable[str]] = None,
-) -> Optional[Sequence[Dict[str, Any]]]:
+) -> Optional[Sequence[dict[str, Any]]]:
     """
     Cleans the values inside `networks`
     Returns a new list
