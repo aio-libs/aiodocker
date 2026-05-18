@@ -120,6 +120,30 @@ async def test_list_images(docker: Docker, image_name: str) -> None:
 
 
 @pytest.mark.asyncio
+async def test_list_images_filters_mapping_is_forwarded(
+    docker: Docker, image_name: str
+) -> None:
+    # Scope by `reference` to the known fixture image. If the mapping were
+    # not JSON-encoded and forwarded as `filters`, the daemon would return
+    # every image and the per-tag assertion below would fail on unrelated
+    # entries.
+    matched = await docker.images.list(filters={"reference": [image_name]})
+    assert isinstance(matched, list)
+    assert len(matched) >= 1
+    for img in matched:
+        tags = img.get("RepoTags") or []
+        assert any(t == image_name or t.startswith(f"{image_name}:") for t in tags)
+
+
+@pytest.mark.asyncio
+async def test_list_images_filters_str_is_deprecated(
+    docker: Docker, image_name: str
+) -> None:
+    with pytest.warns(DeprecationWarning, match="pre-encoded JSON string"):
+        await docker.images.list(filters='{"reference":["' + image_name + '"]}')
+
+
+@pytest.mark.asyncio
 async def test_tag_image(docker: Docker, random_name: str, image_name: str) -> None:
     repository = random_name
     await docker.images.tag(name=image_name, repo=repository, tag="1.0")
