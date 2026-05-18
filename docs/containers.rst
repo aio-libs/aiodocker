@@ -38,3 +38,15 @@ Create a container
 
     if __name__ == "__main__":
         asyncio.run(create_container())
+
+.. note::
+
+   Some commonly-used fields — including ``Runtime``, ``Privileged``,
+   ``Binds``, ``NetworkMode``, ``RestartPolicy``, and ``PortBindings`` —
+   belong **inside** ``HostConfig``, not at the top level of the config
+   dict. Docker silently ignores them when placed at the top level. See the
+   `Docker Engine API reference
+   <https://docs.docker.com/engine/api/latest/#tag/Container/operation/ContainerCreate>`_
+   for the authoritative field list. ``aiodocker`` emits a
+   :py:class:`UserWarning` when it detects a well-known ``HostConfig``-only
+   field at the top level.

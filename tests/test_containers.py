@@ -1,11 +1,15 @@
 import asyncio
 import secrets
 import sys
+import warnings
 from contextlib import suppress
 
 import pytest
 
-from aiodocker.containers import DockerContainer
+from aiodocker.containers import (
+    DockerContainer,
+    _warn_misplaced_host_config_fields,
+)
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerContainerError, DockerError
 
@@ -544,3 +548,44 @@ def test_container_contains() -> None:
     assert "Id" in container
     assert "State" in container
     assert "Missing" not in container
+
+
+def test_warn_misplaced_host_config_field_runtime() -> None:
+    """`Runtime` at top level should trigger a UserWarning pointing at HostConfig."""
+    config = {
+        "Image": "alpine:latest",
+        "Runtime": "runc",
+    }
+    with pytest.warns(UserWarning, match="HostConfig") as record:
+        _warn_misplaced_host_config_fields(config)
+    assert any("Runtime" in str(w.message) for w in record)
+
+
+def test_warn_misplaced_host_config_field_nested_is_silent() -> None:
+    """No warning should fire when the field is correctly inside HostConfig."""
+    config = {
+        "Image": "alpine:latest",
+        "HostConfig": {"Runtime": "runc"},
+    }
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        _warn_misplaced_host_config_fields(config)
+    assert not [w for w in caught if "HostConfig" in str(w.message)]
+
+
+@pytest.mark.asyncio
+async def test_create_with_runtime_in_host_config(
+    docker: Docker, image_name: str
+) -> None:
+    """Setting Runtime via HostConfig must survive a create + inspect round-trip."""
+    container = await docker.containers.create(
+        config={
+            "Image": image_name,
+            "HostConfig": {"Runtime": "runc"},
+        }
+    )
+    try:
+        info = await container.show()
+        assert info["HostConfig"]["Runtime"] == "runc"
+    finally:
+        await container.delete(force=True)

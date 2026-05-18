@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import shlex
 import tarfile
+import warnings
 from contextlib import AbstractAsyncContextManager
 from typing import (
     TYPE_CHECKING,
@@ -35,6 +36,47 @@ from .utils import clean_filters, identical, parse_result
 
 if TYPE_CHECKING:
     from .docker import Docker
+
+
+# Subset of fields that live under ``HostConfig`` in the Docker Engine
+# ``/containers/create`` API. When a caller places one of these at the top
+# level of the config dict, the Docker daemon silently drops it. We warn so
+# users do not lose hours debugging "why didn't my Runtime/Privileged stick?".
+_HOST_CONFIG_ONLY_FIELDS = frozenset({
+    "AutoRemove",
+    "Binds",
+    "CapAdd",
+    "CapDrop",
+    "Devices",
+    "ExtraHosts",
+    "IpcMode",
+    "Mounts",
+    "NetworkMode",
+    "PidMode",
+    "PortBindings",
+    "Privileged",
+    "PublishAllPorts",
+    "ReadonlyRootfs",
+    "RestartPolicy",
+    "Runtime",
+    "SecurityOpt",
+    "Tmpfs",
+    "VolumesFrom",
+})
+
+
+def _warn_misplaced_host_config_fields(config: Any) -> None:
+    if not isinstance(config, Mapping):
+        return
+    for field in config:
+        if field in _HOST_CONFIG_ONLY_FIELDS:
+            warnings.warn(
+                f"{field!r} is a HostConfig field but was placed at the top "
+                f"level of the container config; Docker will ignore it. "
+                f"Move it to config['HostConfig'][{field!r}].",
+                UserWarning,
+                stacklevel=3,
+            )
 
 
 class DockerContainers:
@@ -76,6 +118,7 @@ class DockerContainers:
         *,
         name: Optional[str] = None,
     ) -> DockerContainer:
+        _warn_misplaced_host_config_fields(config)
         url = "containers/create"
         encoded_config = json.dumps(config, sort_keys=True).encode("utf-8")
         kwargs = {}
