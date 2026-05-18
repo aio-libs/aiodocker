@@ -18,7 +18,7 @@ from testcontainers.core.container import DockerContainer as TempContainer
 from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
-from aiodocker.images import _has_embedded_tag_or_digest
+from aiodocker.images import DockerImages, _has_embedded_tag_or_digest
 
 
 def skip_windows() -> None:
@@ -223,21 +223,87 @@ def test_has_embedded_tag_or_digest(image_ref: str, expected: bool) -> None:
     assert _has_embedded_tag_or_digest(image_ref) is expected
 
 
+class _FakeStreamContent:
+    async def readline(self) -> bytes:
+        return b""
+
+
+class _FakeResponse:
+    content = _FakeStreamContent()
+
+    def close(self) -> None:
+        pass
+
+
+class _FakeDocker:
+    """Minimal stand-in for ``Docker`` that records ``_query`` arguments."""
+
+    def __init__(self) -> None:
+        self.captured: dict[str, object] = {}
+
+    def _resolve_long_running_timeout(self, timeout: object) -> None:
+        return None
+
+    @asynccontextmanager
+    async def _query(
+        self,
+        path: str,
+        method: str = "GET",
+        *,
+        params: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
+        **_: object,
+    ) -> AsyncIterator[_FakeResponse]:
+        self.captured = {
+            "path": path,
+            "method": method,
+            "params": dict(params or {}),
+            "headers": dict(headers or {}),
+        }
+        yield _FakeResponse()
+
+
+@pytest.mark.parametrize(
+    "from_image,explicit_tag,expected_tag_param",
+    [
+        # Reproduces #974: bare names default to ``latest`` instead of
+        # triggering Docker Engine's "pull all tags" behavior.
+        ("alpine", None, "latest"),
+        ("library/alpine", None, "latest"),
+        ("registry:5000/alpine", None, "latest"),
+        # Embedded tag/digest in ``from_image`` is left untouched.
+        ("alpine:3.18", None, None),
+        ("alpine@sha256:0123456789abcdef", None, None),
+        # Explicit ``tag`` always wins.
+        ("alpine", "3.18", "3.18"),
+        # Empty string is the documented opt-in for "pull all tags".
+        ("alpine", "", None),
+    ],
+)
 @pytest.mark.asyncio
-async def test_pull_image_without_tag_defaults_to_latest(docker: Docker) -> None:
-    # Reproduces #974: bare image names without a tag should not trigger the
-    # Docker Engine's "pull all tags" behavior, which fails on architectures
-    # where historical tags lack manifests (e.g. arm64).
-    try:
-        items = [item async for item in docker.images.pull("hello-world", stream=True)]
-        assert items, "expected at least one progress event from the pull stream"
-        image = await docker.images.inspect("hello-world:latest")
-        assert image
-    finally:
-        try:
-            await docker.images.delete(name="hello-world:latest", force=True)
-        except DockerError:
-            pass
+async def test_pull_sends_expected_tag_param(
+    from_image: str,
+    explicit_tag: str | None,
+    expected_tag_param: str | None,
+) -> None:
+    fake = _FakeDocker()
+    images = DockerImages(fake)  # type: ignore[arg-type]
+
+    if explicit_tag is None:
+        result = await images.pull(from_image)
+    else:
+        result = await images.pull(from_image, tag=explicit_tag)
+
+    assert result == []
+    assert fake.captured["path"] == "images/create"
+    assert fake.captured["method"] == "POST"
+    params = fake.captured["params"]
+    assert isinstance(params, dict)
+    assert params["fromImage"] == from_image
+    if expected_tag_param is None:
+        assert "tag" not in params
+    else:
+        assert params["tag"] == expected_tag_param
 
 
 @pytest.mark.asyncio
