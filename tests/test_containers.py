@@ -15,8 +15,10 @@ async def _validate_hello(container: DockerContainer) -> None:
         await container.start()
         response = await container.wait()
         assert response["StatusCode"] == 0
-        await asyncio.sleep(5)  # wait for output in case of slow test container
-        logs = await container.log(stdout=True)
+        # Stream with follow=True so the daemon flushes all output before EOF;
+        # the container has already exited so this returns as soon as the log
+        # buffer drains rather than blocking on a fixed sleep.
+        logs = [line async for line in container.log(stdout=True, follow=True)]
         assert "hello\n" in logs
 
         with pytest.raises(TypeError):
