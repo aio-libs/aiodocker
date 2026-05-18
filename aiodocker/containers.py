@@ -655,6 +655,24 @@ class DockerContainer:
             "commit", method="POST", params=params, data=config, timeout=timeout_config
         )
 
+    async def top(self, *, ps_args: Optional[str] = None) -> Dict[str, Any]:
+        """List processes running inside the container.
+
+        Args:
+            ps_args: Arguments passed to ``ps`` (e.g. ``"aux"``).
+                If ``None``, the Docker daemon default is used.
+
+        Returns:
+            Dict with ``Titles`` (column names) and ``Processes``
+            (list of rows) keys, as returned by the Docker API.
+        """
+        params: Dict[str, Any] = {}
+        if ps_args is not None:
+            params["ps_args"] = ps_args
+        return await self.docker._query_json(
+            f"containers/{self._id}/top", method="GET", params=params
+        )
+
     async def pause(self) -> None:
         async with self.docker._query(f"containers/{self._id}/pause", method="POST"):
             pass
