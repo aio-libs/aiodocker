@@ -1,1 +1,1 @@
-Switch the CI jobs from ``actions/setup-python`` to ``astral-sh/setup-uv`` for installing the Python interpreter, and from ``pip`` to ``uv`` for installing dependencies and building artifacts -- by :user:`bdraco`.
+Switch the CI workflow to install packages with ``uv`` and build artifacts with ``uv build``, while keeping ``actions/setup-python`` for the interpreter -- by :user:`bdraco`.
