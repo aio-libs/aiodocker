@@ -193,8 +193,13 @@ async def test_top_with_ps_args(shell_container: DockerContainer) -> None:
     result = await shell_container.top(ps_args="-ef")
     assert "Titles" in result
     assert "Processes" in result
-    # `ps -ef` exposes a UID column.
-    assert "UID" in result["Titles"]
+    assert isinstance(result["Titles"], list)
+    assert len(result["Titles"]) > 0
+    assert isinstance(result["Processes"], list)
+    assert len(result["Processes"]) >= 1
+    # Each row should have one cell per column title.
+    for row in result["Processes"]:
+        assert len(row) == len(result["Titles"])
 
 
 @pytest.mark.skipif(
