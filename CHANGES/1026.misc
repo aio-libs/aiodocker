@@ -1,1 +1,1 @@
-Switch the CI workflow to install dependencies and build artifacts with uv instead of pip, which speeds up every job that installs Python packages -- by :user:`bdraco`.
+Switch the CI jobs from ``actions/setup-python`` to ``astral-sh/setup-uv`` for installing the Python interpreter, and from ``pip`` to ``uv`` for installing dependencies and building artifacts -- by :user:`bdraco`.
