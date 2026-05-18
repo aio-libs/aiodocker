@@ -41,9 +41,11 @@ jobs:
         fetch-depth: 0
         filter: 'blob:none'
     - name: Install uv and Python
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v8.1.0
       with:
         python-version: ${{ env.PYTHON_LATEST }}
+        activate-environment: true
+        enable-cache: true
     - name: Build artifacts
       run: uv build
     - name: Upload built artifacts for testing
@@ -64,11 +66,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v5
     - name: Install uv and Python ${{ env.PYTHON_LATEST }}
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v8.1.0
       with:
         python-version: ${{ env.PYTHON_LATEST }}
+        activate-environment: true
+        enable-cache: true
     - name: Install dependencies
-      run: uv pip install --system -e '.[lint]'
+      run: uv pip install -e '.[lint]'
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit/
@@ -91,9 +95,11 @@ jobs:
         name: ${{ env.dists-artifact-name }}
         path: dist
     - name: Install uv and Python ${{ env.PYTHON_LATEST }}
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v8.1.0
       with:
         python-version: ${{ env.PYTHON_LATEST }}
+        activate-environment: true
+        enable-cache: true
     - name: Run twine checker
       run: uvx twine check --strict dist/*
 
@@ -127,18 +133,20 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v5
     - name: Install uv and Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v8.1.0
       with:
         python-version: ${{ matrix.python-version }}
+        activate-environment: true
+        enable-cache: true
     - name: Download all the dists
       uses: actions/download-artifact@v4
       with:
         name: ${{ env.dists-artifact-name }}
         path: dist
     - name: Install dependencies
-      run: uv pip install --system -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}.0'
+      run: uv pip install -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}.0'
     - name: Install the build artifact
-      run: uv pip install --system dist/aiodocker*.whl
+      run: uv pip install dist/aiodocker*.whl
     # NOTE: Unfortunately the gain of image caching is too small,
     #       and even it increases the latency of Linux jobs. :(
     # - name: Cache Docker images
