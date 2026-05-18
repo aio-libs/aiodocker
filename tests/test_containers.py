@@ -173,6 +173,31 @@ async def test_resize(shell_container: DockerContainer) -> None:
 
 
 @pytest.mark.skipif(
+    sys.platform == "win32", reason="docker top is not supported on Windows"
+)
+@pytest.mark.asyncio
+async def test_top(shell_container: DockerContainer) -> None:
+    result = await shell_container.top()
+    assert "Titles" in result
+    assert "Processes" in result
+    assert isinstance(result["Titles"], list)
+    assert isinstance(result["Processes"], list)
+    assert len(result["Processes"]) >= 1
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32", reason="docker top is not supported on Windows"
+)
+@pytest.mark.asyncio
+async def test_top_with_ps_args(shell_container: DockerContainer) -> None:
+    result = await shell_container.top(ps_args="-ef")
+    assert "Titles" in result
+    assert "Processes" in result
+    # `ps -ef` exposes a UID column.
+    assert "UID" in result["Titles"]
+
+
+@pytest.mark.skipif(
     sys.platform == "win32", reason="Commit unpaused containers doesn't work on Windows"
 )
 @pytest.mark.asyncio
