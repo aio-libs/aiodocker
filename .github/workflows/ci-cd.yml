@@ -40,11 +40,13 @@ jobs:
         # so that dynamic version for build work correctly.
         fetch-depth: 0
         filter: 'blob:none'
-    - name: Install uv and Python
-      uses: astral-sh/setup-uv@v8.1.0
+    - name: Set up Python
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
-        activate-environment: true
+    - name: Install uv
+      uses: astral-sh/setup-uv@v8.1.0
+      with:
         enable-cache: true
     - name: Build artifacts
       run: uv build
@@ -65,18 +67,20 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v5
-    - name: Install uv and Python ${{ env.PYTHON_LATEST }}
-      uses: astral-sh/setup-uv@v8.1.0
+    - name: Setup Python ${{ env.PYTHON_LATEST }}
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
-        activate-environment: true
+    - name: Install uv
+      uses: astral-sh/setup-uv@v8.1.0
+      with:
         enable-cache: true
     - name: Install dependencies
-      run: uv pip install -e '.[lint]'
+      run: uv pip install --system -e '.[lint]'
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pre-commit/
-        key: pre-commit-4|${{ env.PYTHON_LATEST }}|${{ hashFiles('.pre-commit-config.yaml') }}
+        key: pre-commit-4|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
     - name: Run linters
       run: |
         make lint
@@ -94,11 +98,13 @@ jobs:
       with:
         name: ${{ env.dists-artifact-name }}
         path: dist
-    - name: Install uv and Python ${{ env.PYTHON_LATEST }}
-      uses: astral-sh/setup-uv@v8.1.0
+    - name: Setup Python ${{ env.PYTHON_LATEST }}
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_LATEST }}
-        activate-environment: true
+    - name: Install uv
+      uses: astral-sh/setup-uv@v8.1.0
+      with:
         enable-cache: true
     - name: Run twine checker
       run: uvx twine check --strict dist/*
@@ -132,11 +138,13 @@ jobs:
         docker version
     - name: Checkout
       uses: actions/checkout@v5
-    - name: Install uv and Python ${{ matrix.python-version }}
-      uses: astral-sh/setup-uv@v8.1.0
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
-        activate-environment: true
+    - name: Install uv
+      uses: astral-sh/setup-uv@v8.1.0
+      with:
         enable-cache: true
     - name: Download all the dists
       uses: actions/download-artifact@v4
@@ -144,9 +152,9 @@ jobs:
         name: ${{ env.dists-artifact-name }}
         path: dist
     - name: Install dependencies
-      run: uv pip install -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}.0'
+      run: uv pip install --system -e '.[test]' 'aiohttp~=${{ matrix.aiohttp-version }}.0'
     - name: Install the build artifact
-      run: uv pip install dist/aiodocker*.whl
+      run: uv pip install --system dist/aiodocker*.whl
     # NOTE: Unfortunately the gain of image caching is too small,
     #       and even it increases the latency of Linux jobs. :(
     # - name: Cache Docker images
