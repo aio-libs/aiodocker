@@ -110,11 +110,12 @@ class DockerImages:
             fromImage: name of the image to pull, optionally including a tag
                        (``name:tag``) or digest (``name@sha256:...``)
             repo: repository name given to an image when it is imported
-            tag: tag or digest to pull. When omitted and ``from_image`` does
-                 not embed a tag or digest, defaults to ``"latest"`` to match
-                 the behavior of the ``docker pull`` CLI. Pass an empty
-                 string explicitly to request the Docker Engine's "pull all
-                 tags" behavior.
+            tag: tag to pull. When omitted and ``from_image`` does not embed
+                 a tag (``name:tag``) or digest (``name@sha256:...``),
+                 defaults to ``"latest"`` to match the behavior of the
+                 ``docker pull`` CLI. Pass an empty string explicitly to
+                 request the Docker Engine's "pull all tags" behavior. To
+                 pull by digest, embed it in ``from_image``.
             platform: platform in the format `os[/arch[/variant]]`
             auth: special {'auth': base64} pull private repo
         """

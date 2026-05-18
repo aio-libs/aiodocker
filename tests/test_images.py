@@ -229,8 +229,10 @@ async def test_pull_image_without_tag_defaults_to_latest(docker: Docker) -> None
     # Docker Engine's "pull all tags" behavior, which fails on architectures
     # where historical tags lack manifests (e.g. arm64).
     try:
-        async for _ in docker.images.pull("hello-world", stream=True):
-            pass
+        items = [item async for item in docker.images.pull("hello-world", stream=True)]
+        assert items, "expected at least one progress event from the pull stream"
+        image = await docker.images.inspect("hello-world:latest")
+        assert image
     finally:
         try:
             await docker.images.delete(name="hello-world:latest", force=True)
