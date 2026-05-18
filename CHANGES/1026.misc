@@ -1,0 +1,1 @@
+Switch the CI workflow to install dependencies and build artifacts with uv instead of pip, which speeds up every job that installs Python packages -- by :user:`bdraco`.
