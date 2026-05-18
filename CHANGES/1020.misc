@@ -1,0 +1,1 @@
+Replace a fixed five second sleep in the container log test helper with a follow stream read, so the helper waits only as long as the daemon takes to flush log output.
