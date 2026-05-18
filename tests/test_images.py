@@ -18,6 +18,7 @@ from testcontainers.core.container import DockerContainer as TempContainer
 from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+from aiodocker.images import _has_embedded_tag_or_digest
 
 
 def skip_windows() -> None:
@@ -203,6 +204,38 @@ async def test_pull_image_stream(docker: Docker, image_name: str) -> None:
 
     async for item in docker.images.pull(image_name, stream=True):
         pass
+
+
+@pytest.mark.parametrize(
+    "image_ref,expected",
+    [
+        ("alpine", False),
+        ("library/alpine", False),
+        ("registry:5000/alpine", False),
+        ("alpine:3.18", True),
+        ("library/alpine:latest", True),
+        ("registry:5000/alpine:3.18", True),
+        ("alpine@sha256:0123456789abcdef", True),
+        ("registry:5000/alpine@sha256:0123456789abcdef", True),
+    ],
+)
+def test_has_embedded_tag_or_digest(image_ref: str, expected: bool) -> None:
+    assert _has_embedded_tag_or_digest(image_ref) is expected
+
+
+@pytest.mark.asyncio
+async def test_pull_image_without_tag_defaults_to_latest(docker: Docker) -> None:
+    # Reproduces #974: bare image names without a tag should not trigger the
+    # Docker Engine's "pull all tags" behavior, which fails on architectures
+    # where historical tags lack manifests (e.g. arm64).
+    try:
+        async for _ in docker.images.pull("hello-world", stream=True):
+            pass
+    finally:
+        try:
+            await docker.images.delete(name="hello-world:latest", force=True)
+        except DockerError:
+            pass
 
 
 @pytest.mark.asyncio
