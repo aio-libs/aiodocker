@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Callable
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from aiohttp import web
@@ -18,6 +19,7 @@ from testcontainers.core.container import DockerContainer as TempContainer
 from aiodocker import utils
 from aiodocker.docker import Docker
 from aiodocker.exceptions import DockerError
+from aiodocker.images import DockerImages, _has_embedded_tag_or_digest
 
 
 def skip_windows() -> None:
@@ -227,6 +229,77 @@ async def test_pull_image_stream(docker: Docker, image_name: str) -> None:
 
     async for item in docker.images.pull(image_name, stream=True):
         pass
+
+
+@pytest.mark.parametrize(
+    "image_ref,expected",
+    [
+        ("alpine", False),
+        ("library/alpine", False),
+        ("registry:5000/alpine", False),
+        ("alpine:3.18", True),
+        ("library/alpine:latest", True),
+        ("registry:5000/alpine:3.18", True),
+        ("alpine@sha256:0123456789abcdef", True),
+        ("registry:5000/alpine@sha256:0123456789abcdef", True),
+    ],
+)
+def test_has_embedded_tag_or_digest(image_ref: str, expected: bool) -> None:
+    assert _has_embedded_tag_or_digest(image_ref) is expected
+
+
+@pytest.mark.parametrize(
+    "from_image,explicit_tag,expected_tag_param",
+    [
+        # Reproduces #974: bare names default to ``latest`` instead of
+        # triggering Docker Engine's "pull all tags" behavior.
+        ("alpine", None, "latest"),
+        ("library/alpine", None, "latest"),
+        ("registry:5000/alpine", None, "latest"),
+        # Embedded tag/digest in ``from_image`` is left untouched.
+        ("alpine:3.18", None, None),
+        ("alpine@sha256:0123456789abcdef", None, None),
+        # Explicit ``tag`` always wins.
+        ("alpine", "3.18", "3.18"),
+        # Empty string is the documented opt-in for "pull all tags".
+        ("alpine", "", None),
+    ],
+)
+@pytest.mark.asyncio
+async def test_pull_sends_expected_tag_param(
+    from_image: str,
+    explicit_tag: str | None,
+    expected_tag_param: str | None,
+) -> None:
+    response = MagicMock()
+    response.content.readline = AsyncMock(return_value=b"")
+    response.close = MagicMock()
+
+    query_cm = MagicMock()
+    query_cm.__aenter__ = AsyncMock(return_value=response)
+    query_cm.__aexit__ = AsyncMock(return_value=None)
+
+    docker = MagicMock()
+    docker._query = MagicMock(return_value=query_cm)
+    docker._resolve_long_running_timeout = MagicMock(return_value=None)
+
+    images = DockerImages(docker)
+
+    if explicit_tag is None:
+        result = await images.pull(from_image)
+    else:
+        result = await images.pull(from_image, tag=explicit_tag)
+
+    assert result == []
+    docker._query.assert_called_once()
+    call = docker._query.call_args
+    assert call.args == ("images/create", "POST")
+    params = call.kwargs["params"]
+    assert params["fromImage"] == from_image
+    if expected_tag_param is None:
+        assert "tag" not in params
+    else:
+        assert params["tag"] == expected_tag_param
 
 
 @pytest.mark.asyncio

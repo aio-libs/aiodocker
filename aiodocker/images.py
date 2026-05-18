@@ -27,6 +27,11 @@ if TYPE_CHECKING:
     from .docker import Docker
 
 
+def _has_embedded_tag_or_digest(image_ref: str) -> bool:
+    last_segment = image_ref.rsplit("/", 1)[-1]
+    return ":" in last_segment or "@" in last_segment
+
+
 class DockerImages:
     def __init__(self, docker: Docker) -> None:
         self.docker = docker
@@ -129,10 +134,15 @@ class DockerImages:
         Similar to `docker pull`, pull an image locally
 
         Args:
-            fromImage: name of the image to pull
+            fromImage: name of the image to pull, optionally including a tag
+                       (``name:tag``) or digest (``name@sha256:...``)
             repo: repository name given to an image when it is imported
-            tag: if empty when pulling an image all tags
-                 for the given image to be pulled
+            tag: tag to pull. When omitted and ``from_image`` does not embed
+                 a tag (``name:tag``) or digest (``name@sha256:...``),
+                 defaults to ``"latest"`` to match the behavior of the
+                 ``docker pull`` CLI. Pass an empty string explicitly to
+                 request the Docker Engine's "pull all tags" behavior. To
+                 pull by digest, embed it in ``from_image``.
             platform: platform in the format `os[/arch[/variant]]`
             auth: special {'auth': base64} pull private repo
         """
@@ -141,6 +151,8 @@ class DockerImages:
         headers = {}
         if repo:
             params["repo"] = repo
+        if tag is None and not _has_embedded_tag_or_digest(image):
+            tag = "latest"
         if tag:
             params["tag"] = tag
         if platform:
