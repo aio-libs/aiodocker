@@ -502,3 +502,13 @@ async def test_prune_containers_nothing_to_remove(docker: Docker) -> None:
     assert "SpaceReclaimed" in result
     assert result["ContainersDeleted"] is None
     assert isinstance(result["SpaceReclaimed"], int)
+
+
+def test_container_contains() -> None:
+    """`in` operator must reflect underlying dict membership."""
+    container = DockerContainer.__new__(DockerContainer)
+    container._container = {"Id": "abc", "State": {"Running": True}}
+
+    assert "Id" in container
+    assert "State" in container
+    assert "Missing" not in container
