@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from io import BytesIO
 from pathlib import Path
 from typing import Callable
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from aiohttp import web
@@ -223,46 +224,6 @@ def test_has_embedded_tag_or_digest(image_ref: str, expected: bool) -> None:
     assert _has_embedded_tag_or_digest(image_ref) is expected
 
 
-class _FakeStreamContent:
-    async def readline(self) -> bytes:
-        return b""
-
-
-class _FakeResponse:
-    content = _FakeStreamContent()
-
-    def close(self) -> None:
-        pass
-
-
-class _FakeDocker:
-    """Minimal stand-in for ``Docker`` that records ``_query`` arguments."""
-
-    def __init__(self) -> None:
-        self.captured: dict[str, object] = {}
-
-    def _resolve_long_running_timeout(self, timeout: object) -> None:
-        return None
-
-    @asynccontextmanager
-    async def _query(
-        self,
-        path: str,
-        method: str = "GET",
-        *,
-        params: dict[str, str] | None = None,
-        headers: dict[str, str] | None = None,
-        **_: object,
-    ) -> AsyncIterator[_FakeResponse]:
-        self.captured = {
-            "path": path,
-            "method": method,
-            "params": dict(params or {}),
-            "headers": dict(headers or {}),
-        }
-        yield _FakeResponse()
-
-
 @pytest.mark.parametrize(
     "from_image,explicit_tag,expected_tag_param",
     [
@@ -286,8 +247,19 @@ async def test_pull_sends_expected_tag_param(
     explicit_tag: str | None,
     expected_tag_param: str | None,
 ) -> None:
-    fake = _FakeDocker()
-    images = DockerImages(fake)  # type: ignore[arg-type]
+    response = MagicMock()
+    response.content.readline = AsyncMock(return_value=b"")
+    response.close = MagicMock()
+
+    query_cm = MagicMock()
+    query_cm.__aenter__ = AsyncMock(return_value=response)
+    query_cm.__aexit__ = AsyncMock(return_value=None)
+
+    docker = MagicMock()
+    docker._query = MagicMock(return_value=query_cm)
+    docker._resolve_long_running_timeout = MagicMock(return_value=None)
+
+    images = DockerImages(docker)
 
     if explicit_tag is None:
         result = await images.pull(from_image)
@@ -295,10 +267,10 @@ async def test_pull_sends_expected_tag_param(
         result = await images.pull(from_image, tag=explicit_tag)
 
     assert result == []
-    assert fake.captured["path"] == "images/create"
-    assert fake.captured["method"] == "POST"
-    params = fake.captured["params"]
-    assert isinstance(params, dict)
+    docker._query.assert_called_once()
+    call = docker._query.call_args
+    assert call.args == ("images/create", "POST")
+    params = call.kwargs["params"]
     assert params["fromImage"] == from_image
     if expected_tag_param is None:
         assert "tag" not in params
