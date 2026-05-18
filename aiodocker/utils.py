@@ -242,14 +242,15 @@ def clean_filters(filters: Optional[Mapping[str, Any] | Sequence[str]] = None) -
     """
     if filters is None:
         return "{}"
-    if isinstance(filters, dict):
+    if isinstance(filters, Mapping):
+        normalized: dict[str, list[Any]] = {}
         for k, v in filters.items():
             if not isinstance(v, list):
                 v = [v]
-            filters[k] = v
+            normalized[k] = v
     else:
         raise TypeError("filters must be a mapping")
-    return json.dumps(filters)
+    return json.dumps(normalized)
 
 
 def mktar_from_dockerfile(fileobj: Union[BytesIO, IO[bytes]]) -> IO[bytes]:
