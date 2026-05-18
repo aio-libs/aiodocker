@@ -282,7 +282,9 @@ async def test_attach_nontty_wait_for_exit(
     )
 
     async with container.attach(stdin=False, stdout=True, stderr=True):
-        await asyncio.sleep(10)
+        # Wait for the container to actually exit instead of sleeping for a
+        # fixed worst-case duration.
+        await container.wait()
 
 
 @pytest.mark.asyncio
