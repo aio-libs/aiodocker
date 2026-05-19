@@ -32,13 +32,7 @@ class SupportsRead(Protocol[_T_co]):
 # When returning values, we need extra type-narrowing for individual fields,
 # so it is better to define per-API typed DTOs.
 JSONValue: TypeAlias = (
-    str
-    | int
-    | float
-    | bool
-    | None
-    | Mapping[str, "JSONValue"]
-    | Sequence["JSONValue"]
+    str | int | float | bool | None | Mapping[str, "JSONValue"] | Sequence["JSONValue"]
 )
 
 JSONObject: TypeAlias = Mapping[str, JSONValue]

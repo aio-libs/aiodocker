@@ -349,9 +349,7 @@ class Docker:
         data = await self._query_json("version")
         return data
 
-    def _canonicalize_url(
-        self, path: str | URL, *, versioned_api: bool = True
-    ) -> URL:
+    def _canonicalize_url(self, path: str | URL, *, versioned_api: bool = True) -> URL:
         if isinstance(path, URL):
             assert not path.is_absolute()
         if versioned_api:
