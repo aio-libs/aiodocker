@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any
 
 from .utils import clean_filters
 
@@ -42,8 +43,8 @@ class DockerVolumes:
     async def prune(
         self,
         *,
-        filters: Optional[Mapping[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        filters: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Delete unused volumes
 

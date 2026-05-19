@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from .utils import clean_filters
 
@@ -12,8 +13,8 @@ class DockerSwarmNodes:
     async def list(
         self,
         *,
-        filters: Optional[Mapping[str, str | Sequence[str]]] = None,
-    ) -> List[Mapping]:
+        filters: Mapping[str, str | Sequence[str]] | None = None,
+    ) -> list[Mapping]:
         """
         Return a list of swarm's nodes.
 

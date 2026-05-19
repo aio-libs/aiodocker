@@ -4,10 +4,7 @@ import json
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Literal,
-    Optional,
-    Tuple,
     overload,
 )
 
@@ -32,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class Exec:
-    def __init__(self, docker: "Docker", id: str, tty: Optional[bool] = None) -> None:
+    def __init__(self, docker: "Docker", id: str, tty: bool | None = None) -> None:
         self.docker = docker
         self._id = id
         self._tty = tty
@@ -41,14 +38,14 @@ class Exec:
     def id(self) -> str:
         return self._id
 
-    async def inspect(self) -> Dict[str, Any]:
+    async def inspect(self) -> dict[str, Any]:
         ret = await self.docker._query_json(f"exec/{self._id}/json")
         assert isinstance(ret["ProcessConfig"], dict)
         self._tty = bool(ret["ProcessConfig"]["tty"])
         return ret
 
-    async def resize(self, *, h: Optional[int] = None, w: Optional[int] = None) -> None:
-        dct: Dict[str, int] = {}
+    async def resize(self, *, h: int | None = None, w: int | None = None) -> None:
+        dct: dict[str, int] = {}
         if h is not None:
             dct["h"] = h
         if w is not None:
@@ -111,7 +108,7 @@ class Exec:
             )
         else:
 
-            async def setup() -> Tuple[URL, bytes, bool]:
+            async def setup() -> tuple[URL, bytes, bool]:
                 if self._tty is None:
                     await self.inspect()  # should restore tty
                 assert self._tty is not None
