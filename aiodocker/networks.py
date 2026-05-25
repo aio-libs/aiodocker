@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from .utils import clean_filters
 
@@ -13,8 +14,8 @@ class DockerNetworks:
     async def list(
         self,
         *,
-        filters: Optional[Mapping[str, str | Sequence[str]]] = None,
-    ) -> List[Dict[str, Any]]:
+        filters: Mapping[str, str | Sequence[str]] | None = None,
+    ) -> list[dict[str, Any]]:
         """
         Return a list of networks
 
@@ -35,7 +36,7 @@ class DockerNetworks:
         data = await self.docker._query_json("networks", params=params)
         return data
 
-    async def create(self, config: Dict[str, Any]) -> DockerNetwork:
+    async def create(self, config: dict[str, Any]) -> DockerNetwork:
         bconfig = json.dumps(config, sort_keys=True).encode("utf-8")
         data = await self.docker._query_json(
             "networks/create", method="POST", data=bconfig
@@ -49,8 +50,8 @@ class DockerNetworks:
     async def prune(
         self,
         *,
-        filters: Optional[Mapping[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        filters: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Delete unused networks
 
@@ -78,7 +79,7 @@ class DockerNetwork:
         self.docker = docker
         self.id = id_
 
-    async def show(self) -> Dict[str, Any]:
+    async def show(self) -> dict[str, Any]:
         data = await self.docker._query_json(f"networks/{self.id}")
         return data
 
@@ -86,13 +87,13 @@ class DockerNetwork:
         async with self.docker._query(f"networks/{self.id}", method="DELETE") as resp:
             return resp.status == 204
 
-    async def connect(self, config: Dict[str, Any]) -> None:
+    async def connect(self, config: dict[str, Any]) -> None:
         bconfig = json.dumps(config, sort_keys=True).encode("utf-8")
         await self.docker._query_json(
             f"networks/{self.id}/connect", method="POST", data=bconfig
         )
 
-    async def disconnect(self, config: Dict[str, Any]) -> None:
+    async def disconnect(self, config: dict[str, Any]) -> None:
         bconfig = json.dumps(config, sort_keys=True).encode("utf-8")
         await self.docker._query_json(
             f"networks/{self.id}/disconnect",

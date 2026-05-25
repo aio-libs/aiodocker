@@ -14,7 +14,6 @@ from typing import (
     TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
 )
 
 
@@ -32,28 +31,23 @@ class SupportsRead(Protocol[_T_co]):
 # NOTE: Currently these types are used to annotate arguments only.
 # When returning values, we need extra type-narrowing for individual fields,
 # so it is better to define per-API typed DTOs.
-JSONValue: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    None,
-    Mapping[str, "JSONValue"],
-    Sequence["JSONValue"],
-]
+JSONValue: TypeAlias = (
+    str | int | float | bool | None | Mapping[str, "JSONValue"] | Sequence["JSONValue"]
+)
+
 JSONObject: TypeAlias = Mapping[str, JSONValue]
 JSONList: TypeAlias = Sequence[JSONValue]
 
 
-MutableJSONValue: TypeAlias = Union[
-    str,
-    int,
-    float,
-    bool,
-    None,
-    MutableMapping[str, "JSONValue"],
-    MutableSequence["JSONValue"],
-]
+MutableJSONValue: TypeAlias = (
+    str
+    | int
+    | float
+    | bool
+    | None
+    | MutableMapping[str, "JSONValue"]
+    | MutableSequence["JSONValue"]
+)
 MutableJSONObject: TypeAlias = MutableMapping[str, MutableJSONValue]
 MutableJSONList: TypeAlias = MutableSequence[MutableJSONValue]
 

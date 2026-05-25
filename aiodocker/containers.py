@@ -3,19 +3,12 @@ from __future__ import annotations
 import json
 import shlex
 import tarfile
+from collections.abc import AsyncIterator, Mapping, Sequence
 from contextlib import AbstractAsyncContextManager
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Dict,
-    List,
     Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
     overload,
 )
 
@@ -41,7 +34,7 @@ class DockerContainers:
     def __init__(self, docker: Docker) -> None:
         self.docker = docker
 
-    async def list(self, **kwargs) -> List[DockerContainer]:
+    async def list(self, **kwargs) -> list[DockerContainer]:
         data = await self.docker._query_json(
             "containers/json", method="GET", params=kwargs
         )
@@ -74,7 +67,7 @@ class DockerContainers:
         self,
         config: JSONObject,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> DockerContainer:
         url = "containers/create"
         encoded_config = json.dumps(config, sort_keys=True).encode("utf-8")
@@ -90,8 +83,8 @@ class DockerContainers:
         self,
         config: JSONObject,
         *,
-        auth: Optional[Union[Mapping, str, bytes]] = None,
-        name: Optional[str] = None,
+        auth: Mapping | str | bytes | None = None,
+        name: str | None = None,
     ) -> DockerContainer:
         """
         Create and start a container.
@@ -139,8 +132,8 @@ class DockerContainers:
     async def prune(
         self,
         *,
-        filters: Optional[Mapping[str, Any]] = None,
-    ) -> Dict[str, Any]:
+        filters: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """
         Delete stopped containers
 
@@ -164,7 +157,7 @@ class DockerContainers:
 
 
 class DockerContainer:
-    _container: Dict[str, Any]
+    _container: dict[str, Any]
     _id: str
 
     def __init__(self, docker: Docker, **kwargs) -> None:
@@ -193,7 +186,7 @@ class DockerContainer:
         follow: Literal[False] = False,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
         **kwargs,
-    ) -> List[str]: ...
+    ) -> list[str]: ...
 
     @overload
     def log(
@@ -281,7 +274,7 @@ class DockerContainer:
             data = await parse_result(response)
             return data
 
-    async def show(self, **kwargs) -> Dict[str, Any]:
+    async def show(self, **kwargs) -> dict[str, Any]:
         data = await self.docker._query_json(
             f"containers/{self._id}/json", method="GET", params=kwargs
         )
@@ -308,7 +301,7 @@ class DockerContainer:
                 This controls how long to wait for the Docker daemon to respond,
                 not the container stop duration.
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if t is not None:
             params["t"] = t
         if signal is not None:
@@ -379,7 +372,7 @@ class DockerContainer:
                 If None, uses the default SIGKILL signal.
             timeout: HTTP request timeout for the kill operation.
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if signal is not None:
             params["signal"] = signal
 
@@ -399,7 +392,7 @@ class DockerContainer:
         *,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         # Default to infinite timeout for wait operations
         timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
@@ -428,7 +421,7 @@ class DockerContainer:
             link: If True, remove the specified link (legacy networking feature).
             timeout: HTTP request timeout for the delete operation.
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if force:
             params["force"] = force
         if v:
@@ -469,12 +462,12 @@ class DockerContainer:
         stdout: bool = False,
         stderr: bool = False,
         stdin: bool = False,
-        detach_keys: Optional[str] = None,
+        detach_keys: str | None = None,
         logs: bool = False,
         timeout: ClientTimeout | Sentinel | None = SENTINEL,
     ) -> Stream:
-        async def setup() -> Tuple[URL, Optional[bytes], bool]:
-            params: MultiDict[Union[str, int]] = MultiDict()
+        async def setup() -> tuple[URL, bytes | None, bool]:
+            params: MultiDict[str | int] = MultiDict()
             if detach_keys:
                 params.add("detachKeys", detach_keys)
             else:
@@ -496,7 +489,7 @@ class DockerContainer:
 
         return Stream(self.docker, setup, timeout_config)
 
-    async def port(self, private_port: int | str) -> List[PortInfo] | None:
+    async def port(self, private_port: int | str) -> list[PortInfo] | None:
         if "NetworkSettings" not in self._container:
             await self.show()
 
@@ -524,7 +517,7 @@ class DockerContainer:
         *,
         stream: Literal[True] = True,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
-    ) -> AsyncIterator[Dict[str, Any]]: ...
+    ) -> AsyncIterator[dict[str, Any]]: ...
 
     @overload
     async def stats(
@@ -532,7 +525,7 @@ class DockerContainer:
         *,
         stream: Literal[False],
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
-    ) -> List[Dict[str, Any]]: ...
+    ) -> list[dict[str, Any]]: ...
 
     def stats(
         self,
@@ -564,16 +557,16 @@ class DockerContainer:
 
     async def exec(
         self,
-        cmd: Union[str, Sequence[str]],
+        cmd: str | Sequence[str],
         stdout: bool = True,
         stderr: bool = True,
         stdin: bool = False,
         tty: bool = False,
         privileged: bool = False,
         user: str = "",  # root by default
-        environment: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
-        workdir: Optional[str] = None,
-        detach_keys: Optional[str] = None,
+        environment: Mapping[str, str] | Sequence[str] | None = None,
+        workdir: str | None = None,
+        detach_keys: str | None = None,
     ) -> Exec:
         if isinstance(cmd, str):
             cmd = shlex.split(cmd)
@@ -621,15 +614,15 @@ class DockerContainer:
     async def commit(
         self,
         *,
-        repository: Optional[str] = None,
-        tag: Optional[str] = None,
-        message: Optional[str] = None,
-        author: Optional[str] = None,
-        changes: Optional[Union[str, Sequence[str]]] = None,
-        config: Optional[Dict[str, Any]] = None,
+        repository: str | None = None,
+        tag: str | None = None,
+        message: str | None = None,
+        author: str | None = None,
+        changes: str | Sequence[str] | None = None,
+        config: dict[str, Any] | None = None,
         pause: bool = True,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Commit a container to an image. Similar to the ``docker commit``
         command.
@@ -655,7 +648,7 @@ class DockerContainer:
             "commit", method="POST", params=params, data=config, timeout=timeout_config
         )
 
-    async def top(self, *, ps_args: Optional[str] = None) -> Dict[str, Any]:
+    async def top(self, *, ps_args: str | None = None) -> dict[str, Any]:
         """List processes running inside the container.
 
         Args:
@@ -666,7 +659,7 @@ class DockerContainer:
             Dict with ``Titles`` (column names) and ``Processes``
             (list of rows) keys, as returned by the Docker API.
         """
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if ps_args is not None:
             params["ps_args"] = ps_args
         return await self.docker._query_json(

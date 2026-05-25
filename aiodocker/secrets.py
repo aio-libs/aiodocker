@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 from base64 import b64encode
-from typing import Any, List, Mapping, Optional, Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 from .utils import clean_filters, clean_map
 
@@ -14,8 +15,8 @@ class DockerSecrets:
     async def list(
         self,
         *,
-        filters: Optional[Mapping[str, str | Sequence[str]]] = None,
-    ) -> List[Mapping]:
+        filters: Mapping[str, str | Sequence[str]] | None = None,
+    ) -> list[Mapping]:
         """
         Return a list of secrets
 
@@ -39,9 +40,9 @@ class DockerSecrets:
         data: str,
         *,
         b64: bool = False,
-        labels: Optional[Mapping[str, str]] = None,
-        driver: Optional[Mapping] = None,
-        templating: Optional[Mapping] = None,
+        labels: Mapping[str, str] | None = None,
+        driver: Mapping | None = None,
+        templating: Mapping | None = None,
     ) -> Mapping[str, Any]:
         """
         Create a secret
@@ -110,12 +111,12 @@ class DockerSecrets:
         secret_id: str,
         version: str,
         *,
-        name: Optional[str] = None,
-        data: Optional[str] = None,
+        name: str | None = None,
+        data: str | None = None,
         b64: bool = False,
-        labels: Optional[Mapping[str, str]] = None,
-        driver: Optional[Mapping] = None,
-        templating: Optional[Mapping] = None,
+        labels: Mapping[str, str] | None = None,
+        driver: Mapping | None = None,
+        templating: Mapping | None = None,
     ) -> bool:
         """
         Update a secret.

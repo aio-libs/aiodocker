@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections import ChainMap
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 
@@ -20,7 +20,7 @@ class DockerLog:
         self.docker = docker
         self.channel = Channel()
         self.container = container
-        self.response: Optional[aiohttp.ClientResponse] = None
+        self.response: aiohttp.ClientResponse | None = None
 
     def listen(self) -> ChannelSubscriber:
         warnings.warn(

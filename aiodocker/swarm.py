@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, Mapping, Optional
+from collections.abc import Iterable, Mapping
 
 from .utils import clean_map
 
@@ -12,13 +12,13 @@ class DockerSwarm:
     async def init(
         self,
         *,
-        advertise_addr: Optional[str] = None,
-        data_path_port: Optional[int] = None,
-        default_addr_pool: Optional[list] = None,
+        advertise_addr: str | None = None,
+        data_path_port: int | None = None,
+        default_addr_pool: list | None = None,
         listen_addr: str = "0.0.0.0:2377",
         force_new_cluster: bool = False,
         subnet_size: int = 24,
-        swarm_spec: Optional[Mapping] = None,
+        swarm_spec: Mapping | None = None,
     ) -> str:
         """
         Initialize a new swarm.
@@ -68,8 +68,8 @@ class DockerSwarm:
         remote_addrs: Iterable[str],
         listen_addr: str = "0.0.0.0:2377",
         join_token: str,
-        advertise_addr: Optional[str] = None,
-        data_path_addr: Optional[str] = None,
+        advertise_addr: str | None = None,
+        data_path_addr: str | None = None,
     ) -> bool:
         """
         Join a swarm.
