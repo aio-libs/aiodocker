@@ -548,12 +548,12 @@ class DockerContainer:
 
     async def _stats_stream(self, cm):
         async with cm as response:
-            async for item in json_stream_stream(response):
+            async for item in json_stream_stream(response, raise_on_error=False):
                 yield item
 
     async def _stats_list(self, cm):
         async with cm as response:
-            return await json_stream_list(response)
+            return await json_stream_list(response, raise_on_error=False)
 
     async def exec(
         self,

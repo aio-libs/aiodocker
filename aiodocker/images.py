@@ -141,6 +141,11 @@ class DockerImages:
                  pull by digest, embed it in ``from_image``.
             platform: platform in the format `os[/arch[/variant]]`
             auth: special {'auth': base64} pull private repo
+
+        Raises:
+            DockerStreamError: If the Docker Engine reports an error in
+                the progress stream (e.g. the registry rejected the pull
+                with ``403 Forbidden``). Subclass of ``DockerError``.
         """
         image = from_image  # TODO: clean up
         params = {"fromImage": image}
@@ -220,6 +225,14 @@ class DockerImages:
         stream: bool = False,
         timeout: float | Sentinel | None = SENTINEL,
     ) -> Any:
+        """
+        Similar to ``docker push``, push an image to a registry.
+
+        Raises:
+            DockerStreamError: If the Docker Engine reports an error in
+                the progress stream (e.g. the registry rejected the push
+                with ``403 Forbidden``). Subclass of ``DockerError``.
+        """
         params = {}
         headers = {
             # Anonymous push requires a dummy auth header.
@@ -452,6 +465,11 @@ class DockerImages:
             platform: platform in the format `os[/arch[/variant]]`
             fileobj: a tar archive compressed or not
             timeout: timeout for the build operation (infinite by default)
+
+        Raises:
+            DockerStreamError: If the Docker Engine reports an error in
+                the build progress stream (e.g. a failing build step).
+                Subclass of ``DockerError``.
         """
         headers = {}
 
@@ -543,6 +561,10 @@ class DockerImages:
 
         Returns:
             Tarball of the image
+
+        Raises:
+            DockerStreamError: If the Docker Engine reports an error in
+                the import progress stream. Subclass of ``DockerError``.
         """
         headers = {"Content-Type": "application/x-tar"}
 
