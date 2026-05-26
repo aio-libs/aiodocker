@@ -11,6 +11,7 @@ import aiohttp
 import attrs
 from yarl import URL
 
+from ._flow_control_queue import FlowControlDataQueue
 from .exceptions import DockerError
 
 
@@ -37,7 +38,7 @@ class Stream:
         self._resp = None
         self._closed = False
         self._timeout = timeout
-        self._queue: aiohttp.FlowControlDataQueue[Message] | None = None
+        self._queue: FlowControlDataQueue[Message] | None = None
 
     async def _init(self) -> None:
         if self._resp is not None:
@@ -84,7 +85,6 @@ class Stream:
                     msg = msg + f" Body: [{body!r}]"
             raise DockerError(500, msg)
         protocol = conn.protocol
-        loop = resp._loop
         assert protocol is not None
         assert protocol.transport is not None
         sock = protocol.transport.get_extra_info("socket")
@@ -93,8 +93,8 @@ class Stream:
             # the socket can be closed in the case of error
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
 
-        queue: aiohttp.FlowControlDataQueue[Message] = aiohttp.FlowControlDataQueue(
-            protocol, limit=2**16, loop=loop
+        queue: FlowControlDataQueue[Message] = FlowControlDataQueue(
+            protocol, limit=2**16
         )
         protocol.set_parser(_ExecParser(queue, tty=tty), queue)
         protocol.force_close()

@@ -22,7 +22,10 @@ classifiers = [
     "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
-    "aiohttp>=3.10",
+    # Upper bound on aiohttp is interim: the vendored FlowControlDataQueue
+    # still subclasses aiohttp.DataQueue, whose private surface may change in
+    # aiohttp 4.0. Tracked in https://github.com/aio-libs/aiodocker/issues/919.
+    "aiohttp>=3.10,<4.0",
 ]
 
 [project.optional-dependencies]
