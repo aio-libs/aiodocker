@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, Optional
 
 
 class DockerError(Exception):
@@ -48,6 +48,47 @@ class DockerContainerError(DockerError):
 
     def __str__(self) -> str:
         return f"[{self.status}] {self.message} (container: {self.container_id})"
+
+
+class DockerStreamError(DockerError):
+    """Raised when a Docker JSON progress stream reports an error mid-stream.
+
+    The HTTP request itself succeeded (typically with status 200), but one
+    of the streamed JSON chunks contained an ``error`` or ``errorDetail``
+    payload. This is the standard way the Docker Engine surfaces failures
+    from long-running endpoints such as ``images/{name}/push``,
+    ``images/create`` (pull), ``build``, and ``images/load`` (import) —
+    including upstream registry rejections like ``403 Forbidden``.
+
+    Inherits from :class:`DockerError` so existing ``except DockerError``
+    blocks continue to catch these errors.
+
+    Attributes:
+        status: Always 0 for stream-embedded errors (the HTTP response
+            itself was successful, so no HTTP status meaningfully
+            describes the failure).
+        message: Human-readable error message extracted from the stream
+            chunk (from ``errorDetail.message`` if present, otherwise from
+            the top-level ``error`` field).
+        error_detail: The raw ``errorDetail`` mapping from the chunk,
+            which may include additional fields such as ``code``.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_detail: Optional[Dict[str, Any]] = None,
+        status: int = 0,
+    ) -> None:
+        super().__init__(status, message)
+        self.error_detail = error_detail or {}
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"{self.message!r}, error_detail={self.error_detail!r})"
+        )
 
 
 class DockerContextError(DockerError):

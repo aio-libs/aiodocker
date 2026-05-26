@@ -3,8 +3,9 @@ from __future__ import annotations
 import socket
 import struct
 import warnings
+from collections.abc import Awaitable, Callable
 from types import TracebackType
-from typing import TYPE_CHECKING, Awaitable, Callable, NamedTuple, Optional, Tuple, Type
+from typing import TYPE_CHECKING, NamedTuple
 
 import aiohttp
 import attrs
@@ -29,15 +30,15 @@ class Stream:
     def __init__(
         self,
         docker: "Docker",
-        setup: Callable[[], Awaitable[Tuple[URL, Optional[bytes], bool]]],
-        timeout: Optional[aiohttp.ClientTimeout] = None,
+        setup: Callable[[], Awaitable[tuple[URL, bytes | None, bool]]],
+        timeout: aiohttp.ClientTimeout | None = None,
     ) -> None:
         self._setup = setup
         self.docker = docker
         self._resp = None
         self._closed = False
         self._timeout = timeout
-        self._queue: Optional[FlowControlDataQueue[Message]] = None
+        self._queue: FlowControlDataQueue[Message] | None = None
 
     async def _init(self) -> None:
         if self._resp is not None:
@@ -99,7 +100,7 @@ class Stream:
         protocol.force_close()
         self._queue = queue
 
-    async def read_out(self) -> Optional[Message]:
+    async def read_out(self) -> Message | None:
         """Read from stdout or stderr."""
         await self._init()
         try:
@@ -141,10 +142,10 @@ class Stream:
 
     async def __aexit__(
         self,
-        exc_typ: Type[BaseException],
+        exc_typ: type[BaseException],
         exc_val: BaseException,
         exc_tb: TracebackType,
-    ) -> Optional[bool]:
+    ) -> bool | None:
         await self.close()
         return None
 
@@ -168,7 +169,7 @@ class _ExecParser:
     def feed_eof(self) -> None:
         self.queue.feed_eof()
 
-    def feed_data(self, data: bytes) -> Tuple[bool, bytes]:
+    def feed_data(self, data: bytes) -> tuple[bool, bytes]:
         if self.tty:
             msg = Message(1, data)  # stdout
             self.queue.feed_data(msg, len(data))

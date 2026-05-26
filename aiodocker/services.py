@@ -1,16 +1,8 @@
 from __future__ import annotations
 
 import json
-from typing import (
-    Any,
-    AsyncIterator,
-    List,
-    Mapping,
-    MutableMapping,
-    Optional,
-    Sequence,
-    Union,
-)
+from collections.abc import AsyncIterator, Mapping, MutableMapping, Sequence
+from typing import Any, List
 
 from .multiplexed import multiplexed_result_list, multiplexed_result_stream
 from .utils import (
@@ -29,8 +21,8 @@ class DockerServices:
     async def list(
         self,
         *,
-        filters: Optional[Mapping[str, str | Sequence[str]]] = None,
-    ) -> List[Mapping]:
+        filters: Mapping[str, str | Sequence[str]] | None = None,
+    ) -> list[Mapping]:
         """
         Return a list of services
 
@@ -55,15 +47,15 @@ class DockerServices:
         self,
         task_template: Mapping[str, Any],
         *,
-        name: Optional[str] = None,
-        labels: Optional[Mapping[str, str]] = None,
-        mode: Optional[Mapping] = None,
-        update_config: Optional[Mapping] = None,
-        rollback_config: Optional[Mapping] = None,
-        networks: Optional[List] = None,
-        endpoint_spec: Optional[Mapping] = None,
-        auth: Optional[Union[MutableMapping, str, bytes]] = None,
-        registry: Optional[str] = None,
+        name: str | None = None,
+        labels: Mapping[str, str] | None = None,
+        mode: Mapping | None = None,
+        update_config: Mapping | None = None,
+        rollback_config: Mapping | None = None,
+        networks: List[Any] | None = None,
+        endpoint_spec: Mapping | None = None,
+        auth: MutableMapping | str | bytes | None = None,
+        registry: str | None = None,
     ) -> Mapping[str, Any]:
         """
         Create a service
@@ -127,7 +119,7 @@ class DockerServices:
         service_id: str,
         version: str,
         *,
-        image: Optional[str] = None,
+        image: str | None = None,
         rollback: bool = False,
     ) -> bool:
         """
@@ -205,7 +197,7 @@ class DockerServices:
         timestamps: bool = False,
         is_tty: bool = False,
         tail: str = "all",
-    ) -> Union[str, AsyncIterator[str]]:
+    ) -> str | AsyncIterator[str]:
         """
         Retrieve logs of the given service
 

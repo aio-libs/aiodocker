@@ -7,6 +7,7 @@ from .exceptions import (
     DockerContextInvalidError,
     DockerContextTLSError,
     DockerError,
+    DockerStreamError,
 )
 
 
@@ -24,4 +25,5 @@ __all__ = (
     "DockerContextInvalidError",
     "DockerContextTLSError",
     "DockerError",
+    "DockerStreamError",
 )

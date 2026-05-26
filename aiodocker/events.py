@@ -61,7 +61,9 @@ class DockerEvents:
             async with self.docker._query(
                 "events", method="GET", params=merged_params, timeout=timeout_config
             ) as response:
-                self.json_stream = json_stream_stream(response, self._transform_event)
+                self.json_stream = json_stream_stream(
+                    response, self._transform_event, raise_on_error=False
+                )
                 try:
                     async for data in self.json_stream:
                         await self.channel.publish(data)
