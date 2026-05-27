@@ -37,14 +37,30 @@ Installation
 Development
 ===========
 
-Create a virtualenv (either using ``python -m venv``, ``pyenv`` or your
-favorite tools) and install in the editable mode with ``ci`` and ``dev`` optional
-dependency sets.
+The recommended developer setup uses `uv <https://docs.astral.sh/uv/>`_, which
+manages the virtualenv and resolves dependencies from the committed
+``uv.lock`` so every contributor and CI job builds against the same versions.
 
 .. code-block:: sh
 
+   # Install uv first: https://docs.astral.sh/uv/getting-started/installation/
+   uv sync --extra dev --extra lint --extra test --extra doc
+   uv run pre-commit install
+
+The ``Makefile`` helpers (``make develop``, ``make install``, ``make lint``,
+``make test``) all assume uv.
+
+Using pip instead (fallback)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you can't install uv, you can still bootstrap with pip. The resulting
+environment isn't pinned to ``uv.lock``, so versions may drift from CI.
+
+.. code-block:: sh
+
+   python -m venv .venv && source .venv/bin/activate
    pip install -U pip
-   pip install -e '.[ci,dev]'  # in zsh, you need to escape brackets
+   pip install -e '.[dev,lint,test,doc]'  # in zsh, you need to escape brackets
    pre-commit install
 
 Running tests
@@ -56,7 +72,7 @@ Running tests
    make test
 
    # Run individual tests
-   python -m pytest tests/test_images.py
+   uv run pytest tests/test_images.py
 
 
 Building packages
@@ -66,8 +82,7 @@ NOTE: Usually you don't need to run this step by yourself.
 
 .. code-block:: sh
 
-   pip install -U build
-   python -m build --sdist --wheel
+   uv build
 
 
 Documentation

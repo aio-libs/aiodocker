@@ -2,20 +2,19 @@
 
 lint:
 ifdef CI
-	pre-commit run --all-files --show-diff-on-failure
+	uv run pre-commit run --all-files --show-diff-on-failure
 else
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 endif
-	mypy
+	uv run mypy
 
 
 develop:
-	@pip install -e .[dev]
+	@uv sync --extra dev --extra lint --extra test --extra doc
 
 install:
-	@pip install -U pip
-	@pip install -e .[dev]
-	pre-commit install
+	@uv sync --extra dev --extra lint --extra test --extra doc
+	uv run pre-commit install
 
 create-tar:
 	@tar -cvf tests/docker/docker_context.tar -C tests/docker/tar/ .
