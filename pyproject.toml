@@ -22,10 +22,13 @@ classifiers = [
     "Programming Language :: Python :: 3.13"
 ]
 dependencies = [
+    # Lower bound: aiohttp 3.11.13 backported the fix for `break` in a `finally`
+    # block in web_protocol.py (aio-libs/aiohttp#10434), which Python 3.14 turns
+    # into a SyntaxWarning under PEP 765. Older aiohttp versions are EOL.
     # Upper bound on aiohttp is interim: the vendored FlowControlDataQueue
     # still subclasses aiohttp.DataQueue, whose private surface may change in
     # aiohttp 4.0. Tracked in https://github.com/aio-libs/aiodocker/issues/919.
-    "aiohttp>=3.10,<4.0",
+    "aiohttp>=3.11.13,<4.0",
 ]
 
 [project.optional-dependencies]
