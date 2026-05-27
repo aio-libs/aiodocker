@@ -150,7 +150,7 @@ class Stream:
         return None
 
     def __del__(self, _warnings=warnings) -> None:
-        if self._resp is not None:
+        if self._resp is None:
             return
         if not self._closed:
             warnings.warn("Unclosed ExecStream", ResourceWarning)
