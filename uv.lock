@@ -50,7 +50,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiohttp", specifier = ">=3.10,<4.0" },
+    { name = "aiohttp", specifier = ">=3.11.13,<4.0" },
     { name = "aiohttp", marker = "extra == 'dev'", specifier = "==3.13.5" },
     { name = "alabaster", marker = "extra == 'doc'", specifier = "==1.0.0" },
     { name = "async-timeout", marker = "extra == 'test'", specifier = "~=5.0.1" },
