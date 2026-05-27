@@ -99,10 +99,8 @@ class DockerSwarm:
             "DataPathAddr": data_path_addr,
         }
 
-        async with self.docker._query(
-            "swarm/join", method="POST", data=clean_map(data)
-        ):
-            return True
+        await self.docker._query_json("swarm/join", method="POST", data=clean_map(data))
+        return True
 
     async def leave(self, *, force: bool = False) -> bool:
         """
