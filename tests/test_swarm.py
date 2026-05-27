@@ -18,8 +18,13 @@ async def test_swarm_failing_joining(swarm):
     system_info = await swarm.system.info()
     swarm_addr = [system_info["Swarm"]["RemoteManagers"][-1]["Addr"]]
     token = swarm_info["JoinTokens"]["Worker"]
-    with pytest.raises(DockerError):
+    with pytest.raises(DockerError) as exc_info:
         await swarm.swarm.join(join_token=token, remote_addrs=swarm_addr)
+    # Daemon must reject because the node is already part of a swarm (503).
+    # If the request body is not JSON-encoded the daemon returns a 400 JSON
+    # decode error instead, which is the regression we want to catch (#288).
+    assert exc_info.value.status == 503
+    assert "already part of a swarm" in exc_info.value.message
 
 
 @pytest.mark.asyncio
