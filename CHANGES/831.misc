@@ -1,1 +1,0 @@
-Document ``docker.containers.list(all=True)`` for listing stopped containers, and note that any keyword argument is forwarded as a query parameter to the Docker Engine ``GET /containers/json`` endpoint -- by :user:`achimnol`.

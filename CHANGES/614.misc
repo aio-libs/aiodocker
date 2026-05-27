@@ -1,1 +1,0 @@
-Document how to bind-mount a host directory via ``HostConfig.Binds`` and ``HostConfig.Mounts``, including bind-propagation options (``shared``, ``slave``, etc.) and the host-side ``mount --make-shared`` prerequisite -- by :user:`achimnol`.

@@ -12,6 +12,48 @@ Changes
 
 .. towncrier release notes start
 
+0.27.0 (2026-05-27)
+===================
+
+Breaking Changes
+----------------
+
+- ``images.push()``, ``images.pull()``, ``images.build()``, and ``images.import_image()`` now raise ``DockerStreamError`` when the Docker Engine reports an error in the progress stream, instead of silently returning the error chunk as part of the response. Existing ``except DockerError`` blocks continue to catch these failures because ``DockerStreamError`` is a subclass. Callers that intentionally inspected the returned list for an ``error`` key must update their code to catch the exception instead. (#445)
+- ``images.pull()`` (and its ``Docker.pull`` alias) no longer triggers the Docker Engine's "pull all tags" behavior when ``tag`` is omitted and ``from_image`` has no embedded tag or digest; it now pulls ``"latest"`` instead. Callers that relied on the previous all-tags behavior must pass ``tag=""`` explicitly to opt back in. (#974)
+- Raise the minimum required ``aiohttp`` to ``>=3.11.13``. Earlier releases contain a ``break`` inside a ``finally`` block in ``aiohttp/web_protocol.py`` which Python 3.14 turns into a ``SyntaxWarning`` under PEP 765; the offending code was fixed in aiohttp 3.11.13 (aio-libs/aiohttp#10434, backported in #10476). The 3.10 series is end-of-life. The CI test matrix now exercises ``aiohttp~=3.11.0`` and ``aiohttp~=3.13.0`` instead of 3.10 and 3.13. (#1038)
+
+
+Bug Fixes
+---------
+
+- Fix ``DockerSwarm.join()`` so the request body is JSON-encoded. The endpoint previously sent a form-encoded body with a ``Content-Type: application/json`` header, causing the daemon to reject the request with a JSON decode error. (#288)
+- Raise ``DockerStreamError`` (a ``DockerError`` subclass) when the Docker Engine reports an error inside the JSON progress stream returned by ``images.push()``, ``images.pull()``, ``images.build()``, and ``images.import_image()``. Previously these calls returned ``HTTP 200`` from the Engine even when the upstream registry rejected the operation (e.g. ``403 Forbidden`` from Nexus or Docker Hub), and the error chunk was silently included in the returned list, giving callers no way to detect the failure. (#445)
+- Vendor ``FlowControlDataQueue`` from aiohttp since it is deprecated and will be removed in aiohttp 4.0, and pin ``aiohttp<4.0`` until the dependency is migrated off the class. (#919)
+- Fix container membership check by renaming the misspelled ``__hasitem__`` to ``__contains__`` so the ``in`` operator works on ``DockerContainer`` instances. (#967)
+- Default ``images.pull()`` to the ``"latest"`` tag when neither a ``tag`` argument nor an embedded tag/digest in ``from_image`` is provided, matching the behavior of the ``docker pull`` CLI. (#974)
+- Fix the inverted condition in ``Stream.__del__`` so a ``ResourceWarning`` is emitted when a stream is garbage-collected while still holding a live, unclosed response. (#1033)
+- Stop closing caller-supplied ``session`` and ``connector`` from :meth:`Docker.close`; only resources created internally are torn down, and :meth:`Docker.close` is now idempotent. (#1034)
+
+
+New Features
+------------
+
+- Accept a typed ``filters`` mapping in ``DockerImages.list()`` (e.g. ``{"dangling": ["true"]}``), matching the style of ``volumes.list()``, ``networks.list()``, and ``images.prune()``. A pre-encoded JSON string is still accepted for backwards compatibility, but emits a ``DeprecationWarning`` and will be removed in 1.0. (#696)
+- Add :py:meth:`DockerContainer.top` to expose the ``containers/{id}/top`` API endpoint, accepting an optional ``ps_args`` argument. (#959)
+
+
+Miscellaneous
+-------------
+
+- Document how to bind-mount a host directory via ``HostConfig.Binds`` and ``HostConfig.Mounts``, including bind-propagation options (``shared``, ``slave``, etc.) and the host-side ``mount --make-shared`` prerequisite -- by :user:`achimnol`. (#614)
+- Document ``docker.containers.list(all=True)`` for listing stopped containers, and note that any keyword argument is forwarded as a query parameter to the Docker Engine ``GET /containers/json`` endpoint -- by :user:`achimnol`. (#831)
+- Replace a fixed five second sleep in the container log test helper with a follow stream read, so the helper waits only as long as the daemon takes to flush log output -- by :user:`bdraco`. (#1020)
+- Replace a fixed ten second sleep in the non-TTY attach exit test with a wait for container exit, so the test returns as soon as the container actually finishes -- by :user:`bdraco`. (#1023)
+- Build the distribution with ``uv build`` and run ``twine`` through ``uvx`` in CI, dropping the dedicated ``pip install`` steps for ``build`` and ``twine`` -- by :user:`bdraco`. (#1026)
+- Replace legacy type annotations with Python3.10+ versions. (#1028)
+- Make `uv` the default development setup: track `uv.lock` in git, switch the `Makefile`, `test.sh`, and the README development docs to `uv sync` / `uv run` (with a pip-based fallback documented), and convert the CI `lint` and `test` jobs to use `astral-sh/setup-uv` with the matrix Python via `UV_PYTHON_PREFERENCE=only-system`. (#1038)
+
+
 0.26.0 (2026-02-17)
 ===================
 

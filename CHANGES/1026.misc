@@ -1,1 +1,0 @@
-Build the distribution with ``uv build`` and run ``twine`` through ``uvx`` in CI, dropping the dedicated ``pip install`` steps for ``build`` and ``twine`` -- by :user:`bdraco`.
