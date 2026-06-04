@@ -28,7 +28,7 @@ dependencies = [
     # Upper bound on aiohttp is interim: the vendored FlowControlDataQueue
     # still subclasses aiohttp.DataQueue, whose private surface may change in
     # aiohttp 4.0. Tracked in https://github.com/aio-libs/aiodocker/issues/919.
-    "aiohttp>=3.11.13,<4.0",
+    "aiohttp<4.0,>=3.11.13",
 ]
 
 [project.optional-dependencies]
@@ -37,7 +37,7 @@ ssh = [
     "paramiko>=2.9.0",
 ]
 dev = [
-    "aiohttp==3.13.5",
+    "aiohttp==3.14.0",
     "towncrier==25.8.0",
 ]
 lint = [
