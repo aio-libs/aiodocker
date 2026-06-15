@@ -67,9 +67,9 @@ class DockerVolumes:
 
 
 class DockerVolume:
-    def __init__(self, docker, **kwargs):
+    def __init__(self, docker, name: str = '', **kwargs):
         self.docker = docker
-        self.name = kwargs.get("Name", kwargs.get("name"))
+        self.name = kwargs.get("Name", name)
         self._volume = kwargs
 
     async def show(self):
