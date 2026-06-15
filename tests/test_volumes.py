@@ -10,11 +10,12 @@ from aiodocker.volumes import DockerVolume
 @pytest.mark.asyncio
 async def test_create_search_get_delete(docker: Docker) -> None:
     name = "aiodocker-test-volume-two"
-    await docker.volumes.create({
+    create_response = await docker.volumes.create({
         "Name": name,
         "Labels": {"some": "label"},
         "Driver": "local",
     })
+    assert create_response['Name'] == name
     volumes_response = await docker.volumes.list(filters={"label": "some=label"})
     volumes = volumes_response["Volumes"]
     assert len(volumes) == 1

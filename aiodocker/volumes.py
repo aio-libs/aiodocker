@@ -29,16 +29,16 @@ class DockerVolumes:
         data = await self.docker._query_json("volumes", params=params)
         return data
 
-    async def get(self, id):
+    async def get(self, id) -> 'DockerVolume':
         data = await self.docker._query_json(f"volumes/{id}", method="GET")
-        return DockerVolume(self.docker, data["Name"])
+        return DockerVolume(self.docker, **data)
 
-    async def create(self, config):
+    async def create(self, config) -> 'DockerVolume':
         config = json.dumps(config, sort_keys=True).encode("utf-8")
         data = await self.docker._query_json(
             "volumes/create", method="POST", data=config
         )
-        return DockerVolume(self.docker, data["Name"])
+        return DockerVolume(self.docker, **data)
 
     async def prune(
         self,
@@ -67,12 +67,14 @@ class DockerVolumes:
 
 
 class DockerVolume:
-    def __init__(self, docker, name):
+    def __init__(self, docker, **kwargs):
         self.docker = docker
-        self.name = name
+        self.name = kwargs.get('Name', kwargs.get('name'))
+        self._volume = kwargs
 
     async def show(self):
         data = await self.docker._query_json(f"volumes/{self.name}")
+        self._volume = data
         return data
 
     async def delete(self, force=False):
@@ -80,3 +82,9 @@ class DockerVolume:
             f"volumes/{self.name}", method="DELETE", params=dict(force=force)
         ):
             pass
+
+    def __getitem__(self, key: str) -> Any:
+        return self._volume[key]
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._volume
