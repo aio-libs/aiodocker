@@ -29,11 +29,11 @@ class DockerVolumes:
         data = await self.docker._query_json("volumes", params=params)
         return data
 
-    async def get(self, id) -> 'DockerVolume':
+    async def get(self, id) -> "DockerVolume":
         data = await self.docker._query_json(f"volumes/{id}", method="GET")
         return DockerVolume(self.docker, **data)
 
-    async def create(self, config) -> 'DockerVolume':
+    async def create(self, config) -> "DockerVolume":
         config = json.dumps(config, sort_keys=True).encode("utf-8")
         data = await self.docker._query_json(
             "volumes/create", method="POST", data=config
@@ -69,7 +69,7 @@ class DockerVolumes:
 class DockerVolume:
     def __init__(self, docker, **kwargs):
         self.docker = docker
-        self.name = kwargs.get('Name', kwargs.get('name'))
+        self.name = kwargs.get("Name", kwargs.get("name"))
         self._volume = kwargs
 
     async def show(self):

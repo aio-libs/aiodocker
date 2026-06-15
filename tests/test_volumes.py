@@ -15,7 +15,7 @@ async def test_create_search_get_delete(docker: Docker) -> None:
         "Labels": {"some": "label"},
         "Driver": "local",
     })
-    assert create_response['Name'] == name
+    assert create_response["Name"] == name
     volumes_response = await docker.volumes.list(filters={"label": "some=label"})
     volumes = volumes_response["Volumes"]
     assert len(volumes) == 1
