@@ -429,7 +429,7 @@ class DockerContainer:
         if link:
             params["link"] = link
 
-        # Use standard timeout resolution
+        # Default to infinite timeout for delete operations
         timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
         async with self.docker._query(
