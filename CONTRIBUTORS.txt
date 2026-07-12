@@ -6,6 +6,7 @@ Anton Patrushev
 Byeongjun Park
 Cecil Tonglet
 Christian Barra
+Daniel Habenicht
 Danny Song
 Darwin Monroy
 Edgar Ramírez Mondragón
