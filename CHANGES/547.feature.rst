@@ -1,0 +1,1 @@
+Add ``DockerContainer.get_archive_stream()`` to stream a container archive in bounded chunks, keeping peak memory flat instead of buffering the whole archive as ``get_archive()`` does.

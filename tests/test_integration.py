@@ -9,7 +9,7 @@ import ssl
 import sys
 import tarfile
 import time
-from typing import Any, List
+from typing import Any, List, cast
 
 import aiohttp
 import pytest
@@ -413,6 +413,63 @@ async def test_get_archive(
     foo_file = tar_archive.extractfile("foo.txt")
     assert foo_file is not None
     assert foo_file.read() == b"test\n"
+
+
+@pytest.mark.asyncio
+async def test_get_archive_stream(
+    image_name: str,
+    make_container: AsyncContainerFactory,
+) -> None:
+    skip_windows()
+
+    config: dict[str, Any] = {
+        "Cmd": [
+            "python",
+            "-c",
+            "with open('tmp/foo.txt', 'w') as f: f.write('test\\n')",
+        ],
+        "Image": image_name,
+        "AttachStdin": False,
+        "AttachStdout": False,
+        "AttachStderr": False,
+        "Tty": True,
+        "OpenStdin": False,
+    }
+
+    container = await make_container(
+        config, name="aiodocker-testing-get-archive-stream"
+    )
+    await container.start()
+    await asyncio.sleep(1)
+
+    # Streamed bytes reassemble to the same tar as get_archive().
+    chunks = [
+        chunk
+        async for chunk in container.get_archive_stream("tmp/foo.txt", chunk_size=4)
+    ]
+    assert len(chunks) > 1  # small chunk_size actually splits the body
+    data = b"".join(chunks)
+    tar_archive = tarfile.open(fileobj=io.BytesIO(data))
+    assert len(tar_archive.getmembers()) == 1
+    foo_file = tar_archive.extractfile("foo.txt")
+    assert foo_file is not None
+    assert foo_file.read() == b"test\n"
+
+    # Early abandonment: breaking out of the stream must not error.
+    async for _chunk in container.get_archive_stream("tmp/foo.txt"):
+        break
+
+    # chunk_size guard is enforced on iteration.
+    for bad in (0, -1, True):
+        with pytest.raises(ValueError):
+            async for _ in container.get_archive_stream("tmp/foo.txt", chunk_size=bad):
+                pass
+
+    with pytest.raises(ValueError):
+        async for _ in container.get_archive_stream(
+            "tmp/foo.txt", chunk_size=cast(int, "x")
+        ):
+            pass
 
 
 @pytest.mark.asyncio
