@@ -444,7 +444,8 @@ async def test_get_archive_stream(
 
     # Streamed bytes reassemble to the same tar as get_archive().
     chunks = [
-        chunk async for chunk in container.get_archive_stream("tmp/foo.txt", chunk_size=4)
+        chunk
+        async for chunk in container.get_archive_stream("tmp/foo.txt", chunk_size=4)
     ]
     assert len(chunks) > 1  # small chunk_size actually splits the body
     data = b"".join(chunks)
