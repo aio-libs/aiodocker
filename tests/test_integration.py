@@ -426,7 +426,7 @@ async def test_get_archive_stream(
         "Cmd": [
             "python",
             "-c",
-            "with open('tmp/foo.txt', 'w') as f: f.write('test\n')",
+            "with open('tmp/foo.txt', 'w') as f: f.write('test\\n')",
         ],
         "Image": image_name,
         "AttachStdin": False,
