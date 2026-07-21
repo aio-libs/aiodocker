@@ -263,6 +263,41 @@ class DockerContainer:
             assert isinstance(data, tarfile.TarFile)
             return data
 
+    async def get_archive_stream(
+        self, path: str, *, chunk_size: int = 64 * 1024
+    ) -> AsyncIterator[bytes]:
+        """Stream the tar archive at *path* in bounded chunks.
+
+        Unlike :meth:`get_archive`, which reads the whole archive into memory,
+        this yields the archive in ``chunk_size``-byte pieces so peak memory
+        stays flat regardless of archive size.
+
+        This is an async generator: iterate it, do not await it::
+
+            async for chunk in container.get_archive_stream("/etc"):
+                ...
+
+        ``chunk_size`` must be a positive integer (validated on first
+        iteration). Callers that may stop early should wrap the iterator in
+        :func:`contextlib.aclosing` for deterministic connection release.
+        """
+        if (
+            not isinstance(chunk_size, int)
+            or isinstance(chunk_size, bool)
+            or chunk_size <= 0
+        ):
+            raise ValueError("chunk_size must be a positive integer")
+        async with self.docker._query(
+            f"containers/{self._id}/archive",
+            method="GET",
+            params={"path": path},
+        ) as response:
+            try:
+                async for chunk in response.content.iter_chunked(chunk_size):
+                    yield chunk
+            finally:
+                response.close()
+
     async def put_archive(self, path, data):
         async with self.docker._query(
             f"containers/{self._id}/archive",
