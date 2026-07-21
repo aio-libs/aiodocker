@@ -471,7 +471,6 @@ async def test_get_archive_stream(
         ):
             pass
 
-    await container.delete(force=True)
 
 
 @pytest.mark.asyncio
