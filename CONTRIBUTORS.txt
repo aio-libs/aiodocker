@@ -32,6 +32,7 @@ Paul Tagliamonte
 Robin Tweedie
 Sanghun Lee
 Saulius Adamonis
+Stefan Agner
 Tianon Gravi
 Tommy Beadle
 Travis DePrato
