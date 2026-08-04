@@ -179,7 +179,8 @@ async def test_container_stats_one_shot_with_stream_raises(
 
     try:
         with pytest.raises(ValueError):
-            container.stats(stream=True, one_shot=True)
+            # combination rejected at runtime and excluded from the overloads
+            container.stats(stream=True, one_shot=True)  # type: ignore[call-overload]
     finally:
         await container.delete(force=True)
 
