@@ -516,6 +516,7 @@ class DockerContainer:
         self,
         *,
         stream: Literal[True] = True,
+        one_shot: Literal[False] = False,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> AsyncIterator[dict[str, Any]]: ...
 
