@@ -516,6 +516,7 @@ class DockerContainer:
         self,
         *,
         stream: Literal[True] = True,
+        one_shot: Literal[False] = False,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> AsyncIterator[dict[str, Any]]: ...
 
@@ -524,6 +525,7 @@ class DockerContainer:
         self,
         *,
         stream: Literal[False],
+        one_shot: bool = False,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> list[dict[str, Any]]: ...
 
@@ -531,14 +533,22 @@ class DockerContainer:
         self,
         *,
         stream: bool = True,
+        one_shot: bool = False,
         timeout: float | ClientTimeout | Sentinel | None = SENTINEL,
     ) -> Any:
+        if stream and one_shot:
+            raise ValueError("one_shot is only applicable with stream=False")
+
         # Default to infinite timeout for stats operations
         timeout_config = self.docker._resolve_long_running_timeout(timeout)
 
+        params = {"stream": "1" if stream else "0"}
+        if one_shot:
+            params["one-shot"] = "1"
+
         cm = self.docker._query(
             f"containers/{self._id}/stats",
-            params={"stream": "1" if stream else "0"},
+            params=params,
             timeout=timeout_config,
         )
         if stream:

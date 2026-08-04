@@ -144,6 +144,48 @@ async def test_container_stats_list(docker: Docker, image_name: str) -> None:
 
 
 @pytest.mark.asyncio
+async def test_container_stats_one_shot(docker: Docker, image_name: str) -> None:
+    container = await docker.containers.run(
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": ["python"],
+            "Image": image_name,
+        }
+    )
+
+    try:
+        await container.start()
+        response = await container.wait()
+        assert response["StatusCode"] == 0
+        stats = await container.stats(stream=False, one_shot=True)
+        assert "cpu_stats" in stats[0]
+        # one-shot mode returns a single sample without a precpu baseline
+        assert "system_cpu_usage" not in stats[0]["precpu_stats"]
+    finally:
+        await container.delete(force=True)
+
+
+@pytest.mark.asyncio
+async def test_container_stats_one_shot_with_stream_raises(
+    docker: Docker, image_name: str
+) -> None:
+    container = await docker.containers.run(
+        config={
+            "Cmd": ["-c", "print('hello')"],
+            "Entrypoint": ["python"],
+            "Image": image_name,
+        }
+    )
+
+    try:
+        with pytest.raises(ValueError):
+            # combination rejected at runtime and excluded from the overloads
+            container.stats(stream=True, one_shot=True)  # type: ignore[call-overload]
+    finally:
+        await container.delete(force=True)
+
+
+@pytest.mark.asyncio
 async def test_container_stats_stream(docker: Docker, image_name: str) -> None:
     container = await docker.containers.run(
         config={
