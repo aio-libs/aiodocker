@@ -102,9 +102,12 @@ def split_image_reference(reference: str) -> tuple[str, str | None, str | None]:
 
 
 def is_valid_domain(domain: str) -> bool:
-    """Return whether the given string is a well-formed registry domain.
+    """Return whether the given string matches Docker's registry domain grammar.
 
     Accepts a domain name, an IPv4 or bracketed IPv6 address, and an optional
-    port, rejecting malformed values such as ``".ghcr.io"``.
+    port, rejecting malformed values such as ``".ghcr.io"``. Being a port of
+    ``DomainRegexp`` this is a grammar check, so it does not verify that an
+    IPv6 literal is semantically valid or that a port is within range, both of
+    which Docker leaves to the daemon as well.
     """
     return DOMAIN_REGEX.fullmatch(domain) is not None
