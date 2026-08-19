@@ -421,8 +421,10 @@ async def test_pups_image_auth(
     # the encoded value if required.
     await docker.pull(repository, auth="dGVzdHVzZXI6dGVzdHBhc3N3b3Jk")
     with pytest.raises(ValueError):
-        # The repository arg must include the registry address.
-        await docker.pull("image:latest", auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
+        # A reference is required to authenticate against a registry. One
+        # without a registry address resolves to the default registry, so
+        # only an empty reference is rejected.
+        await docker.pull("", auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.pull(repository, auth={"auth": "dGVzdHVzZXI6dGVzdHBhc3N3b3Jk"})
     await docker.images.inspect(repository)
 
