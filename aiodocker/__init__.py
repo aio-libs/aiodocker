@@ -9,6 +9,14 @@ from .exceptions import (
     DockerError,
     DockerStreamError,
 )
+from .reference import (
+    DEFAULT_DOMAIN,
+    LEGACY_DEFAULT_DOMAIN,
+    OFFICIAL_REPO_PREFIX,
+    is_valid_domain,
+    split_docker_domain,
+    split_image_reference,
+)
 
 
 try:
@@ -19,6 +27,9 @@ except PackageNotFoundError:
 
 
 __all__ = (
+    "DEFAULT_DOMAIN",
+    "LEGACY_DEFAULT_DOMAIN",
+    "OFFICIAL_REPO_PREFIX",
     "Docker",
     "DockerContainerError",
     "DockerContextError",
@@ -26,4 +37,7 @@ __all__ = (
     "DockerContextTLSError",
     "DockerError",
     "DockerStreamError",
+    "is_valid_domain",
+    "split_docker_domain",
+    "split_image_reference",
 )

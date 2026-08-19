@@ -15,6 +15,7 @@ from typing import (
 import aiohttp
 
 from .jsonstream import json_stream_list, json_stream_stream
+from .reference import split_docker_domain, split_image_reference
 from .types import SENTINEL, JSONObject, Sentinel, SupportsRead
 from .utils import clean_filters, clean_map, compose_auth_header
 
@@ -24,8 +25,8 @@ if TYPE_CHECKING:
 
 
 def _has_embedded_tag_or_digest(image_ref: str) -> bool:
-    last_segment = image_ref.rsplit("/", 1)[-1]
-    return ":" in last_segment or "@" in last_segment
+    _, tag, digest = split_image_reference(image_ref)
+    return tag is not None or digest is not None
 
 
 class DockerImages:
@@ -159,12 +160,11 @@ class DockerImages:
         if platform:
             params["platform"] = platform
         if auth is not None:
-            registry, has_registry_host, _ = image.partition("/")
-            if not has_registry_host:
-                raise ValueError(
-                    "Image should have registry host when auth information is provided"
-                )
-            # TODO: assert registry == repo?
+            if not image:
+                raise ValueError("Image must not be empty when auth is provided")
+            # The registry host is the domain of the reference, which is the
+            # default registry when the reference does not name one.
+            registry, _ = split_docker_domain(image)
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
 
         # Default to infinite timeout for pull operations
@@ -241,11 +241,9 @@ class DockerImages:
         if tag:
             params["tag"] = tag
         if auth is not None:
-            registry, has_registry_host, _ = name.partition("/")
-            if not has_registry_host:
-                raise ValueError(
-                    "Image should have registry host when auth information is provided"
-                )
+            if not name:
+                raise ValueError("Image must not be empty when auth is provided")
+            registry, _ = split_docker_domain(name)
             headers["X-Registry-Auth"] = compose_auth_header(auth, registry)
 
         # Default to infinite timeout for push operations
