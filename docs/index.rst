@@ -127,6 +127,7 @@ It's *Apache 2* licensed and freely available.
    stream
    logs
    images
+   reference
    networks
    secrets
    services
